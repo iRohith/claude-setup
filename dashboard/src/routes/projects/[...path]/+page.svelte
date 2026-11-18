@@ -23,8 +23,8 @@
 <main class="mx-auto max-w-4xl p-4 sm:p-8">
 	<a class="text-sm text-neutral-500 hover:underline" href={resolve('/')}>← projects</a>
 	<h1 class="mt-2 text-2xl font-semibold">{data.summary.name}</h1>
-	<p class="mb-6 text-sm break-all text-neutral-500">
-		{data.summary.root} · {data.summary.state ?? '?'}
+	<p class="mb-6 text-sm text-neutral-500">
+		<span class="break-all">{data.summary.root}</span> · {data.summary.state ?? '?'}
 	</p>
 
 	{#if data.summary.error}

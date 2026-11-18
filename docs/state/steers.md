@@ -109,6 +109,12 @@ Changed: added 1.6 (placed before 1.2); intent principle 13; guidance line in im
 Why it's a steer: sets how sessions run, and how friction is handled.
 Changed: intent principles 14 and 15; two guidance lines in implementation.md.
 
+## 2026-11-18 · affects 1.12, 1.13, 2.1, 5.1, 5.4
+> the first wf init/setup whatever that runs first that guidance, instructions everything need to some in place. ... if its just next part, then its fine. implement everything first.
+
+Why it's a steer: guidance must exist from a project's first moment; the demo session retried a denied edit and chained commands because it had none.
+Changed: added 1.12 (global CLAUDE.md, linked by install) and 1.13 (per-state instructions at session start, `wf init` prints setup's, final denials) to major 1; narrowed 2.1, 5.1 and 5.4.
+
 ## 2026-11-18 · affects 1.11, 3.4, 4.1
 > thats cli job to handle sort/insertion location logic by id and all right
 

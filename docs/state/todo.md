@@ -55,10 +55,14 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   - every write prints its changed lines (an LCS line diff: `- ` removed, `+ ` added); writes hold a single-writer lock in `scratch/temp/wf.lock` and take it over from a dead process
   - core gained `activeMinors`, `nextItem` (stays in the active major; otherwise the first unfinished major), `withLock`, `initProject` (empty templates, setup state) and the registry `local/projects.json` under `WF_HOME` (default: claude-setup)
   - `wf/cli.test.ts`: 7 tests run the real CLI against a sample project in `scratch/temp/` with a temp `WF_HOME` (removed afterwards); 19 of 19 wf tests pass; also ran `wf status` and `wf show 1` on this repo
-- [~] 1.3 hooks: SessionStart injection and the PreToolUse deny on `docs/state/**`
+- [x] 1.3 hooks: SessionStart injection and the PreToolUse deny on `docs/state/**`
   Proof: transcript of a real session showing the injected context and the denied Edit with its alternative
-- [~] 1.4 `wf install`: wf on PATH and hook registration (the CLAUDE.md and skills links are 5.4)
+  - `wf hook session-start` injects global learnings, project learnings and the handoff; `wf hook pre-tool-use` denies Edit/MultiEdit/Write/NotebookEdit on wf-owned state files, naming the wf command
+  - proof: two owner-run sessions in scratch/temp/demo; the first started with the context, added a major and two minors via wf, and had its Edit of todo.md denied twice; the second answered the handoff and learnings from context alone
+- [x] 1.4 `wf install`: wf on PATH and hook registration (the CLAUDE.md link is 1.12, the skills links 5.4)
   Proof: on a clean `~/.claude` the throwaway project works with no per-project step
+  - `wf/install.ts`: links ~/.local/bin/wf to cli.ts and adds both hooks to ~/.claude/settings.json, keeping existing settings; idempotent; refuses inside Claude Code
+  - proof: the owner ran it once; the demo project then worked with no per-project step; the owner's ~/.claude already had settings, so the clean-HOME case is covered by install.test.ts
 - [x] 1.5 dashboard: read-only project list and todo tab
   Proof: screenshot of the throwaway project's todo
   - dashboard reads through the core as the workspace package `wf` (`exports` → `core.ts`); `src/lib/server/projects.ts` lists the registry and summarises each project; `/` lists projects, `/projects/<abs path>` shows the todo; unregistered paths return 404
@@ -100,12 +104,16 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   Proof: a todo with items out of order is written back sorted; this repo's todo.md reads 0.1 to 0.6 and 1.1 to 1.11 in order
   - `parseTodo` sorts majors by number and minors by number within their major, so every write puts items in id order; ids already come from max + 1, so nothing else decides position
   - `wf move` removed from 3.4, 4.1 and spec section 4; `wf help add` states the id-order rule
+- [ ] 1.12 global instructions from the first session: `global/CLAUDE.md` (how to work, the owner's rules), linked as `~/.claude/CLAUDE.md` by `wf install`
+  Proof: the owner reads `global/CLAUDE.md` and signs off; after `wf install`, `~/.claude/CLAUDE.md` points to it
+- [ ] 1.13 instructions for the current state injected at every session start, `wf init` printing the setup instructions, and denials that say the rule is final
+  Proof: the owner's demo prompt re-run in a fresh session: one Edit attempt, the denial accepted, `wf edit` used instead, no chained commands
 
 ## [ ] 2 · States and admin
 Deliverable: setup/discuss/build behave as spec section 2 in a real session, and admin mode lifts every restriction only when the owner flips it.
 
-- [ ] 2.1 `wf state`, state stored per project, guidance per state in SessionStart
-  Proof: switching states changes the injected guidance on the next session start
+- [ ] 2.1 `wf state` switches setup, discuss and build, stored per project (the per-state instructions come from 1.13)
+  Proof: `wf state discuss` changes the handoff state and the next session starts with the discuss instructions
 - [ ] 2.2 discuss write block; setup push block until "setup done"
   Proof: transcript showing a denied Edit in discuss and a denied push in setup, then the push allowed after "setup done"
 - [ ] 2.3 admin mode: dashboard toggle, `wf admin` refused inside Claude Code, hooks pass when on
@@ -146,14 +154,14 @@ Deliverable: the owner manages todos and learnings across all projects without t
 ## [ ] 5 · Guidance and skills
 Deliverable: `global/CLAUDE.md` under about 80 lines, with the four skills installed as spec'd.
 
-- [ ] 5.1 write `global/CLAUDE.md`
-  Proof: the owner reads it in one sitting and signs off
+- [ ] 5.1 fold the vetted skills' always-on parts into `global/CLAUDE.md` (with 5.2), keeping it short
+  Proof: the owner reads the updated `global/CLAUDE.md` in one sitting and signs off
 - [ ] 5.2 vet and adapt ponytail, mattpocock, karpathy; impeccable on demand
   Proof: a diff of each adaptation against upstream; no hooks or binaries present
 - [ ] 5.3 seed global learnings from the three failed attempts
   Proof: `wf status` shows them; under the budget
-- [ ] 5.4 `wf install` also links `~/.claude/CLAUDE.md` and the vetted skills into claude-setup
-  Proof: on a fresh HOME, install creates both links pointing into claude-setup; a second run changes nothing
+- [ ] 5.4 `wf install` also links the vetted skills into claude-setup (the CLAUDE.md link is 1.12)
+  Proof: on a fresh HOME, install links the skills into claude-setup; a second run changes nothing
 
 ## [ ] 6 · Real use
 Deliverable: one real project taken from setup through its first major task with this setup, and the friction recorded as learnings.
