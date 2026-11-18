@@ -150,6 +150,21 @@ function main(argv: string[]): void {
 				console.log('\nlogged; the action may run now');
 			});
 		}
+		case 'memory': {
+			const root = wf.findRoot(process.cwd());
+			return wf.withLock(root, () => {
+				const { before, after } = wf.addMemory(root, arg(0, 'section'), arg(1, 'entry'));
+				printChanges(before, after);
+			});
+		}
+		case 'find': {
+			const hits = wf.findInState(wf.findRoot(process.cwd()), arg(0, 'text'));
+			console.log(hits.length ? hits.join('\n') : 'no matches');
+			return;
+		}
+		case 'get':
+			console.log(wf.getState(wf.findRoot(process.cwd()), arg(0, 'file'), args[1]));
+			return;
 		case 'learn': {
 			const root = wf.tryFindRoot(process.cwd());
 			const write = () => {

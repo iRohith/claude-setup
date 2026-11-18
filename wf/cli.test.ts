@@ -314,6 +314,51 @@ test('risk needs every field, names the missing ones, and logs the entry', () =>
 	assert.match(ok.out, /the action may run now/);
 });
 
+test('memory sections keep their shape; find and get read the state', () => {
+	assert.match(
+		wf('memory', 'invariants', 'only wf writes state').out,
+		/^\+ 1\. only wf writes state$/m
+	);
+	assert.match(
+		wf('memory', 'invariants', 'one core holds the rules').out,
+		/^\+ 2\. one core holds the rules$/m
+	);
+	assert.match(
+		wf('memory', 'pitfalls', 'globs miss dotfiles; cause: default options').out,
+		/^\+ - \d{4}-\d{2}-\d{2}: globs miss dotfiles/m
+	);
+	assert.match(
+		wf('memory', 'contracts', 'todo.md stays canonical').out,
+		/^\+ - todo\.md stays canonical$/m
+	);
+	assert.match(
+		wf('memory', 'anti-patterns', 'a kind field on items').out,
+		/^\+ 1\. a kind field on items$/m
+	);
+	assert.match(wf('memory', 'deferred', 'x').err, /memory section is one of/);
+	const memory = readFileSync(join(project, 'docs', 'state', 'memory.md'), 'utf8');
+	assert.match(
+		memory,
+		/## Invariants\n\n1\. only wf writes state\n2\. one core holds the rules\n\n## Contracts/
+	);
+
+	assert.match(
+		wf('find', 'NETWORK').out,
+		/^steers\.md:\d+: Steer: export must not need the network$/m
+	);
+	const hits = wf('find', '0.2').out;
+	assert.match(hits, /^steers\.md:\d+: ## \d{4}-\d{2}-\d{2} · affects 0\.2$/m);
+	assert.match(hits, /^todo\.md:\d+: - \[.\] 0\.2 write$/m);
+	assert.equal(wf('find', 'zzz-nothing').out.trim(), 'no matches');
+
+	assert.equal(
+		wf('get', 'memory', 'Invariants').out.trimEnd(),
+		'## Invariants\n\n1. only wf writes state\n2. one core holds the rules'
+	);
+	assert.match(wf('get', 'handoff.md').out, /^# Handoff\nState: /);
+	assert.match(wf('get', 'memory', 'Nope').err, /has no "## Nope" section/);
+});
+
 test('commands outside a project explain what to do', () => {
 	// Everything under scratch/ sits inside this repo, so run from / (read-only) instead.
 	const r = spawnSync(process.execPath, [cli, 'status'], { cwd: '/', encoding: 'utf8' });

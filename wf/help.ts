@@ -31,6 +31,16 @@ export const HELP: Record<string, Help> = {
 			'Minors in progress elsewhere (waiting on the owner, say) never hold it up.'
 		]
 	},
+	find: {
+		usage: ['wf find "<text>"'],
+		summary: 'search every docs/state/ file, case-insensitive: file:line: text',
+		details: ['Use it to answer "how did we do X" or "what is related to Y" before reading files.']
+	},
+	get: {
+		usage: ['wf get <file> ["<section>"]'],
+		summary: 'print one docs/state/ file, or one "## <section>" of it',
+		details: ['<file> is the name with or without .md, e.g. spec or memory.md.']
+	},
 	show: {
 		usage: ['wf show <id>'],
 		summary:
@@ -130,6 +140,13 @@ export const HELP: Record<string, Help> = {
 		usage: ['wf assume "<summary>" --why "<reason>" --affects <ids|all> [--changed "<text>"]'],
 		summary: 'record a reversible choice made while the owner is away, for their review',
 		details: ['Take the most reversible option, do it, then record it here.']
+	},
+	memory: {
+		usage: ['wf memory invariants|contracts|pitfalls|anti-patterns "<entry>"'],
+		summary: "add to memory.md: the project's invariants, contracts, pitfalls and anti-patterns",
+		details: [
+			'Invariants and anti-patterns are numbered; pitfalls are dated, so include the cause in the text.'
+		]
 	},
 	risk: {
 		usage: [

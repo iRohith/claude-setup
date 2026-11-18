@@ -20,7 +20,7 @@ dashboard, so re-read it (`wf status`) instead of assuming it hasn't changed.
 | `spec.md` | what the implementation leaves out: schemas, formats, commands, contracts | `wf doc spec` |
 | `todo.md` | majors and minors with their proofs and implementation details | `wf add`, `batch`, `edit`, `start`, `done`, `impl` |
 | `handoff.md` | state, active items, next, how to verify, what not to do, questions for the owner | `wf handoff` |
-| `memory.md` | invariants, contracts, pitfalls (dated, with cause), anti-patterns, deferred items | directly |
+| `memory.md` | invariants, contracts, pitfalls (dated, with cause), anti-patterns, deferred items | `wf memory` |
 | `learnings.md` | short numbered lessons: what went wrong → what to do instead | `wf learn` |
 | `steers.md` | the owner's steers, summarised, with why they count | `wf steer`, `wf assume` |
 | `risks.md` | high-risk actions, logged before they run | `wf risk` |
@@ -29,7 +29,9 @@ Write `wf doc` text in `scratch/temp/` first, then `wf doc <name> --from <file>`
 with `# <Title>`) or `--section "<heading>"` (one `##` section). Keep `<` inside backticks in documents.
 
 ## wf
-- Queries: `wf status` (state, active, next), `wf next`, `wf show <id>`. Run `wf status` first in a session.
+- Queries: `wf status` (state, active, next), `wf next`, `wf show <id>` (an item with its steers),
+  `wf find "<text>"` (search all state: how was X done, what is related to Y), `wf get <file> [section]`.
+  Run `wf status` first in a session.
 - `wf help` lists every command; `wf help <command>` gives its usage and the rules it enforces. Read it
   before using a command for the first time.
 - A hook denial is final. Never retry the denied action and never route around it (for example through

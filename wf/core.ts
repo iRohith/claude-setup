@@ -4,6 +4,7 @@ import {
 	existsSync,
 	mkdirSync,
 	openSync,
+	readdirSync,
 	readFileSync,
 	renameSync,
 	unlinkSync,
@@ -450,6 +451,7 @@ const WF_OWNED: Record<string, string> = {
 	'learnings.md': 'wf learn',
 	'steers.md': 'wf steer or wf assume',
 	'risks.md': 'wf risk',
+	'memory.md': 'wf memory',
 	...Object.fromEntries(DOC_NAMES.map((d) => [`${d}.md`, `wf doc ${d}`]))
 };
 
@@ -714,6 +716,88 @@ export function addRisk(root: string, r: Partial<Risk>): { before: string; after
 	const after = `${before.replace(/\n+$/, '')}\n\n${entry.join('\n')}\n`;
 	writeAtomic(path, after);
 	return { before, after };
+}
+
+// ---------- memory, find, get ----------
+
+const MEMORY_SECTIONS: Record<string, string> = {
+	invariants: 'Invariants',
+	contracts: 'Contracts',
+	pitfalls: 'Pitfalls',
+	'anti-patterns': 'Anti-patterns'
+};
+
+/** Line range [start, end) of a "## <title>" section, the heading line excluded; fences respected. */
+function sectionRange(lines: string[], title: string): [number, number] | undefined {
+	const heads = topHeadings(lines);
+	const start = lines.findIndex((l, k) => heads[k] && l === `## ${title}`);
+	if (start === -1) return undefined;
+	const end = heads.findIndex((h, k) => k > start && h);
+	return [start + 1, end === -1 ? lines.length : end];
+}
+
+/**
+ * Appends to a memory.md section in its fixed shape: invariants and anti-patterns numbered,
+ * pitfalls dated, contracts as bullets.
+ */
+export function addMemory(
+	root: string,
+	section: string,
+	text: string
+): { before: string; after: string } {
+	const title = MEMORY_SECTIONS[section];
+	if (!title)
+		throw new WfError(
+			`memory section is one of ${Object.keys(MEMORY_SECTIONS).join(', ')}, got ${section}`
+		);
+	const entry = escapeMd(required(text, 'entry'));
+	const path = statePath(root, 'memory.md');
+	const before = readFileSync(path, 'utf8');
+	const lines = before.replace(/\n+$/, '').split('\n');
+	const range = sectionRange(lines, title);
+	if (!range) throw new WfError(`memory.md has no "## ${title}" section`);
+	const start = range[0];
+	let end = range[1];
+	while (end > start && lines[end - 1].trim() === '') end--;
+	const numbered = title === 'Invariants' || title === 'Anti-patterns';
+	const count = lines.slice(start, end).filter((l) => /^\d+\. /.test(l)).length;
+	const line = numbered
+		? `${count + 1}. ${entry}`
+		: title === 'Pitfalls'
+			? `- ${new Date().toLocaleDateString('sv')}: ${entry}`
+			: `- ${entry}`;
+	const insert = end === start ? ['', line] : [line];
+	lines.splice(end, 0, ...insert);
+	const after = lines.join('\n') + '\n';
+	writeAtomic(path, after);
+	return { before, after };
+}
+
+/** Case-insensitive search across every docs/state/ file: "file:line: text". */
+export function findInState(root: string, text: string): string[] {
+	const needle = required(text, 'search text').toLowerCase();
+	const dir = join(root, 'docs', 'state');
+	return readdirSync(dir)
+		.filter((f) => f.endsWith('.md'))
+		.sort()
+		.flatMap((f) =>
+			readFileSync(join(dir, f), 'utf8')
+				.split('\n')
+				.flatMap((l, i) => (l.toLowerCase().includes(needle) ? [`${f}:${i + 1}: ${l}`] : []))
+		);
+}
+
+/** One docs/state/ file, or one "## <section>" of it. */
+export function getState(root: string, name: string, section?: string): string {
+	const file = name.endsWith('.md') ? name : `${name}.md`;
+	const path = statePath(root, file);
+	if (!existsSync(path)) throw new WfError(`no docs/state/${file}`);
+	const text = readFileSync(path, 'utf8');
+	if (section === undefined) return text.replace(/\n+$/, '');
+	const lines = text.split('\n');
+	const range = sectionRange(lines, section);
+	if (!range) throw new WfError(`${file} has no "## ${section}" section`);
+	return [`## ${section}`, ...lines.slice(...range)].join('\n').replace(/\n+$/, '');
 }
 
 // ---------- session context and learnings ----------

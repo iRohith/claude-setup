@@ -144,8 +144,9 @@ Deliverable: every record type from spec section 3 written and queried through `
 - [x] 3.3 `wf risk` with all four fields required
   Proof: a request missing `--recover` is rejected naming the field
   - core `addRisk`: item, action, why, level, surface and recover all required, every missing one named; level is low, medium or high; item must exist; `wf risk` prints the entry and that the action may run; risks.md joined the deny map
-- [ ] 3.4 memory sections, `wf find`, `wf get`
+- [x] 3.4 memory sections, `wf find`, `wf get`
   Proof: `wf find` hits across files; `wf get` prints one section
+  - core `addMemory` (sections keep their shape: invariants and anti-patterns numbered, pitfalls dated, contracts bulleted), `findInState` (case-insensitive, file:line), `getState` (a file or one fence-aware section); memory.md joined the deny map
 - [ ] 3.5 `wf env set` and `wf env keys`; `.env` read, print and direct Edit/Write denied
   Proof: `.env` gets the key; the transcript never shows a value; `cat .env` is denied
 - [ ] 3.6 `wf checks set` (pre-commit) and `wf push set` (optional pre-push, majors only, for example a deploy)

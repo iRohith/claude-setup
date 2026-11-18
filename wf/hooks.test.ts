@@ -91,7 +91,7 @@ test('in discuss, project files are denied; state files and scratch/temp stay wr
 	assert.equal(denied.hookSpecificOutput.permissionDecision, 'deny');
 	assert.match(denied.hookSpecificOutput.permissionDecisionReason, /project is in discuss/);
 	assert.equal(edit('Write', join(project, 'scratch', 'temp', 'plan.md')), undefined);
-	assert.equal(edit('Write', join(project, 'docs', 'state', 'memory.md')), undefined);
+	assert.equal(edit('Write', join(project, 'docs', 'state', 'notes.md')), undefined);
 	wfIn('state', 'build');
 	assert.equal(edit('Edit', join(project, 'src', 'app.ts')), undefined);
 	wfIn('state', 'setup');
@@ -219,7 +219,10 @@ test('edits to wf-owned state files are denied with the alternative', () => {
 		['MultiEdit', 'todo.md', 'wf add, edit, batch'],
 		['Write', 'handoff.md', 'wf handoff'],
 		['Edit', 'implementation.md', 'wf doc implementation'],
-		['Write', 'spec.md', 'wf doc spec']
+		['Write', 'spec.md', 'wf doc spec'],
+		['Edit', 'steers.md', 'wf steer or wf assume'],
+		['Edit', 'risks.md', 'wf risk'],
+		['Edit', 'memory.md', 'wf memory']
 	]) {
 		const out = hook('pre-tool-use', {
 			hook_event_name: 'PreToolUse',
@@ -249,7 +252,7 @@ test('relative paths are resolved against the hook cwd', () => {
 test('other files, other tools and state files without wf commands yet pass silently', () => {
 	const cases = [
 		{ tool_name: 'Edit', tool_input: { file_path: join(project, 'src', 'app.ts') } },
-		{ tool_name: 'Write', tool_input: { file_path: join(project, 'docs', 'state', 'memory.md') } },
+		{ tool_name: 'Write', tool_input: { file_path: join(project, 'docs', 'state', 'notes.md') } },
 		{ tool_name: 'Read', tool_input: { file_path: join(project, 'docs', 'state', 'todo.md') } },
 		{ tool_name: 'Bash', tool_input: { command: 'ls' } }
 	];
