@@ -9,3 +9,4 @@
 7. Started 1.3 without `wf start`, and hand-edited todo.md for lack of `wf edit` → start before working; plan every spec'd command into an item.
 8. Proved the dashboard with screenshots of a test fixture → proof screenshots show the real app with the owner's real data.
 9. Moved work "to 5.1, 5.2" where no item held it, and never checked the spec against the todo → confirm the target item names the work; after planning, every spec feature maps to an item.
+10. Started 2.2 without `wf start` again, despite learning 7 → before writing any code, run `wf start`; wf's impl check is the backstop, not the habit.

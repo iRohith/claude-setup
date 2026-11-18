@@ -119,8 +119,10 @@ Deliverable: setup/discuss/build behave as spec section 2 in a real session, and
 - [x] 2.1 `wf state` switches setup, discuss and build, stored per project (the per-state instructions come from 1.13)
   Proof: `wf state discuss` changes the handoff state and the next session starts with the discuss instructions
   - core `setState` rewrites the handoff's State line; `wf state <name>` prints the change and the new state's instructions; the next session starts with them (hook test)
-- [ ] 2.2 discuss write block; setup push block until "setup done"
+- [~] 2.2 discuss write block; setup push block until "setup done"
   Proof: transcript showing a denied Edit in discuss and a denied push in setup, then the push allowed after "setup done"
+  - core `discussDenial` (in discuss only docs/state/ and scratch/temp/ are writable), `pushDenial` (no git push in setup until setupDone), `recordSetupDone` (owner prompt containing "setup done" while in setup); registry entries typed as `ProjectEntry`
+  - hooks: PreToolUse now also sees Bash; new `user-prompt-submit` hook; `wf install` registers it and updates the matcher of a hook it already owns
 - [ ] 2.3 admin mode: dashboard toggle, `wf admin` refused inside Claude Code, hooks pass when on
   Proof: transcript of the agent failing to turn it on; the owner turns it on and the state file edit goes through
 - [ ] 2.4 the remaining hook denials from spec section 5: Edit/Write on `scratch/links/**`, and Bash running `claude -p` or `--print`
