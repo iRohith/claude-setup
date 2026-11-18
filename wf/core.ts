@@ -591,16 +591,53 @@ export const projectLearningsPath = (root: string) => statePath(root, 'learnings
 
 const registryPath = () => join(wfHome(), 'local', 'projects.json');
 
-export function readRegistry(): Record<string, object> {
-	const path = registryPath();
-	return existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as Record<string, object>) : {};
+/** Machine-local facts about a registered project. */
+export interface ProjectEntry {
+	/** The owner wrote "setup done" while the project was in setup; pushing is allowed from then on. */
+	setupDone?: boolean;
 }
 
-function register(root: string): void {
+export function readRegistry(): Record<string, ProjectEntry> {
+	const path = registryPath();
+	return existsSync(path)
+		? (JSON.parse(readFileSync(path, 'utf8')) as Record<string, ProjectEntry>)
+		: {};
+}
+
+function updateRegistry(root: string, change: (entry: ProjectEntry) => void): void {
 	const registry = readRegistry();
-	registry[root] ??= {};
+	change((registry[root] ??= {}));
 	mkdirSync(dirname(registryPath()), { recursive: true });
 	writeAtomic(registryPath(), JSON.stringify(registry, null, '\t') + '\n');
+}
+
+const register = (root: string) => updateRegistry(root, () => {});
+
+// ---------- state rules for hooks ----------
+
+/** True when the owner's prompt says "setup done" and the project is in setup; records it. */
+export function recordSetupDone(root: string, prompt: string): boolean {
+	if (readHandoff(root).state !== 'setup' || !/\bsetup done\b/i.test(prompt)) return false;
+	updateRegistry(root, (entry) => (entry.setupDone = true));
+	return true;
+}
+
+/** In discuss, only state and scratch/temp/ may be written: planning goes through wf. */
+export function discussDenial(root: string, file: string): string | undefined {
+	if (readHandoff(root).state !== 'discuss') return undefined;
+	const path = resolve(file);
+	const allowed = [join(root, 'docs', 'state'), join(root, 'scratch', 'temp')];
+	if (!path.startsWith(root + '/') || allowed.some((dir) => path.startsWith(dir + '/')))
+		return undefined;
+	return `The project is in discuss, so project files stay unchanged (a fixed rule; retrying will be denied again). Plan through wf: write text in scratch/temp/, then wf doc or wf batch. The owner switches to build.`;
+}
+
+/** In setup, no push until the owner has written "setup done". */
+export function pushDenial(root: string, command: string): string | undefined {
+	if (readHandoff(root).state !== 'setup' || !/\bgit\b[^\n]*\bpush\b/.test(command))
+		return undefined;
+	if (readRegistry()[root]?.setupDone) return undefined;
+	return `The project is in setup and the owner hasn't written "setup done" yet, so pushing is blocked (a fixed rule; retrying will be denied again). Amend the init commit and wait for "setup done".`;
 }
 
 const TEMPLATES: Record<string, string> = {

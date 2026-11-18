@@ -47,8 +47,21 @@ test('install links wf and CLAUDE.md and registers both hooks, keeping existing 
 	assert.equal(s.hooks.Stop.length, 1);
 	assert.equal(s.hooks.SessionStart[0].matcher, 'startup|resume|clear|compact');
 	assert.equal(s.hooks.SessionStart[0].hooks[0].command, `${cli} hook session-start`);
-	assert.equal(s.hooks.PreToolUse[0].matcher, 'Edit|MultiEdit|Write|NotebookEdit');
+	assert.equal(s.hooks.PreToolUse[0].matcher, 'Edit|MultiEdit|Write|NotebookEdit|Bash');
 	assert.equal(s.hooks.PreToolUse[0].hooks[0].command, `${cli} hook pre-tool-use`);
+	assert.equal(s.hooks.UserPromptSubmit[0].matcher, undefined);
+	assert.equal(s.hooks.UserPromptSubmit[0].hooks[0].command, `${cli} hook user-prompt-submit`);
+});
+
+test('install updates the matcher of a hook it already registered', () => {
+	const path = join(home, '.claude', 'settings.json');
+	const s = settings();
+	s.hooks.PreToolUse[0].matcher = 'Edit|Write';
+	writeFileSync(path, JSON.stringify(s));
+	const r = install();
+	assert.match(r.stdout, /updated the PreToolUse hook's matcher/);
+	assert.equal(settings().hooks.PreToolUse.length, 1);
+	assert.equal(settings().hooks.PreToolUse[0].matcher, 'Edit|MultiEdit|Write|NotebookEdit|Bash');
 });
 
 test('install is idempotent', () => {

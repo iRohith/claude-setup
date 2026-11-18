@@ -75,6 +75,47 @@ test('after wf state, the next session starts with the new state instructions', 
 	});
 });
 
+const wfIn = (...args: string[]) =>
+	spawnSync(process.execPath, [cli, ...args], {
+		cwd: project,
+		env: { ...process.env, WF_HOME: home }
+	});
+const edit = (tool: string, file: string) =>
+	hook('pre-tool-use', { tool_name: tool, tool_input: { file_path: file }, cwd: project });
+const bash = (command: string) =>
+	hook('pre-tool-use', { tool_name: 'Bash', tool_input: { command }, cwd: project });
+
+test('in discuss, project files are denied; state files and scratch/temp stay writable', () => {
+	wfIn('state', 'discuss');
+	const denied = edit('Edit', join(project, 'src', 'app.ts'));
+	assert.equal(denied.hookSpecificOutput.permissionDecision, 'deny');
+	assert.match(denied.hookSpecificOutput.permissionDecisionReason, /project is in discuss/);
+	assert.equal(edit('Write', join(project, 'scratch', 'temp', 'plan.md')), undefined);
+	assert.equal(edit('Write', join(project, 'docs', 'state', 'steers.md')), undefined);
+	wfIn('state', 'build');
+	assert.equal(edit('Edit', join(project, 'src', 'app.ts')), undefined);
+	wfIn('state', 'setup');
+});
+
+test('in setup, git push is denied until the owner writes "setup done"', () => {
+	for (const command of ['git push', 'git -C . push -u origin work', 'git push --force-with-lease'])
+		assert.equal(bash(command).hookSpecificOutput.permissionDecision, 'deny', command);
+	assert.equal(bash('git status'), undefined);
+	assert.equal(hook('user-prompt-submit', { prompt: 'looks good', cwd: project }), undefined);
+	const recorded = hook('user-prompt-submit', { prompt: 'Setup done.', cwd: project });
+	assert.match(
+		recorded.hookSpecificOutput.additionalContext,
+		/recorded that the owner wrote "setup done"/
+	);
+	assert.equal(bash('git push -u origin work'), undefined);
+});
+
+test('"setup done" outside setup records nothing', () => {
+	wfIn('state', 'build');
+	assert.equal(hook('user-prompt-submit', { prompt: 'setup done', cwd: project }), undefined);
+	wfIn('state', 'setup');
+});
+
 test('outside a project, session start injects global learnings only', () => {
 	const out = hook('session-start', { source: 'compact', cwd: '/' }, '/');
 	const ctx: string = out.hookSpecificOutput.additionalContext;

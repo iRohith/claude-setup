@@ -14,9 +14,10 @@ type Settings = Record<string, unknown> & { hooks?: Record<string, HookGroup[]> 
 
 const cli = fileURLToPath(new URL('cli.ts', import.meta.url));
 
-const HOOKS: [event: string, matcher: string, command: string][] = [
+const HOOKS: [event: string, matcher: string | undefined, command: string][] = [
 	['SessionStart', 'startup|resume|clear|compact', `${cli} hook session-start`],
-	['PreToolUse', 'Edit|MultiEdit|Write|NotebookEdit', `${cli} hook pre-tool-use`]
+	['PreToolUse', 'Edit|MultiEdit|Write|NotebookEdit|Bash', `${cli} hook pre-tool-use`],
+	['UserPromptSubmit', undefined, `${cli} hook user-prompt-submit`]
 ];
 
 /** Idempotent. Returns one line per change made. */
@@ -54,9 +55,15 @@ function registerHooks(): string[] {
 	const changes: string[] = [];
 	for (const [event, matcher, command] of HOOKS) {
 		const groups = (settings.hooks[event] ??= []);
-		if (groups.some((g) => g.hooks?.some((h) => h.command === command))) continue;
-		groups.push({ matcher, hooks: [{ type: 'command', command }] });
-		changes.push(`added ${event} hook (${matcher}) to ${path}`);
+		const ours = groups.find((g) => g.hooks?.some((h) => h.command === command));
+		if (ours) {
+			if (ours.matcher === matcher) continue;
+			ours.matcher = matcher;
+			changes.push(`updated the ${event} hook's matcher to ${matcher ?? 'every event'} in ${path}`);
+			continue;
+		}
+		groups.push({ ...(matcher && { matcher }), hooks: [{ type: 'command', command }] });
+		changes.push(`added ${event} hook (${matcher ?? 'every event'}) to ${path}`);
 	}
 	if (changes.length) {
 		mkdirSync(dirname(path), { recursive: true });

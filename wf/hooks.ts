@@ -5,8 +5,9 @@ import * as wf from './core.ts';
 
 interface HookInput {
 	cwd?: string;
+	prompt?: string;
 	tool_name?: string;
-	tool_input?: { file_path?: unknown; notebook_path?: unknown };
+	tool_input?: { file_path?: unknown; notebook_path?: unknown; command?: unknown };
 }
 
 const EDIT_TOOLS = ['Edit', 'MultiEdit', 'Write', 'NotebookEdit'];
@@ -30,7 +31,28 @@ export function runHook(event: string, stdin: string): string {
 			}
 		});
 	}
-	throw new wf.WfError(`unknown hook ${event}; expected session-start or pre-tool-use`);
+	if (event === 'user-prompt-submit') {
+		const root = projectRoot(cwd);
+		if (!root || !wf.recordSetupDone(root, input.prompt ?? '')) return '';
+		return JSON.stringify({
+			hookSpecificOutput: {
+				hookEventName: 'UserPromptSubmit',
+				additionalContext:
+					'wf recorded that the owner wrote "setup done": pushing is allowed now. Update the state, push init to work, create main at init and push it.'
+			}
+		});
+	}
+	throw new wf.WfError(
+		`unknown hook ${event}; expected session-start, pre-tool-use or user-prompt-submit`
+	);
+}
+
+function projectRoot(cwd: string): string | undefined {
+	try {
+		return wf.findRoot(cwd);
+	} catch {
+		return undefined;
+	}
 }
 
 /**
@@ -39,12 +61,7 @@ export function runHook(event: string, stdin: string): string {
  */
 export function sessionContext(cwd: string): string {
 	const parts = [section('Global learnings (from wf)', wf.globalLearningsPath())];
-	let root: string | undefined;
-	try {
-		root = wf.findRoot(cwd);
-	} catch {
-		// Not a wf project: global learnings only.
-	}
+	const root = projectRoot(cwd);
 	if (root) {
 		const state = wf.readHandoff(root).state;
 		parts.push(
@@ -65,10 +82,17 @@ function section(title: string, path: string): string {
 }
 
 function denyReason(input: HookInput, cwd: string): string | undefined {
+	const root = projectRoot(cwd);
+	if (input.tool_name === 'Bash') {
+		const command = input.tool_input?.command;
+		return root && typeof command === 'string' ? wf.pushDenial(root, command) : undefined;
+	}
 	if (!EDIT_TOOLS.includes(input.tool_name ?? '')) return undefined;
 	const target = input.tool_input?.file_path ?? input.tool_input?.notebook_path;
 	if (typeof target !== 'string') return undefined;
-	const alternative = wf.wfAlternative(resolve(cwd, target));
-	if (!alternative) return undefined;
-	return `${basename(target)} is written only through wf. This is a fixed rule, so retrying the edit will be denied again. Use ${alternative} instead (wf help <command> for usage).`;
+	const file = resolve(cwd, target);
+	const alternative = wf.wfAlternative(file);
+	if (alternative)
+		return `${basename(target)} is written only through wf. This is a fixed rule, so retrying the edit will be denied again. Use ${alternative} instead (wf help <command> for usage).`;
+	return root ? wf.discussDenial(root, file) : undefined;
 }

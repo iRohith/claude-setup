@@ -123,11 +123,13 @@ export const HELP: Record<string, Help> = {
 		]
 	},
 	hook: {
-		usage: ['wf hook session-start|pre-tool-use'],
+		usage: ['wf hook session-start|pre-tool-use|user-prompt-submit'],
 		summary: 'Claude Code hook entry points (hook JSON on stdin)',
 		details: [
-			'session-start: prints global learnings, project learnings and the handoff as context.',
-			'pre-tool-use: denies Edit/Write on state files that wf writes, naming the wf command instead.',
+			'session-start: global learnings, the current state instructions, project learnings and the handoff.',
+			'pre-tool-use: denies Edit/Write on state files that wf writes (naming the wf command), project',
+			'file writes in discuss, and git push in setup before the owner writes "setup done".',
+			'user-prompt-submit: records "setup done" from the owner while the project is in setup.',
 			'Registered by wf install; not run by hand.'
 		]
 	},
