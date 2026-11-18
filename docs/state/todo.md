@@ -1,8 +1,7 @@
 # Todo
 
 ## [x] 0 · Setup
-Deliverable: a fresh public `claude-setup` repo (public for this repo only; project repos stay private) with
-`work` and `main`, one `init` commit pushed after "setup done", and no PII or secrets anywhere in it.
+Deliverable: a fresh public `claude-setup` repo (public for this repo only; project repos stay private) with `work` and `main`, one `init` commit pushed after "setup done", and no PII or secrets anywhere in it.
 
 - [x] 0.1 git init with a `work` branch; create a fresh public GitHub repo named after the folder
   Proof: `gh repo view` shows it public; `git branch` shows `work`
@@ -13,52 +12,43 @@ Deliverable: a fresh public `claude-setup` repo (public for this repo only; proj
 - [x] 0.3 pnpm workspace scaffold for `wf/` and `dashboard/` (`pnpm dlx sv create`), latest stable versions
   Proof: `pnpm dev` in `dashboard/` serves the default page
   - `pnpm-workspace.yaml` lists `dashboard` and `wf`
-  - `pnpm dlx sv@latest create dashboard --template minimal --types ts --add tailwindcss="plugins:none"`
-    (sv 1.4.0: kit 3, svelte 5.57, vite 8, tailwind 4.3, typescript 6)
+  - `pnpm dlx sv@latest create dashboard --template minimal --types ts --add tailwindcss="plugins:none"` (sv 1.4.0: kit 3, svelte 5.57, vite 8, tailwind 4.3, typescript 6)
   - `wf/package.json` from `pnpm init`, trimmed to name, private, MIT, module; Node 26 runs `.ts` natively
   - dev server on :5199 returned 200 with "Welcome to SvelteKit"
 - [x] 0.4 checks the owner names in setup, written into `.githooks/pre-commit`
   Proof: a commit with a deliberate lint error is rejected
   - `sv add prettier eslint` in `dashboard/`
-  - warnings are errors: `check` runs svelte-check with `--fail-on-warnings`; `lint` runs eslint with
-    `--max-warnings 0`
+  - warnings are errors: `check` runs svelte-check with `--fail-on-warnings`; `lint` runs eslint with `--max-warnings 0`
   - hook order: gitleaks → `pnpm format` (then the staged files are staged again) → `lint` → `check` → `build`
   - an unused variable in `+page.svelte` was rejected by eslint, then reverted
   - `wf` has no tests yet; its test command joins the hook in 1.1
-  - `sv add sveltekit-adapter="adapter:node"`: adapter-auto warned that it found no deployment target;
-    the dashboard runs locally, so node is the fit and the warning is gone
+  - `sv add sveltekit-adapter="adapter:node"`: adapter-auto warned that it found no deployment target; the dashboard runs locally, so node is the fit and the warning is gone
 - [x] 0.6 no-PII and no-secrets pre-commit gitleaks run
-  (`gitleaks git --pre-commit --staged --redact --no-banner`). The hook builds its config at runtime and
-  passes it through `GITLEAKS_CONFIG_TOML`: gitleaks' default rules, plus one rule each for git config
-  `user.name` and `user.email`, so the PII patterns never touch a tracked file. The written guidance rule
-  goes into `global/CLAUDE.md` in 5.1.
-  Proof: commits containing the git config email or a fake API key are each rejected; `git log -p` of
-  `init` contains neither
-  - `.githooks/pre-commit` (bash): a case-insensitive literal rule each for the git config name and
-    email, merged with gitleaks defaults; `core.hooksPath=.githooks`
-  - tested in a throwaway repo with a fake identity: the fake email and a fake `ghp_` token were each
-    rejected; a clean commit passed
+  Proof: commits containing the git config email or a fake API key are each rejected; `git log -p` of `init` contains neither
+  - `gitleaks git --pre-commit --staged --redact --no-banner`, with its config built at runtime and passed through `GITLEAKS_CONFIG_TOML`: gitleaks' default rules, plus one rule each for git config `user.name` and `user.email`, so the PII patterns never touch a tracked file
+  - the written guidance rule goes into `global/CLAUDE.md` in 5.1
+  - `.githooks/pre-commit` (bash): a case-insensitive literal rule each for the git config name and email, merged with gitleaks defaults; `core.hooksPath=.githooks`
+  - tested in a throwaway repo with a fake identity: the fake email and a fake `ghp_` token were each rejected; a clean commit passed
   - an earlier `local/pii.txt` list of extra patterns was removed: the owner said gitleaks is enough
   - `--verbose --redact` so a block names file, line and rule but never the value
-  - the first real `init` attempt was blocked: `LICENSE:3` (the copyright line) matches the git config
-    name; the owner allowed it, so `.gitleaksignore` holds only that fingerprint (`LICENSE:pii-1:3`,
-    no PII in it)
+  - the first real `init` attempt was blocked: `LICENSE:3` (the copyright line) matches the git config name; the owner allowed it, so `.gitleaksignore` holds only that fingerprint (`LICENSE:pii-1:3`, no PII in it)
 - [x] 0.5 the `init` commit; push after the owner says "setup done"
   Proof: `git log origin/work` shows exactly `init`
   - `git push -u origin work`; `origin/work` holds only `init`; the repo is public, default branch `work`
-  - `init` was amended with owner approval, once to carry its own state and once for the pre-push plan;
-    each force-push is logged in `risks.md`
-  - `main` gets created at `init` after the push. It is verified, and major 0 checked, in the first build
-    commit, because `init` can't record its own branch
+  - `init` was amended with owner approval, once to carry its own state and once for the pre-push plan; each force-push is logged in `risks.md`
+  - `main` gets created at `init` after the push. It is verified, and major 0 checked, in the first build commit, because `init` can't record its own branch
   - verified: `git ls-remote --heads origin` shows `main` and `work` both at `5ad00ff` (`init`)
 
-## [ ] 1 · Crude end to end: plan through `wf`, can't hand-edit state, a new session picks up
-Deliverable: in a throwaway project, a Claude session adds a major and two minors with `wf`, fails to edit
-`docs/state/todo.md` directly, and a fresh session starts with the handoff and learnings in context; the
-dashboard lists the todo.
+## [~] 1 · Crude end to end: plan through `wf`, can't hand-edit state, a new session picks up
+Deliverable: in a throwaway project, a Claude session adds a major and two minors with `wf`, fails to edit `docs/state/todo.md` directly, and a fresh session starts with the handoff and learnings in context; the dashboard lists the todo.
 
-- [ ] 1.1 core: parse and write `todo.md` and `handoff.md`, IDs, the start/done rules
+- [x] 1.1 core: parse and write `todo.md` and `handoff.md`, IDs, the start/done rules
   Proof: a test script round-trips a sample todo unchanged and rejects starting minors in two majors
+  - `wf/core.ts`, one file: parse and format for `todo.md` and `handoff.md` in a strict format with one line per field; parse errors name file:line
+  - rules: start only an open minor; only one major may have minors in progress; done needs in-progress; a major needs at least one minor and all of them done; implementation details only on started minors; ids are max+1, minors start at .1, duplicates rejected
+  - writes go to `.tmp` then rename; the single-writer lock comes in 1.2, where the CLI writes
+  - `wf/core.test.ts`: 11 `node:test` tests, including that the real `todo.md` and `handoff.md` are canonical; `pnpm --dir wf test` added to the pre-commit hook
+  - `todo.md` rewritten once into the strict format: wrapped lines joined, no content changed
 - [ ] 1.2 cli: `init`, `status`, `next`, `show`, `add`, `start`, `done`, `impl`, `handoff`
   Proof: the commands run against a sample project and print the changed lines
 - [ ] 1.3 hooks: SessionStart injection and the PreToolUse deny on `docs/state/**`
@@ -69,8 +59,7 @@ dashboard lists the todo.
   Proof: screenshot of the throwaway project's todo
 
 ## [ ] 2 · States and admin
-Deliverable: setup/discuss/build behave as spec section 2 in a real session, and admin mode lifts every
-restriction only when the owner flips it.
+Deliverable: setup/discuss/build behave as spec section 2 in a real session, and admin mode lifts every restriction only when the owner flips it.
 
 - [ ] 2.1 `wf state`, state stored per project, guidance per state in SessionStart
   Proof: switching states changes the injected guidance on the next session start
@@ -93,8 +82,7 @@ Deliverable: every record type from spec section 3 written and queried through `
 - [ ] 3.5 `wf env set` and `wf env keys`; `.env` read and print denied
   Proof: `.env` gets the key; the transcript never shows a value; `cat .env` is denied
 - [ ] 3.6 `wf checks set` (pre-commit) and `wf push set` (optional pre-push, majors only, for example a deploy)
-  Proof: pushing a major runs the commands, and a failing one blocks the push; pushing a minor or micro
-  runs nothing; after `wf push set` with no commands, no hook exists
+  Proof: pushing a major runs the commands, and a failing one blocks the push; pushing a minor or micro runs nothing; after `wf push set` with no commands, no hook exists
 
 ## [ ] 4 · Dashboard, full
 Deliverable: the owner manages todos and learnings across all projects without touching a file.
@@ -117,8 +105,7 @@ Deliverable: `global/CLAUDE.md` under about 80 lines, with the four skills insta
   Proof: `wf status` shows them; under the budget
 
 ## [ ] 6 · Real use
-Deliverable: one real project taken from setup through its first major task with this setup, and the
-friction recorded as learnings.
+Deliverable: one real project taken from setup through its first major task with this setup, and the friction recorded as learnings.
 
 - [ ] 6.1 run setup, discuss, build on a fresh project the owner picks
   Proof: that project's `docs/state/` and its commit history
