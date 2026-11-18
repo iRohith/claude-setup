@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Blocks secrets and PII in staged changes. PII patterns come from git config at runtime,
-# so they never land in a tracked file.
+# Written by wf checks set; change it with that command, not by hand.
 set -euo pipefail
-
 root=$(git rev-parse --show-toplevel)
+cd "$root"
 
+# Secrets and PII first: gitleaks' default rules plus one rule each for the git config name and
+# email, built at runtime so the values never land in a file.
 rules=""
 n=0
 add_rule() {
@@ -15,28 +16,22 @@ add_rule() {
   n=$((n + 1))
   rules+=$'\n'"[[rules]]"$'\n'"id = 'pii-$n'"$'\n'"description = 'personal identifier'"$'\n'"regex = '''(?i)$escaped'''"$'\n'
 }
-
 add_rule "$(git config user.name || true)"
 add_rule "$(git config user.email || true)"
-
 GITLEAKS_CONFIG_TOML=$'[extend]\nuseDefault = true\n'"$rules" \
   gitleaks git --pre-commit --staged --redact --no-banner --no-color --verbose \
     --gitleaks-ignore-path "$root/.gitleaksignore" "$root"
 
-# The owner's checks. Format rewrites files, so what was staged is staged again.
-dash="$root/dashboard"
-wf="$root/wf"
-mkdir -p "$root/scratch/temp"
-git -C "$root" diff --cached --name-only -z --diff-filter=ACMR > "$root/scratch/temp/staged.lst"
-pnpm --dir "$dash" format
-pnpm --dir "$wf" format
-xargs -0 -r git -C "$root" add -- < "$root/scratch/temp/staged.lst"
-pnpm --dir "$dash" lint
-pnpm --dir "$dash" check
-pnpm --dir "$dash" build
-# Playwright e2e at desktop and mobile sizes; screenshots only with SCREENSHOTS=1, as an item's proof.
-pnpm --dir "$dash" test
-pnpm --dir "$wf" lint
-pnpm --dir "$wf" check
-# wf tests also prove the real docs/state files stay canonical.
-pnpm --dir "$wf" test
+# The project's checks, in order, warnings as errors. Files they rewrite are staged again.
+mkdir -p scratch/temp
+git diff --cached --name-only -z --diff-filter=ACMR > scratch/temp/staged.lst
+pnpm --dir dashboard format
+pnpm --dir wf format
+pnpm --dir dashboard lint
+pnpm --dir dashboard check
+pnpm --dir dashboard build
+pnpm --dir dashboard test
+pnpm --dir wf lint
+pnpm --dir wf check
+pnpm --dir wf test
+xargs -0 -r git add -- < scratch/temp/staged.lst

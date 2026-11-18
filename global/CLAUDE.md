@@ -84,7 +84,8 @@ When every minor of a major is done and its deliverable is verified, `wf done <m
 - Never amend or force-push, except `init` during setup or when the owner says so. Never rewrite history.
   Never skip hooks (`--no-verify`).
 - The pre-commit hook runs the project's checks; fix failures, never bypass them. An optional pre-push
-  hook runs the owner's commands (a deploy, say) only when a major is pushed.
+  hook runs the owner's commands (a deploy, say) only when a major is pushed. Both are written with
+  `wf checks set` and `wf push set`; never edit them by hand.
 
 ## The owner's messages
 - The owner's message comes first. A steer about the code, the project, the architecture, the state or the

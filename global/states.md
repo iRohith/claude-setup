@@ -14,16 +14,11 @@ checks, before the idea is even discussed. Full write access to the project.
    and deploys. Nothing stack-specific comes from wf.
 5. `.gitignore`: `.env`, `.env.local`, `scratch/temp/`, `scratch/refs/`, `scratch/links/`,
    `scratch/thirdparty/`, plus the stack's own build output.
-6. `.githooks/pre-commit` (a script) and `git config core.hooksPath .githooks`.
-   - **First, secrets and PII:** run
-     `gitleaks git --pre-commit --staged --redact --no-banner --verbose`. Pass it a config through the
-     `GITLEAKS_CONFIG_TOML` environment variable, built at runtime. The config is `[extend] useDefault =
-     true`, plus one case-insensitive literal rule each for `git config user.name` and `user.email`. That
-     way the values never land in a file.
-   - **Then the owner's checks,** with warnings as errors.
-   - **Prove the hook works:** commit a deliberate failure and confirm it's rejected.
-   - **Push commands:** if the owner named any, `.githooks/pre-push` runs them only when a pushed commit's
-     subject starts with a bare integer (a major).
+6. `wf checks set "<cmd>" ...` with the owner's checks, warnings as errors.
+   - It writes `.githooks/pre-commit`, which runs gitleaks first (secrets, plus the git config name and
+     email as PII), then the checks in order. It also sets `core.hooksPath`.
+   - Prove the hook works: commit a deliberate failure and confirm it's rejected.
+   - If the owner named push commands, `wf push set "<cmd>" ...`. They run only when a major is pushed.
 7. References the owner points to go in `scratch/refs/`, collaborating projects as links in
    `scratch/links/`, other clones in `scratch/thirdparty/`.
 8. One commit only: `init`, amended as setup goes. No push until the owner writes "setup done". Then: update

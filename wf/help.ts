@@ -141,6 +141,23 @@ export const HELP: Record<string, Help> = {
 		summary: 'record a reversible choice made while the owner is away, for their review',
 		details: ['Take the most reversible option, do it, then record it here.']
 	},
+	checks: {
+		usage: ['wf checks set "<cmd>" ["<cmd>" ...]'],
+		summary: 'write .githooks/pre-commit: gitleaks (secrets and PII), then these checks in order',
+		details: [
+			'The owner names the checks in setup. Commands run from the project root; the first failure',
+			'stops the commit. Files a check rewrites (a formatter) are staged again. Sets core.hooksPath.',
+			'Run it again with the full list to change the checks; never edit the hook by hand.'
+		]
+	},
+	push: {
+		usage: ['wf push set ["<cmd>" ...]'],
+		summary: 'write .githooks/pre-push: these commands run only when a major is pushed',
+		details: [
+			'A major is a pushed commit whose subject starts with a bare integer, e.g. "3 dashboard".',
+			'Other pushes run nothing. With no commands the hook is removed. Optional: a deploy, say.'
+		]
+	},
 	env: {
 		usage: ['wf env set <KEY> <value>', 'wf env keys'],
 		summary: 'write a key into .env, or list its key names; values are never shown',

@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import * as wf from './core.ts';
+import { setChecks, setPush } from './githooks.ts';
 import { HELP, commandHelp, overview } from './help.ts';
 import { runHook } from './hooks.ts';
 import { install } from './install.ts';
@@ -149,6 +150,17 @@ function main(argv: string[]): void {
 				printChanges(before, after);
 				console.log('\nlogged; the action may run now');
 			});
+		}
+		case 'checks': {
+			if (arg(0, 'set') !== 'set') throw new UsageError('checks takes set', 'checks');
+			console.log(`wrote ${setChecks(wf.findRoot(process.cwd()), args.slice(1))}`);
+			return;
+		}
+		case 'push': {
+			if (arg(0, 'set') !== 'set') throw new UsageError('push takes set', 'push');
+			const path = setPush(wf.findRoot(process.cwd()), args.slice(1));
+			console.log(path ? `wrote ${path}` : 'no pre-push hook: pushes run nothing');
+			return;
 		}
 		case 'env': {
 			const root = wf.findRoot(process.cwd());

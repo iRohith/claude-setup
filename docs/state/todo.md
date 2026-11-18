@@ -150,8 +150,10 @@ Deliverable: every record type from spec section 3 written and queried through `
 - [~] 3.5 `wf env set` and `wf env keys`; `.env` read, print and direct Edit/Write denied
   Proof: `.env` gets the key; the transcript never shows a value; `cat .env` is denied
   - core `envSet` (valid key, one-line value, quoted when needed, refuses until .gitignore lists .env), `envKeys` (names only), `envDenial` (Read/Edit/Write of .env and Bash naming .env, but not .env.example, .env.local or wf env); the PreToolUse matcher now includes Read
-- [ ] 3.6 `wf checks set` (pre-commit) and `wf push set` (optional pre-push, majors only, for example a deploy)
+- [x] 3.6 `wf checks set` (pre-commit) and `wf push set` (optional pre-push, majors only, for example a deploy)
   Proof: pushing a major runs the commands, and a failing one blocks the push; pushing a minor or micro runs nothing; after `wf push set` with no commands, no hook exists
+  - `wf/githooks.ts` writes plain-bash hooks that need no wf at commit time: pre-commit (gitleaks with the git config name and email, then the checks in order from the root, then restage what was staged) and pre-push (runs only if a pushed commit's subject starts with a bare integer); both set core.hooksPath
+  - tested against a real throwaway repo and bare remote: failing check stops a commit, a rewrite is committed, the fake email is blocked, a minor push runs nothing, a major push runs the commands, a failing one blocks the push, no commands removes the hook; this repo's own hook regenerated with wf checks set
 - [ ] 3.7 deferred registry: `wf defer "<item>" --resolves <id>` writes the Deferred table in memory.md; an unknown id is rejected; `wf show <id>` lists the deferred entries that name it
   Proof: a deferral naming a missing id is rejected; `wf show` on the resolving id lists the entry
 
