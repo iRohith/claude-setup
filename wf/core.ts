@@ -718,6 +718,53 @@ export function addRisk(root: string, r: Partial<Risk>): { before: string; after
 	return { before, after };
 }
 
+// ---------- .env ----------
+
+const envPath = (root: string) => join(root, '.env');
+
+function envLines(root: string): string[] {
+	const path = envPath(root);
+	return existsSync(path) ? readFileSync(path, 'utf8').replace(/\n+$/, '').split('\n') : [];
+}
+
+/** Adds or overwrites one key in .env. Values are never returned, printed or read back. */
+export function envSet(root: string, key: string, value: string): 'added' | 'updated' {
+	if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) throw new WfError(`not a valid env key: ${key}`);
+	if (value.includes('\n')) throw new WfError('an env value is one line');
+	const gitignore = join(root, '.gitignore');
+	const ignored =
+		existsSync(gitignore) &&
+		readFileSync(gitignore, 'utf8')
+			.split('\n')
+			.some((l) => l.trim() === '.env');
+	if (!ignored) throw new WfError('.env is not listed in .gitignore; add it there first');
+	const quoted = /[\s#"'=]/.test(value) ? JSON.stringify(value) : value;
+	const lines = envLines(root).filter((l) => l !== '');
+	const at = lines.findIndex((l) => l.startsWith(`${key}=`));
+	if (at === -1) lines.push(`${key}=${quoted}`);
+	else lines[at] = `${key}=${quoted}`;
+	writeAtomic(envPath(root), lines.join('\n') + '\n');
+	return at === -1 ? 'added' : 'updated';
+}
+
+/** The key names in .env, nothing else. */
+export const envKeys = (root: string): string[] =>
+	envLines(root).flatMap((l) => l.match(/^([A-Za-z_][A-Za-z0-9_]*)=/)?.slice(1) ?? []);
+
+/** .env itself (not .env.example or .env.local) is never read, printed or edited directly. */
+export function envDenial(
+	file: string | undefined,
+	command: string | undefined
+): string | undefined {
+	const touches =
+		(file !== undefined && basename(resolve(file)) === '.env') ||
+		(command !== undefined &&
+			!/\b(wf|cli\.ts)\s+env\b/.test(command) &&
+			/(^|[\s'"=/<>:])\.env(?![\w.-])/.test(command));
+	if (!touches) return undefined;
+	return '.env holds the real credentials: never read, print or edit it (a fixed rule; retrying will be denied again). Use wf env set <KEY> <value> and wf env keys; .env.example and .env.local are free to use.';
+}
+
 // ---------- memory, find, get ----------
 
 const MEMORY_SECTIONS: Record<string, string> = {

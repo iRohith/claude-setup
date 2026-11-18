@@ -141,6 +141,15 @@ export const HELP: Record<string, Help> = {
 		summary: 'record a reversible choice made while the owner is away, for their review',
 		details: ['Take the most reversible option, do it, then record it here.']
 	},
+	env: {
+		usage: ['wf env set <KEY> <value>', 'wf env keys'],
+		summary: 'write a key into .env, or list its key names; values are never shown',
+		details: [
+			'.env holds real credentials: never read, print or edit it any other way.',
+			'set adds the key or overwrites its value, and refuses until .env is in .gitignore.',
+			'.env.example and .env.local are free to read and edit directly.'
+		]
+	},
 	memory: {
 		usage: ['wf memory invariants|contracts|pitfalls|anti-patterns "<entry>"'],
 		summary: "add to memory.md: the project's invariants, contracts, pitfalls and anti-patterns",

@@ -150,6 +150,19 @@ function main(argv: string[]): void {
 				console.log('\nlogged; the action may run now');
 			});
 		}
+		case 'env': {
+			const root = wf.findRoot(process.cwd());
+			const action = arg(0, 'set|keys');
+			if (action === 'keys') {
+				const keys = wf.envKeys(root);
+				console.log(keys.length ? keys.join('\n') : 'no keys in .env');
+				return;
+			}
+			if (action !== 'set') throw new UsageError(`env takes set or keys, got ${action}`, 'env');
+			const key = arg(1, 'KEY');
+			console.log(`${wf.envSet(root, key, arg(2, 'value'))} ${key} in .env`);
+			return;
+		}
 		case 'memory': {
 			const root = wf.findRoot(process.cwd());
 			return wf.withLock(root, () => {

@@ -196,6 +196,29 @@ test('learnings are written only through wf learn and show up after a compaction
 	assert.match(ctx, /compaction test → it stays in context/);
 });
 
+test('.env is never read, printed or edited; .env.example, .env.local and wf env are fine', () => {
+	const env = join(project, '.env');
+	for (const tool of ['Read', 'Edit', 'Write'])
+		assert.match(
+			edit(tool, env).hookSpecificOutput.permissionDecisionReason,
+			/never read, print or edit it/,
+			tool
+		);
+	for (const command of ['cat .env', 'grep KEY .env', 'source ./.env', 'cp .env /x', 'less < .env'])
+		assert.equal(bash(command).hookSpecificOutput.permissionDecision, 'deny', command);
+	for (const command of [
+		'cat .env.example',
+		'cat .env.local',
+		'wf env keys',
+		'wf env set A b',
+		'pnpm dev',
+		'ls -a'
+	])
+		assert.equal(bash(command), undefined, command);
+	assert.equal(edit('Read', join(project, '.env.example')), undefined);
+	assert.equal(edit('Edit', join(project, '.env.local')), undefined);
+});
+
 test('wf admin refuses inside Claude Code', () => {
 	const r = spawnSync(process.execPath, [cli, 'admin', 'on'], {
 		cwd: project,

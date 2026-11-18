@@ -150,8 +150,9 @@ When every minor of a major is done and its deliverable is verified, `wf done <m
 
 ## Safety
 - Never write outside this project, not even `/tmp`. Temporary files go in `scratch/temp/`.
-- Never read, print or log `.env`. Use `.env.example` and `.env.local`; tools that load `.env` themselves
-  may run.
+- Never read, print or log `.env`. Write keys with `wf env set <KEY> <value>`, list them with
+  `wf env keys`. `.env.example` and `.env.local` are free to use; tools that load `.env` themselves may
+  run.
 - No secrets and no PII in any file, history included. Never write the owner's names, usernames or email;
   identity comes from git config.
 - Never start Claude sessions (`claude -p`) or any hidden background process that could spend credits.

@@ -147,8 +147,9 @@ Deliverable: every record type from spec section 3 written and queried through `
 - [x] 3.4 memory sections, `wf find`, `wf get`
   Proof: `wf find` hits across files; `wf get` prints one section
   - core `addMemory` (sections keep their shape: invariants and anti-patterns numbered, pitfalls dated, contracts bulleted), `findInState` (case-insensitive, file:line), `getState` (a file or one fence-aware section); memory.md joined the deny map
-- [ ] 3.5 `wf env set` and `wf env keys`; `.env` read, print and direct Edit/Write denied
+- [~] 3.5 `wf env set` and `wf env keys`; `.env` read, print and direct Edit/Write denied
   Proof: `.env` gets the key; the transcript never shows a value; `cat .env` is denied
+  - core `envSet` (valid key, one-line value, quoted when needed, refuses until .gitignore lists .env), `envKeys` (names only), `envDenial` (Read/Edit/Write of .env and Bash naming .env, but not .env.example, .env.local or wf env); the PreToolUse matcher now includes Read
 - [ ] 3.6 `wf checks set` (pre-commit) and `wf push set` (optional pre-push, majors only, for example a deploy)
   Proof: pushing a major runs the commands, and a failing one blocks the push; pushing a minor or micro runs nothing; after `wf push set` with no commands, no hook exists
 - [ ] 3.7 deferred registry: `wf defer "<item>" --resolves <id>` writes the Deferred table in memory.md; an unknown id is rejected; `wf show <id>` lists the deferred entries that name it

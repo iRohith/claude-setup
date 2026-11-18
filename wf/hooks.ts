@@ -61,15 +61,17 @@ function denyReason(input: HookInput, cwd: string): string | undefined {
 		return (
 			wf.adminDenial(undefined, command) ??
 			wf.claudeDenial(command) ??
+			wf.envDenial(undefined, command) ??
 			(root ? wf.pushDenial(root, command) : undefined)
 		);
 	}
-	if (!EDIT_TOOLS.includes(input.tool_name ?? '')) return undefined;
 	const target = input.tool_input?.file_path ?? input.tool_input?.notebook_path;
 	if (typeof target !== 'string') return undefined;
 	const file = resolve(cwd, target);
-	const admin = wf.adminDenial(file, undefined);
-	if (admin) return admin;
+	if (input.tool_name === 'Read') return wf.envDenial(file, undefined);
+	if (!EDIT_TOOLS.includes(input.tool_name ?? '')) return undefined;
+	const blocked = wf.adminDenial(file, undefined) ?? wf.envDenial(file, undefined);
+	if (blocked) return blocked;
 	const alternative = wf.wfAlternative(file);
 	if (alternative)
 		return `${basename(target)} is written only through wf. This is a fixed rule, so retrying the edit will be denied again. Use ${alternative} instead (wf help <command> for usage).`;

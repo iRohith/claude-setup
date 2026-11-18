@@ -16,7 +16,7 @@ const cli = fileURLToPath(new URL('cli.ts', import.meta.url));
 
 const HOOKS: [event: string, matcher: string | undefined, command: string][] = [
 	['SessionStart', 'startup|resume|clear|compact', `${cli} hook session-start`],
-	['PreToolUse', 'Edit|MultiEdit|Write|NotebookEdit|Bash', `${cli} hook pre-tool-use`],
+	['PreToolUse', 'Edit|MultiEdit|Write|NotebookEdit|Bash|Read', `${cli} hook pre-tool-use`],
 	['UserPromptSubmit', undefined, `${cli} hook user-prompt-submit`]
 ];
 

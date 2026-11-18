@@ -359,6 +359,24 @@ test('memory sections keep their shape; find and get read the state', () => {
 	assert.match(wf('get', 'memory', 'Nope').err, /has no "## Nope" section/);
 });
 
+test('env set writes keys without ever printing values; keys lists names only', () => {
+	const env = join(project, '.env');
+	assert.match(wf('env', 'set', 'API_KEY', 'sekret-1').err, /not listed in \.gitignore/);
+	writeFileSync(join(project, '.gitignore'), '.env\n');
+	const added = wf('env', 'set', 'API_KEY', 'sekret-1');
+	assert.equal(added.code, 0, added.err);
+	assert.equal(added.out.trim(), 'added API_KEY in .env');
+	const updated = wf('env', 'set', 'API_KEY', 'sekret 2');
+	assert.equal(updated.out.trim(), 'updated API_KEY in .env');
+	wf('env', 'set', 'DB_URL', 'postgres://x');
+	assert.equal(readFileSync(env, 'utf8'), 'API_KEY="sekret 2"\nDB_URL=postgres://x\n');
+	const keys = wf('env', 'keys');
+	assert.equal(keys.out.trim(), 'API_KEY\nDB_URL');
+	for (const r of [added, updated, keys]) assert.doesNotMatch(r.out + r.err, /sekret|postgres/);
+	assert.match(wf('env', 'set', 'bad-key', 'x').err, /not a valid env key/);
+	assert.equal(wf('env', 'show').code, 2);
+});
+
 test('commands outside a project explain what to do', () => {
 	// Everything under scratch/ sits inside this repo, so run from / (read-only) instead.
 	const r = spawnSync(process.execPath, [cli, 'status'], { cwd: '/', encoding: 'utf8' });
