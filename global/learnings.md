@@ -1,10 +1,12 @@
 # Learnings
 
-1. Started `claude -p` subprocesses without being asked; they can bill API credits → never spawn Claude sessions.
+1. Started `claude -p` subprocesses unasked; they can bill API credits → never start Claude sessions or hidden processes.
 2. Defended a bad choice by quoting the owner's goals back → admit the mistake plainly first, no excuses.
-3. Overengineered every version of the setup → least code that serves the request; no "for later".
+3. Grew a project with mechanisms nobody asked for → build the least that serves the request; nothing "for later".
 4. Picked mechanisms on the owner's behalf → propose, ask, then build.
-5. Worked around blocks and fell back silently → ask for the exact thing needed; continue with what doesn't depend on it.
+5. Worked around a block and fell back silently → ask for the exact thing needed; continue with what doesn't depend on it.
 6. Wrote temp files outside the project → never, not even `/tmp`; use the project's `scratch/temp/`.
-7. Pushed `init`, then updated todo/handoff, so the commit lacked its own state → state first, then commit, then push.
-8. Marked major 0 done and `main` created before either happened → verify, run checks, mark done, commit, push.
+7. Pushed, then updated todo and handoff, so the commit lacked its own state → state first, then commit, then push.
+8. Marked items done before they were verified → verify, run the checks, mark done, commit, push.
+9. Proved UI with screenshots of a test fixture → proof screenshots show the real app with real data.
+10. Wrote guidance that leaned on context other projects never see → every instruction lives in the global files, complete on its own.

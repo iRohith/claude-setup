@@ -107,9 +107,11 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
 - [~] 1.12 global instructions from the first session: `global/CLAUDE.md` (how to work, the owner's rules), linked as `~/.claude/CLAUDE.md` by `wf install`
   Proof: the owner reads `global/CLAUDE.md` and signs off; after `wf install`, `~/.claude/CLAUDE.md` points to it
   - `global/CLAUDE.md` (73 lines): project state, working an item, the owner's messages, friction, code, safety, scratch; names only existing wf commands; `wf install` links it as `~/.claude/CLAUDE.md` and never replaces an existing file
+  - rewritten to stand alone for downstream projects: the docs/state files and how each changes, wf use, states and admin, the todo shape, working an item, commits and branches, steers, learnings, friction, high-risk actions, code, safety, shell, scratch and linked projects; global learnings reworded as general lessons
 - [~] 1.13 instructions for the current state injected at every session start, `wf init` printing the setup instructions, and denials that say the rule is final
   Proof: the owner's demo prompt re-run in a fresh session: one Edit attempt, the denial accepted, `wf edit` used instead, no chained commands
   - `global/states.md` has a section per state; core `stateInstructions` reads it from wf's own folder; session start injects the current state's section; `wf init` prints it; denials say the rule is fixed and a retry will be denied again
+  - states.md gives each state numbered steps: setup (init, repo, native scaffold, gitignore, gitleaks plus the owner's checks, majors-only pre-push, refs and links, the init and main rule), discuss (references first, plan documents via wf doc, todo via wf batch), build
 
 ## [ ] 2 · States and admin
 Deliverable: setup/discuss/build behave as spec section 2 in a real session, and admin mode lifts every restriction only when the owner flips it.
