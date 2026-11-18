@@ -171,6 +171,13 @@ test('doc writes a whole document or one section', () => {
 		/no "# " or "## "/
 	);
 	assert.match(wf('doc', 'notes', '--from', part).err, /no document notes/);
+	writeFileSync(part, 'Fine: `<id>`, \\<id>.\n\n```\n<title>\n```\n\nBroken: "# <Title>".\n');
+	const bare = wf('doc', 'implementation', '--section', 'X', '--from', part);
+	assert.equal(bare.code, 1);
+	assert.match(
+		bare.err,
+		/the implementation text, line 7: <Title> outside code renders as an HTML tag/
+	);
 	assert.equal(wf('doc', 'spec').code, 2);
 });
 

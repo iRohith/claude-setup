@@ -184,7 +184,8 @@ rules it enforces. `wf/help.ts` is the one list of commands.
 - `wf find <text>`: case-insensitive search across all state files, printed as file:line plus the line.
 - `wf get <file> [section]`: print one state file or one section of it.
 
-**Todos**
+**Todos**: `todo.md` is always in id order (majors by number, minors by number within their major), so
+position follows the id and nothing reorders items.
 - `wf add major "<title>" --deliverable "<text>"`
 - `wf add minor <major> "<title>" --proof "<text>"`
 - `wf batch <file>`: add many majors and minors at once, all or nothing. The file (written in
@@ -196,7 +197,6 @@ rules it enforces. `wf/help.ts` is the one list of commands.
   Any error names the batch file's line and nothing is written.
 - `wf edit <id> [--title ...] [--proof ...] [--deliverable ...]`: proofs belong to minors, deliverables to
   majors.
-- `wf move <id> --before <id>`
 - `wf start <id>` and `wf done <id>`
 - `wf impl <id> "<detail>"`
 

@@ -50,6 +50,32 @@ export interface Handoff {
 const STATES: State[] = ['setup', 'discuss', 'build'];
 const HANDOFF_MAX_LINES = 15;
 
+// ---------- markdown safety ----------
+
+// Markdown passes a bare <word> through as an HTML tag; an unclosed <title> hides the rest of the
+// page. So state files store `<` outside code spans as `\<`; in memory the text is plain.
+const outsideCode = (text: string, fn: (s: string) => string) =>
+	text
+		.split('`')
+		.map((part, i) => (i % 2 ? part : fn(part)))
+		.join('`');
+export const escapeMd = (text: string) => outsideCode(text, (s) => s.replaceAll('<', '\\<'));
+export const unescapeMd = (text: string) => outsideCode(text, (s) => s.replaceAll('\\<', '<'));
+
+/** For whole markdown documents: names the first line with a bare tag outside code. */
+function checkNoBareTags(text: string, file: string): void {
+	let fenced = false;
+	text.split('\n').forEach((line, i) => {
+		if (/^\s*```/.test(line)) fenced = !fenced;
+		if (fenced) return;
+		const bare = line.replace(/`[^`]*`/g, '').match(/(?<!\\)<\/?[A-Za-z][^>]*>/);
+		if (bare)
+			throw new WfError(
+				`${file}, line ${i + 1}: ${bare[0]} outside code renders as an HTML tag; put it in backticks or write \\${bare[0]}`
+			);
+	});
+}
+
 // ---------- todo.md ----------
 
 export function parseTodo(text: string, file = 'todo.md'): Todo {
@@ -67,10 +93,16 @@ export function parseTodo(text: string, file = 'todo.md'): Todo {
 		if (line === '') {
 			minor = undefined;
 		} else if ((m = line.match(/^## \[([ ~x])\] (\d+) · (.+)$/))) {
-			major = { id: m[2], mark: m[1] as Mark, title: m[3], deliverable: '', minors: [] };
+			major = {
+				id: m[2],
+				mark: m[1] as Mark,
+				title: unescapeMd(m[3]),
+				deliverable: '',
+				minors: []
+			};
 			const dl = lines[++i]?.match(/^Deliverable: (.+)$/);
 			if (!dl) fail(i, 'expected "Deliverable: ..." under the major');
-			major.deliverable = dl![1];
+			major.deliverable = unescapeMd(dl![1]);
 			todo.majors.push(major);
 			minor = undefined;
 		} else if ((m = line.match(/^- \[([ ~x])\] (\d+\.\d+) (.+)$/))) {
@@ -79,30 +111,47 @@ export function parseTodo(text: string, file = 'todo.md'): Todo {
 				fail(i, `minor ${m[2]} is not under major ${major!.id}`);
 			const pr = lines[++i]?.match(/^ {2}Proof: (.+)$/);
 			if (!pr) fail(i, 'expected "  Proof: ..." under the minor');
-			minor = { id: m[2], mark: m[1] as Mark, title: m[3], proof: pr![1], impl: [] };
+			minor = {
+				id: m[2],
+				mark: m[1] as Mark,
+				title: unescapeMd(m[3]),
+				proof: unescapeMd(pr![1]),
+				impl: []
+			};
 			major!.minors.push(minor);
 		} else if ((m = line.match(/^ {2}- (.+)$/))) {
 			if (!minor) fail(i, 'implementation detail outside a minor');
-			minor!.impl.push(m[1]);
+			minor!.impl.push(unescapeMd(m[1]));
 		} else {
 			fail(i, `unrecognised line: ${line}`);
 		}
 	}
 	checkIds(todo);
+	sortById(todo);
 	return todo;
+}
+
+/** Position follows the id: majors by number, minors by number within their major. */
+function sortById(todo: Todo): void {
+	const n = (id: string) => Number(id.split('.').at(-1));
+	todo.majors.sort((a, b) => n(a.id) - n(b.id));
+	for (const major of todo.majors) major.minors.sort((a, b) => n(a.id) - n(b.id));
 }
 
 export function formatTodo(todo: Todo): string {
 	const out = ['# Todo', ''];
 	for (const major of todo.majors) {
 		out.push(
-			`## [${major.mark}] ${major.id} · ${major.title}`,
-			`Deliverable: ${major.deliverable}`,
+			`## [${major.mark}] ${major.id} · ${escapeMd(major.title)}`,
+			`Deliverable: ${escapeMd(major.deliverable)}`,
 			''
 		);
 		for (const minor of major.minors) {
-			out.push(`- [${minor.mark}] ${minor.id} ${minor.title}`, `  Proof: ${minor.proof}`);
-			for (const detail of minor.impl) out.push(`  - ${detail}`);
+			out.push(
+				`- [${minor.mark}] ${minor.id} ${escapeMd(minor.title)}`,
+				`  Proof: ${escapeMd(minor.proof)}`
+			);
+			for (const detail of minor.impl) out.push(`  - ${escapeMd(detail)}`);
 		}
 		if (major.minors.length) out.push('');
 	}
@@ -321,7 +370,7 @@ export function parseHandoff(text: string, file = 'handoff.md'): Handoff {
 	const field = (i: number, key: string): string => {
 		const m = lines[i]?.match(new RegExp(`^${key}: (.+)$`));
 		if (!m) throw new WfError(`${file}:${i + 1}: expected "${key}: ..."`);
-		return m[1];
+		return unescapeMd(m[1]);
 	};
 	if (lines[0] !== '# Handoff') throw new WfError(`${file}:1: expected "# Handoff"`);
 	const state = field(1, 'State') as State;
@@ -344,11 +393,11 @@ export function formatHandoff(h: Handoff): string {
 	const lines = [
 		'# Handoff',
 		`State: ${h.state}`,
-		`Active: ${required(h.active, 'active')}`,
-		`Next: ${required(h.next, 'next')}`,
-		`Verify: ${required(h.verify, 'verify')}`,
-		`Don't: ${required(h.dont, "don't")}`,
-		...open.map((o) => `Open: ${required(o, 'open')}`)
+		`Active: ${escapeMd(required(h.active, 'active'))}`,
+		`Next: ${escapeMd(required(h.next, 'next'))}`,
+		`Verify: ${escapeMd(required(h.verify, 'verify'))}`,
+		`Don't: ${escapeMd(required(h.dont, "don't"))}`,
+		...open.map((o) => `Open: ${escapeMd(required(o, 'open'))}`)
 	];
 	if (lines.length > HANDOFF_MAX_LINES)
 		throw new WfError(`handoff is limited to ${HANDOFF_MAX_LINES} lines`);
@@ -409,6 +458,7 @@ export function writeDoc(
 	const before = existsSync(path) ? readFileSync(path, 'utf8') : '';
 	const body = text.trim();
 	if (!body) throw new WfError('the document text is empty');
+	checkNoBareTags(body, `the ${name} text`);
 	let after: string;
 	if (section === undefined) {
 		if (!body.startsWith('# ')) throw new WfError('a whole document starts with "# <Title>"');

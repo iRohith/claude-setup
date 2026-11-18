@@ -44,6 +44,7 @@ export const HELP: Record<string, Help> = {
 		summary: 'add one major or one minor',
 		details: [
 			'Ids are assigned: majors x (max + 1), minors x.x starting at .1. Ids are never reused.',
+			'todo.md is always in id order, so where an item sits follows from its id.',
 			'A major needs a deliverable the owner can inspect; a minor needs a tangible, verifiable proof.',
 			'Every field is one line. Minors cannot be added to a done major.',
 			'Prints the changed lines of todo.md.'

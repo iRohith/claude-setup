@@ -23,6 +23,12 @@ Deliverable: a fresh public `claude-setup` repo (public for this repo only; proj
   - an unused variable in `+page.svelte` was rejected by eslint, then reverted
   - `wf` has no tests yet; its test command joins the hook in 1.1
   - `sv add sveltekit-adapter="adapter:node"`: adapter-auto warned that it found no deployment target; the dashboard runs locally, so node is the fit and the warning is gone
+- [x] 0.5 the `init` commit; push after the owner says "setup done"
+  Proof: `git log origin/work` shows exactly `init`
+  - `git push -u origin work`; `origin/work` holds only `init`; the repo is public, default branch `work`
+  - `init` was amended with owner approval, once to carry its own state and once for the pre-push plan; each force-push is logged in `risks.md`
+  - `main` gets created at `init` after the push. It is verified, and major 0 checked, in the first build commit, because `init` can't record its own branch
+  - verified: `git ls-remote --heads origin` shows `main` and `work` both at `5ad00ff` (`init`)
 - [x] 0.6 no-PII and no-secrets pre-commit gitleaks run
   Proof: commits containing the git config email or a fake API key are each rejected; `git log -p` of `init` contains neither
   - `gitleaks git --pre-commit --staged --redact --no-banner`, with its config built at runtime and passed through `GITLEAKS_CONFIG_TOML`: gitleaks' default rules, plus one rule each for git config `user.name` and `user.email`, so the PII patterns never touch a tracked file
@@ -32,12 +38,6 @@ Deliverable: a fresh public `claude-setup` repo (public for this repo only; proj
   - an earlier `local/pii.txt` list of extra patterns was removed: the owner said gitleaks is enough
   - `--verbose --redact` so a block names file, line and rule but never the value
   - the first real `init` attempt was blocked: `LICENSE:3` (the copyright line) matches the git config name; the owner allowed it, so `.gitleaksignore` holds only that fingerprint (`LICENSE:pii-1:3`, no PII in it)
-- [x] 0.5 the `init` commit; push after the owner says "setup done"
-  Proof: `git log origin/work` shows exactly `init`
-  - `git push -u origin work`; `origin/work` holds only `init`; the repo is public, default branch `work`
-  - `init` was amended with owner approval, once to carry its own state and once for the pre-push plan; each force-push is logged in `risks.md`
-  - `main` gets created at `init` after the push. It is verified, and major 0 checked, in the first build commit, because `init` can't record its own branch
-  - verified: `git ls-remote --heads origin` shows `main` and `work` both at `5ad00ff` (`init`)
 
 ## [~] 1 · Crude end to end: plan through `wf`, can't hand-edit state, a new session picks up
 Deliverable: in a throwaway project, a Claude session adds a major and two minors with `wf`, fails to edit `docs/state/todo.md` directly, and a fresh session starts with the handoff and learnings in context; the dashboard lists the todo.
@@ -49,6 +49,24 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   - writes go to `.tmp` then rename; the single-writer lock comes in 1.2, where the CLI writes
   - `wf/core.test.ts`: 11 `node:test` tests, including that the real `todo.md` and `handoff.md` are canonical; `pnpm --dir wf test` added to the pre-commit hook
   - `todo.md` rewritten once into the strict format: wrapped lines joined, no content changed
+- [x] 1.2 cli: `init`, `status`, `next`, `show`, `add`, `start`, `done`, `impl`, `handoff`
+  Proof: the commands run against a sample project and print the changed lines
+  - `wf/cli.ts` parses arguments with `node:util` parseArgs, calls the core and prints; usage errors exit 2, rule errors exit 1 as `wf: <reason>`
+  - every write prints its changed lines (an LCS line diff: `- ` removed, `+ ` added); writes hold a single-writer lock in `scratch/temp/wf.lock` and take it over from a dead process
+  - core gained `activeMinors`, `nextItem` (stays in the active major; otherwise the first unfinished major), `withLock`, `initProject` (empty templates, setup state) and the registry `local/projects.json` under `WF_HOME` (default: claude-setup)
+  - `wf/cli.test.ts`: 7 tests run the real CLI against a sample project in `scratch/temp/` with a temp `WF_HOME` (removed afterwards); 19 of 19 wf tests pass; also ran `wf status` and `wf show 1` on this repo
+- [~] 1.3 hooks: SessionStart injection and the PreToolUse deny on `docs/state/**`
+  Proof: transcript of a real session showing the injected context and the denied Edit with its alternative
+- [~] 1.4 `wf install`: wf on PATH and hook registration (the CLAUDE.md and skills links are 5.4)
+  Proof: on a clean `~/.claude` the throwaway project works with no per-project step
+- [x] 1.5 dashboard: read-only project list and todo tab
+  Proof: screenshot of the throwaway project's todo
+  - dashboard reads through the core as the workspace package `wf` (`exports` → `core.ts`); `src/lib/server/projects.ts` lists the registry and summarises each project; `/` lists projects, `/projects/<abs path>` shows the todo; unregistered paths return 404
+  - throwaway project `scratch/temp/demo` built with wf only (init, a major, two minors, one started, one detail); both pages render every field over curl; the screenshot waits on a browser for the Playwright MCP
+  - Playwright via `sv add playwright` on the system Chrome (`channel: 'chrome'`, no browser downloads); `e2e.setup.ts` builds a fixed fixture project with the wf CLI in `scratch/temp/e2e` and the dev server reads it through `WF_HOME`
+  - 3 e2e tests at desktop (1440×900) and mobile (Pixel 7): project list, todo page, 404; in the pre-commit hook; `SCREENSHOTS=1` writes `scratch/images/1.5-{projects,todo}-{desktop,mobile}.png`
+  - reviewing the screenshots found the ◐ glyph rendering as a clipped half-shape and the path wrapping mid-line on mobile; replaced with open / in progress / done badges and put the path on its own line
+  - correction: the committed screenshots showed the e2e fixture project, not the real dashboard or the throwaway project the proof names; the real-dashboard screenshots are 1.7
 - [x] 1.6 `wf/` type-checked, linted and formatted like the dashboard; every JS config converted to TS
   Proof: a type error and a lint error in `wf/` are each rejected at commit; no `.js` files remain outside `node_modules` and build output
   - `wf/` dev deps at the latest versions: typescript, @types/node, prettier, eslint, @eslint/js, typescript-eslint
@@ -59,24 +77,6 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   - hook: format both, restage, then dashboard lint, check, build, then wf lint, check, test
   - probes: a `string` assigned to a `number` was rejected by tsc (TS2322); an unused const was rejected by eslint; both removed
   - `git ls-files '*.js' '*.cjs' '*.mjs'` lists nothing
-- [x] 1.2 cli: `init`, `status`, `next`, `show`, `add`, `start`, `done`, `impl`, `handoff`
-  Proof: the commands run against a sample project and print the changed lines
-  - `wf/cli.ts` parses arguments with `node:util` parseArgs, calls the core and prints; usage errors exit 2, rule errors exit 1 as `wf: <reason>`
-  - every write prints its changed lines (an LCS line diff: `- ` removed, `+ ` added); writes hold a single-writer lock in `scratch/temp/wf.lock` and take it over from a dead process
-  - core gained `activeMinors`, `nextItem` (stays in the active major; otherwise the first unfinished major), `withLock`, `initProject` (empty templates, setup state) and the registry `local/projects.json` under `WF_HOME` (default: claude-setup)
-  - `wf/cli.test.ts`: 7 tests run the real CLI against a sample project in `scratch/temp/` with a temp `WF_HOME` (removed afterwards); 19 of 19 wf tests pass; also ran `wf status` and `wf show 1` on this repo
-- [~] 1.3 hooks: SessionStart injection and the PreToolUse deny on `docs/state/**`
-  Proof: transcript of a real session showing the injected context and the denied Edit with its alternative
-- [~] 1.4 `wf install`: wf on PATH and hook registration (links for CLAUDE.md and skills land in 5.1, 5.2)
-  Proof: on a clean `~/.claude` the throwaway project works with no per-project step
-- [x] 1.5 dashboard: read-only project list and todo tab
-  Proof: screenshot of the throwaway project's todo
-  - dashboard reads through the core as the workspace package `wf` (`exports` → `core.ts`); `src/lib/server/projects.ts` lists the registry and summarises each project; `/` lists projects, `/projects/<abs path>` shows the todo; unregistered paths return 404
-  - throwaway project `scratch/temp/demo` built with wf only (init, a major, two minors, one started, one detail); both pages render every field over curl; the screenshot waits on a browser for the Playwright MCP
-  - Playwright via `sv add playwright` on the system Chrome (`channel: 'chrome'`, no browser downloads); `e2e.setup.ts` builds a fixed fixture project with the wf CLI in `scratch/temp/e2e` and the dev server reads it through `WF_HOME`
-  - 3 e2e tests at desktop (1440×900) and mobile (Pixel 7): project list, todo page, 404; in the pre-commit hook; `SCREENSHOTS=1` writes `scratch/images/1.5-{projects,todo}-{desktop,mobile}.png`
-  - reviewing the screenshots found the ◐ glyph rendering as a clipped half-shape and the path wrapping mid-line on mobile; replaced with open / in progress / done badges and put the path on its own line
-  - correction: the committed screenshots showed the e2e fixture project, not the real dashboard or the throwaway project the proof names; the real-dashboard screenshots are 1.7
 - [x] 1.7 screenshots of the real dashboard: the owner's registry and projects, with claude-setup itself registered
   Proof: scratch/images shows / and every registered project's page at desktop and mobile, taken from pnpm dev with the default registry
   - `wf init` in a project that already has docs/state/ now checks it parses and registers it; registered claude-setup itself
@@ -89,9 +89,16 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
 - [x] 1.9 bulk planning: `wf batch <file>` adds majors and minors (with proofs) all or nothing, `wf edit` changes a title, proof or deliverable, `wf doc` writes overview, intent, references, implementation or spec, whole or one section
   Proof: a batch file writes a whole initial todo in one call; a batch with one bad entry changes nothing; `wf doc implementation --from <file>` replaces the plan and a direct Edit of it is denied
   - core `applyBatch`: the todo.md shape without ids (`## <title>` + Deliverable, `## <id>`, `- <title>` + Proof), applied to a copy and swapped in only when every entry passes; errors name file:line
-  - core `editItem` (proofs on minors, deliverables on majors) and `writeDoc` (whole document from "# <Title>", or one "## <section>" replaced in place or appended; no #/## inside a section body)
+  - core `editItem` (proofs on minors, deliverables on majors) and `writeDoc` (whole document from "# \<Title>", or one "## \<section>" replaced in place or appended; no #/## inside a section body)
   - the deny list is now a map from file to its command: todo.md, handoff.md and the five plan documents; a denial names the exact command (e.g. `wf doc spec`); 39 of 39 wf tests pass
   - used on this repo: `wf edit` moved edit/batch/doc out of 3.4 and fixed 1.4's stale install.sh title; `wf doc spec --section` rewrote spec section 4 to match what's built
+- [~] 1.10 state text is markdown-safe: `<` outside code spans is written as `\<` in todo.md and handoff.md and read back as `<`; `wf doc` rejects a bare `<tag>` outside code
+  Proof: todo.md renders to the last item in a markdown renderer; a detail containing a bare \<Title> round-trips; wf doc names the line of a bare tag
+  - core `escapeMd`/`unescapeMd`: `<` outside code spans is `\<` on disk and `<` in memory, for every todo and handoff field; `writeDoc` rejects a bare tag outside inline code and fenced blocks, naming its line
+- [x] 1.11 the CLI keeps todo.md in id order: majors by number, minors by number within their major; position follows the id, so there is no `wf move`
+  Proof: a todo with items out of order is written back sorted; this repo's todo.md reads 0.1 to 0.6 and 1.1 to 1.11 in order
+  - `parseTodo` sorts majors by number and minors by number within their major, so every write puts items in id order; ids already come from max + 1, so nothing else decides position
+  - `wf move` removed from 3.4, 4.1 and spec section 4; `wf help add` states the id-order rule
 
 ## [ ] 2 · States and admin
 Deliverable: setup/discuss/build behave as spec section 2 in a real session, and admin mode lifts every restriction only when the owner flips it.
@@ -102,6 +109,8 @@ Deliverable: setup/discuss/build behave as spec section 2 in a real session, and
   Proof: transcript showing a denied Edit in discuss and a denied push in setup, then the push allowed after "setup done"
 - [ ] 2.3 admin mode: dashboard toggle, `wf admin` refused inside Claude Code, hooks pass when on
   Proof: transcript of the agent failing to turn it on; the owner turns it on and the state file edit goes through
+- [ ] 2.4 the remaining hook denials from spec section 5: Edit/Write on `scratch/links/**`, and Bash running `claude -p` or `--print`
+  Proof: hook tests and a real session show each one denied with its alternative
 
 ## [ ] 3 · Records
 Deliverable: every record type from spec section 3 written and queried through `wf`.
@@ -112,22 +121,26 @@ Deliverable: every record type from spec section 3 written and queried through `
   Proof: `wf show <id>` lists the steer that changed it
 - [ ] 3.3 `wf risk` with all four fields required
   Proof: a request missing `--recover` is rejected naming the field
-- [ ] 3.4 memory sections, `wf move`, `wf find`, `wf get`
-  Proof: `wf move` reorders an item; `wf find` hits across files; `wf get` prints one section
-- [ ] 3.5 `wf env set` and `wf env keys`; `.env` read and print denied
+- [ ] 3.4 memory sections, `wf find`, `wf get`
+  Proof: `wf find` hits across files; `wf get` prints one section
+- [ ] 3.5 `wf env set` and `wf env keys`; `.env` read, print and direct Edit/Write denied
   Proof: `.env` gets the key; the transcript never shows a value; `cat .env` is denied
 - [ ] 3.6 `wf checks set` (pre-commit) and `wf push set` (optional pre-push, majors only, for example a deploy)
   Proof: pushing a major runs the commands, and a failing one blocks the push; pushing a minor or micro runs nothing; after `wf push set` with no commands, no hook exists
+- [ ] 3.7 deferred registry: `wf defer "<item>" --resolves <id>` writes the Deferred table in memory.md; an unknown id is rejected; `wf show <id>` lists the deferred entries that name it
+  Proof: a deferral naming a missing id is rejected; `wf show` on the resolving id lists the entry
 
 ## [ ] 4 · Dashboard, full
 Deliverable: the owner manages todos and learnings across all projects without touching a file.
 
-- [ ] 4.1 editing: add, edit, reorder, check, with core validation errors shown inline
+- [ ] 4.1 editing: add, edit, check, with core validation errors shown inline (items sit in id order, so there is no reordering)
   Proof: screenshots of each action and of a rejected edit
 - [ ] 4.2 tabs for every registered project plus Global; steers, risks, memory and docs views; state switcher
   Proof: screenshots across two projects
 - [ ] 4.3 UI designed from actual use (impeccable), mobile-friendly
   Proof: desktop and phone-width screenshots reviewed by the owner
+- [ ] 4.4 edit project and global learnings in the dashboard, through the same core rules and size budget
+  Proof: screenshots of a learning added and an over-budget one rejected, from the real dashboard at desktop and mobile
 
 ## [ ] 5 · Guidance and skills
 Deliverable: `global/CLAUDE.md` under about 80 lines, with the four skills installed as spec'd.
@@ -138,6 +151,8 @@ Deliverable: `global/CLAUDE.md` under about 80 lines, with the four skills insta
   Proof: a diff of each adaptation against upstream; no hooks or binaries present
 - [ ] 5.3 seed global learnings from the three failed attempts
   Proof: `wf status` shows them; under the budget
+- [ ] 5.4 `wf install` also links `~/.claude/CLAUDE.md` and the vetted skills into claude-setup
+  Proof: on a fresh HOME, install creates both links pointing into claude-setup; a second run changes nothing
 
 ## [ ] 6 · Real use
 Deliverable: one real project taken from setup through its first major task with this setup, and the friction recorded as learnings.

@@ -181,6 +181,67 @@ test('edit changes titles, proofs and deliverables, each on the right kind of it
 	assert.throws(() => editItem(todo, '1', {}), /nothing to change/);
 });
 
+test('a bare < is escaped in the file and plain in memory; code spans are left alone', () => {
+	const todo = parseTodo(sample);
+	start(todo, '1.1');
+	impl(todo, '1.1', 'writeDoc takes "# <Title>" and `wf show <id>`');
+	editItem(todo, '1', { deliverable: 'renders past <title> tags' });
+	const text = formatTodo(todo);
+	assert.ok(text.includes('  - writeDoc takes "# \\<Title>" and `wf show <id>`'));
+	assert.ok(text.includes('Deliverable: renders past \\<title> tags'));
+	const back = parseTodo(text);
+	assert.equal(back.majors[1].minors[0].impl[0], 'writeDoc takes "# <Title>" and `wf show <id>`');
+	assert.equal(back.majors[1].deliverable, 'renders past <title> tags');
+	assert.equal(formatTodo(back), text);
+});
+
+test('items are kept in id order, whatever order the file has', () => {
+	const shuffled = `# Todo
+
+## [ ] 1 · Second
+Deliverable: d
+
+- [ ] 1.10 tenth
+  Proof: p
+- [ ] 1.2 second
+  Proof: p
+- [ ] 1.9 ninth
+  Proof: p
+
+## [ ] 0 · First
+Deliverable: d
+
+- [ ] 0.2 b
+  Proof: p
+- [ ] 0.1 a
+  Proof: p
+`;
+	const todo = parseTodo(shuffled);
+	assert.deepEqual(
+		todo.majors.flatMap((m) => [m.id, ...m.minors.map((n) => n.id)]),
+		['0', '0.1', '0.2', '1', '1.2', '1.9', '1.10']
+	);
+	assert.match(
+		formatTodo(todo),
+		/0\.1 a[\s\S]*0\.2 b[\s\S]*1\.2 second[\s\S]*1\.9 ninth[\s\S]*1\.10 tenth/
+	);
+});
+
+test('the handoff escapes the same way', () => {
+	const h = {
+		state: 'build' as const,
+		active: '—',
+		next: 'run with ITEM=<id>',
+		verify: '`ITEM=<id> pnpm test`',
+		dont: 'x',
+		open: []
+	};
+	const text = formatHandoff(h);
+	assert.match(text, /^Next: run with ITEM=\\<id>$/m);
+	assert.match(text, /^Verify: `ITEM=<id> pnpm test`$/m);
+	assert.deepEqual(parseHandoff(text), h);
+});
+
 test('fields are required and single-line', () => {
 	const todo = parseTodo(sample);
 	assert.throws(() => addMajor(todo, ' ', 'd'), /title is required/);

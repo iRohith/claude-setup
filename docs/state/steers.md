@@ -109,6 +109,24 @@ Changed: added 1.6 (placed before 1.2); intent principle 13; guidance line in im
 Why it's a steer: sets how sessions run, and how friction is handled.
 Changed: intent principles 14 and 15; two guidance lines in implementation.md.
 
+## 2026-11-18 · affects 1.11, 3.4, 4.1
+> thats cli job to handle sort/insertion location logic by id and all right
+
+Why it's a steer: the ordering rule belongs in the CLI.
+Changed: added 1.11; the core keeps todo.md in id order; `wf move` is gone from 3.4, the spec and 4.1's reordering.
+
+## 2026-11-18 · affects 1.10
+> It stopped here. core editItem (proofs on minors, deliverables on majors) and writeDoc (whole document from "# ... escape properly
+
+Why it's a steer: a bare tag in state text broke the markdown preview from that line on.
+Changed: added 1.10; `<` outside code is escaped on write and unescaped on read; `wf doc` rejects bare tags.
+
+## 2026-11-18 · affects 1.4, 2.4, 3.5, 3.7, 4.4, 5.4
+> not just that. seems like you deleted the unimplemented parts. what about it
+
+Why it's a steer: the plan had lost work. 1.4's links pointed at items that didn't hold them, and several spec features never had an item.
+Changed: added 2.4 (links and `claude -p` denials), 3.7 (deferred registry), 4.4 (learnings editing in the dashboard), 5.4 (install links); widened 3.5 to direct `.env` writes; 1.4 now points at 5.4.
+
 ## 2026-11-18 · affects 1.8, 1.9, 3.4
 > the cli needs --help and more docs if the ai wants to query how to run. and also what about the batch creating todos, implementation plan, batch/bulk write initial todo etc via cli? are those planned yet?
 
