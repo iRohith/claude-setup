@@ -23,15 +23,18 @@ GITLEAKS_CONFIG_TOML=$'[extend]\nuseDefault = true\n'"$rules" \
   gitleaks git --pre-commit --staged --redact --no-banner --no-color --verbose \
     --gitleaks-ignore-path "$root/.gitleaksignore" "$root"
 
-# The owner's checks for the dashboard. Format rewrites files, so what was staged is staged again.
+# The owner's checks. Format rewrites files, so what was staged is staged again.
 dash="$root/dashboard"
+wf="$root/wf"
 mkdir -p "$root/scratch/temp"
 git -C "$root" diff --cached --name-only -z --diff-filter=ACMR > "$root/scratch/temp/staged.lst"
 pnpm --dir "$dash" format
+pnpm --dir "$wf" format
 xargs -0 -r git -C "$root" add -- < "$root/scratch/temp/staged.lst"
 pnpm --dir "$dash" lint
 pnpm --dir "$dash" check
 pnpm --dir "$dash" build
-
-# wf tests, including that the real docs/state files stay canonical.
-pnpm --dir "$root/wf" test
+pnpm --dir "$wf" lint
+pnpm --dir "$wf" check
+# wf tests also prove the real docs/state files stay canonical.
+pnpm --dir "$wf" test

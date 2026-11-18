@@ -49,6 +49,16 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   - writes go to `.tmp` then rename; the single-writer lock comes in 1.2, where the CLI writes
   - `wf/core.test.ts`: 11 `node:test` tests, including that the real `todo.md` and `handoff.md` are canonical; `pnpm --dir wf test` added to the pre-commit hook
   - `todo.md` rewritten once into the strict format: wrapped lines joined, no content changed
+- [x] 1.6 `wf/` type-checked, linted and formatted like the dashboard; every JS config converted to TS
+  Proof: a type error and a lint error in `wf/` are each rejected at commit; no `.js` files remain outside `node_modules` and build output
+  - `wf/` dev deps at the latest versions: typescript, @types/node, prettier, eslint, @eslint/js, typescript-eslint
+  - `wf/tsconfig.json`: strict, nodenext, `noEmit`, `allowImportingTsExtensions`, `erasableSyntaxOnly` (Node runs the files as they are)
+  - `wf/prettier.config.ts` uses the dashboard's style without the svelte plugins; `wf/eslint.config.ts` uses js + typescript-eslint recommended
+  - scripts `check` (`tsc --noEmit`), `lint` (prettier check plus eslint with `--max-warnings 0`), `format`, `test`
+  - dashboard `eslint.config.js` and `prettier.config.js` renamed with `git mv` to `.ts`, the prettier config typed, `tsconfig.json` include updated
+  - hook: format both, restage, then dashboard lint, check, build, then wf lint, check, test
+  - probes: a `string` assigned to a `number` was rejected by tsc (TS2322); an unused const was rejected by eslint; both removed
+  - `git ls-files '*.js' '*.cjs' '*.mjs'` lists nothing
 - [ ] 1.2 cli: `init`, `status`, `next`, `show`, `add`, `start`, `done`, `impl`, `handoff`
   Proof: the commands run against a sample project and print the changed lines
 - [ ] 1.3 hooks: SessionStart injection and the PreToolUse deny on `docs/state/**`

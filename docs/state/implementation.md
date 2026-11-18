@@ -79,6 +79,7 @@ This is how claude-setup gets built, start to finish. The exact formats and comm
 - "risky actions go through `wf risk` first";
 - "one shell command per call, long output to `scratch/temp/` then read";
 - "pnpm by default";
+- "type-safe languages only unless the owner allows otherwise; TypeScript over JavaScript, configs included";
 - "latest stable versions";
 - "never `claude -p`";
 - "never write secrets or PII into any file, including the owner's names, usernames or email; identity

@@ -60,7 +60,9 @@ The setup that makes it behave this way is itself simple, small and obvious.
     outdated ones.
 12. No secrets and no PII anywhere in git history: not the owner's names, usernames or email. Identity comes
     from git config at runtime. claude-setup is public; every project repo is private.
-13. pnpm is the default for everything (npm and npx are aliased to pnpm). System Python with uv.
+13. Type-safe languages only, unless the owner allows otherwise. TypeScript over JavaScript wherever
+    possible, config files included.
+14. pnpm is the default for everything (npm and npx are aliased to pnpm). System Python with uv.
 
 ## Lessons from three failed attempts
 

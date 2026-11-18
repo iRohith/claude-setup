@@ -64,7 +64,8 @@ export function parseTodo(text: string, file = 'todo.md'): Todo {
 			minor = undefined;
 		} else if ((m = line.match(/^- \[([ ~x])\] (\d+\.\d+) (.+)$/))) {
 			if (!major) fail(i, 'minor before any major');
-			if (!m[2].startsWith(`${major!.id}.`)) fail(i, `minor ${m[2]} is not under major ${major!.id}`);
+			if (!m[2].startsWith(`${major!.id}.`))
+				fail(i, `minor ${m[2]} is not under major ${major!.id}`);
 			const pr = lines[++i]?.match(/^ {2}Proof: (.+)$/);
 			if (!pr) fail(i, 'expected "  Proof: ..." under the minor');
 			minor = { id: m[2], mark: m[1] as Mark, title: m[3], proof: pr![1], impl: [] };
@@ -83,7 +84,11 @@ export function parseTodo(text: string, file = 'todo.md'): Todo {
 export function formatTodo(todo: Todo): string {
 	const out = ['# Todo', ''];
 	for (const major of todo.majors) {
-		out.push(`## [${major.mark}] ${major.id} · ${major.title}`, `Deliverable: ${major.deliverable}`, '');
+		out.push(
+			`## [${major.mark}] ${major.id} · ${major.title}`,
+			`Deliverable: ${major.deliverable}`,
+			''
+		);
 		for (const minor of major.minors) {
 			out.push(`- [${minor.mark}] ${minor.id} ${minor.title}`, `  Proof: ${minor.proof}`);
 			for (const detail of minor.impl) out.push(`  - ${detail}`);
@@ -119,7 +124,8 @@ export function findMinor(todo: Todo, id: string): Minor {
 }
 
 const isMinorId = (id: string) => /^\d+\.\d+$/.test(id);
-const nextNumber = (ids: string[]) => Math.max(-1, ...ids.map((id) => Number(id.split('.').at(-1)))) + 1;
+const nextNumber = (ids: string[]) =>
+	Math.max(-1, ...ids.map((id) => Number(id.split('.').at(-1)))) + 1;
 
 export function addMajor(todo: Todo, title: string, deliverable: string): Major {
 	const major: Major = {
@@ -150,10 +156,12 @@ export function addMinor(todo: Todo, majorId: string, title: string, proof: stri
 export function start(todo: Todo, id: string): Minor {
 	if (!isMinorId(id)) throw new WfError(`start takes a minor id (x.x), got ${id}`);
 	const minor = findMinor(todo, id);
-	if (minor.mark !== ' ') throw new WfError(`${id} is already ${minor.mark === '~' ? 'in progress' : 'done'}`);
+	if (minor.mark !== ' ')
+		throw new WfError(`${id} is already ${minor.mark === '~' ? 'in progress' : 'done'}`);
 	const majorId = id.split('.')[0];
 	const busy = todo.majors.find((n) => n.id !== majorId && n.minors.some((k) => k.mark === '~'));
-	if (busy) throw new WfError(`major ${busy.id} has minors in progress; finish them before starting ${id}`);
+	if (busy)
+		throw new WfError(`major ${busy.id} has minors in progress; finish them before starting ${id}`);
 	minor.mark = '~';
 	const major = findMajor(todo, majorId);
 	if (major.mark === ' ') major.mark = '~';
@@ -200,7 +208,8 @@ export function parseHandoff(text: string, file = 'handoff.md'): Handoff {
 	};
 	if (lines[0] !== '# Handoff') throw new WfError(`${file}:1: expected "# Handoff"`);
 	const state = field(1, 'State') as State;
-	if (!STATES.includes(state)) throw new WfError(`${file}:2: state must be one of ${STATES.join(', ')}`);
+	if (!STATES.includes(state))
+		throw new WfError(`${file}:2: state must be one of ${STATES.join(', ')}`);
 	const open = lines.slice(6).map((_, k) => field(6 + k, 'Open'));
 	return {
 		state,
@@ -224,7 +233,8 @@ export function formatHandoff(h: Handoff): string {
 		`Don't: ${required(h.dont, "don't")}`,
 		...open.map((o) => `Open: ${required(o, 'open')}`)
 	];
-	if (lines.length > HANDOFF_MAX_LINES) throw new WfError(`handoff is limited to ${HANDOFF_MAX_LINES} lines`);
+	if (lines.length > HANDOFF_MAX_LINES)
+		throw new WfError(`handoff is limited to ${HANDOFF_MAX_LINES} lines`);
 	return lines.join('\n') + '\n';
 }
 
@@ -233,7 +243,8 @@ export function formatHandoff(h: Handoff): string {
 export function findRoot(from: string): string {
 	for (let dir = from; ; dir = dirname(dir)) {
 		if (existsSync(join(dir, 'docs', 'state'))) return dir;
-		if (dirname(dir) === dir) throw new WfError(`no docs/state/ above ${from}; run wf init in the project`);
+		if (dirname(dir) === dir)
+			throw new WfError(`no docs/state/ above ${from}; run wf init in the project`);
 	}
 }
 
@@ -244,7 +255,11 @@ function writeAtomic(path: string, text: string): void {
 	renameSync(`${path}.tmp`, path);
 }
 
-export const readTodo = (root: string) => parseTodo(readFileSync(statePath(root, 'todo.md'), 'utf8'));
-export const writeTodo = (root: string, todo: Todo) => writeAtomic(statePath(root, 'todo.md'), formatTodo(todo));
-export const readHandoff = (root: string) => parseHandoff(readFileSync(statePath(root, 'handoff.md'), 'utf8'));
-export const writeHandoff = (root: string, h: Handoff) => writeAtomic(statePath(root, 'handoff.md'), formatHandoff(h));
+export const readTodo = (root: string) =>
+	parseTodo(readFileSync(statePath(root, 'todo.md'), 'utf8'));
+export const writeTodo = (root: string, todo: Todo) =>
+	writeAtomic(statePath(root, 'todo.md'), formatTodo(todo));
+export const readHandoff = (root: string) =>
+	parseHandoff(readFileSync(statePath(root, 'handoff.md'), 'utf8'));
+export const writeHandoff = (root: string, h: Handoff) =>
+	writeAtomic(statePath(root, 'handoff.md'), formatHandoff(h));

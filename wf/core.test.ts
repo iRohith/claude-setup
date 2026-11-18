@@ -35,7 +35,8 @@ Deliverable: the core works
 Deliverable: nothing yet
 `;
 
-const real = (name: string) => readFileSync(new URL(`../docs/state/${name}`, import.meta.url), 'utf8');
+const real = (name: string) =>
+	readFileSync(new URL(`../docs/state/${name}`, import.meta.url), 'utf8');
 
 test('todo round-trips unchanged', () => {
 	assert.equal(formatTodo(parseTodo(sample)), sample);
@@ -47,9 +48,15 @@ test('the real todo.md and handoff.md are canonical', () => {
 });
 
 test('parse errors name the line', () => {
-	assert.throws(() => parseTodo('# Todo\n\n## [ ] 0 · Setup\nnot a deliverable\n'), /todo\.md:4: expected "Deliverable/);
+	assert.throws(
+		() => parseTodo('# Todo\n\n## [ ] 0 · Setup\nnot a deliverable\n'),
+		/todo\.md:4: expected "Deliverable/
+	);
 	assert.throws(() => parseTodo('# Todo\n\nstray\n'), /todo\.md:3: unrecognised line/);
-	assert.throws(() => parseTodo('# Todo\n\n## [ ] 0 · A\nDeliverable: d\n\n- [ ] 1.1 x\n  Proof: p\n'), /not under major 0/);
+	assert.throws(
+		() => parseTodo('# Todo\n\n## [ ] 0 · A\nDeliverable: d\n\n- [ ] 1.1 x\n  Proof: p\n'),
+		/not under major 0/
+	);
 });
 
 test('starting minors in two majors is rejected', () => {
@@ -108,7 +115,8 @@ test('fields are required and single-line', () => {
 });
 
 test('handoff round-trips, checks the state, and is capped at 15 lines', () => {
-	const text = '# Handoff\nState: build\nActive: 1.1\nNext: 1.2\nVerify: node --test\nDon\'t: hand-edit\nOpen: —\n';
+	const text =
+		"# Handoff\nState: build\nActive: 1.1\nNext: 1.2\nVerify: node --test\nDon't: hand-edit\nOpen: —\n";
 	const h = parseHandoff(text);
 	assert.deepEqual(h.open, []);
 	assert.equal(formatHandoff(h), text);

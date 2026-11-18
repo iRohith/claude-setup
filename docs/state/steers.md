@@ -97,6 +97,12 @@ Changed: spec section 2 setup now ends with `main` at `init`, and limits amend a
 Why it's a steer: fixes the order of done and commit.
 Changed: spec section 2 now has the five-step commit order; the guidance list matches; global learning 8; major 0 is open again until `main` is verified.
 
+## 2026-11-18 · affects 1.6, all
+> add those. type it. not js, always ts. add this as a guideline too. Always use type safe languages unless I give permission. TS over JS always when possible.
+
+Why it's a steer: adds checks for `wf/`, and a language rule for every project.
+Changed: added 1.6 (placed before 1.2); intent principle 13; guidance line in implementation.md.
+
 ## 2026-11-18 · affects 0, all
 > now move to pnpm instead of bun for everything.
 
