@@ -160,6 +160,28 @@ test('admin mode is guarded from the model and lifts every denial when the owner
 	wfIn('state', 'setup');
 });
 
+test('linked projects are read-only and claude -p is never run', () => {
+	const linked = edit('Write', join(project, 'scratch', 'links', 'engine', 'src', 'x.ts'));
+	assert.match(
+		linked.hookSpecificOutput.permissionDecisionReason,
+		/never write into another project/
+	);
+	for (const command of ['claude -p "summarise"', 'claude --print hi', 'npx claude -p x'])
+		assert.match(
+			bash(command).hookSpecificOutput.permissionDecisionReason,
+			/never allowed/,
+			command
+		);
+	assert.equal(bash('claude --version'), undefined);
+	assert.equal(bash('ls scratch/links/engine'), undefined);
+	const outside = hook(
+		'pre-tool-use',
+		{ tool_name: 'Bash', tool_input: { command: 'claude -p x' }, cwd: '/' },
+		'/'
+	);
+	assert.equal(outside.hookSpecificOutput.permissionDecision, 'deny');
+});
+
 test('wf admin refuses inside Claude Code', () => {
 	const r = spawnSync(process.execPath, [cli, 'admin', 'on'], {
 		cwd: project,

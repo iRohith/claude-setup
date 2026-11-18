@@ -660,6 +660,18 @@ export function discussDenial(root: string, file: string): string | undefined {
 	return `The project is in discuss, so project files stay unchanged (a fixed rule; retrying will be denied again). Plan through wf: write text in scratch/temp/, then wf doc or wf batch. The owner switches to build.`;
 }
 
+/** Linked projects are read-only: nothing writes into another project. */
+export function linksDenial(root: string, file: string): string | undefined {
+	if (!resolve(file).startsWith(join(root, 'scratch', 'links') + '/')) return undefined;
+	return 'scratch/links/ holds other projects, read-only: never write into another project (a fixed rule; retrying will be denied again). Anything needed from it goes to the owner.';
+}
+
+/** Headless Claude sessions can bill API credits; they are never started. */
+export function claudeDenial(command: string): string | undefined {
+	if (!/\bclaude\b[^\n]*\s(-p|--print)\b/.test(command)) return undefined;
+	return 'Starting Claude sessions (claude -p, --print) is never allowed: they can spend API credits (a fixed rule; retrying will be denied again).';
+}
+
 /** In setup, no push until the owner has written "setup done". */
 export function pushDenial(root: string, command: string): string | undefined {
 	if (readHandoff(root).state !== 'setup' || !/\bgit\b[^\n]*\bpush\b/.test(command))

@@ -92,7 +92,11 @@ function denyReason(input: HookInput, cwd: string): string | undefined {
 	if (input.tool_name === 'Bash') {
 		const command = input.tool_input?.command;
 		if (typeof command !== 'string') return undefined;
-		return wf.adminDenial(undefined, command) ?? (root ? wf.pushDenial(root, command) : undefined);
+		return (
+			wf.adminDenial(undefined, command) ??
+			wf.claudeDenial(command) ??
+			(root ? wf.pushDenial(root, command) : undefined)
+		);
 	}
 	if (!EDIT_TOOLS.includes(input.tool_name ?? '')) return undefined;
 	const target = input.tool_input?.file_path ?? input.tool_input?.notebook_path;
@@ -103,5 +107,5 @@ function denyReason(input: HookInput, cwd: string): string | undefined {
 	const alternative = wf.wfAlternative(file);
 	if (alternative)
 		return `${basename(target)} is written only through wf. This is a fixed rule, so retrying the edit will be denied again. Use ${alternative} instead (wf help <command> for usage).`;
-	return root ? wf.discussDenial(root, file) : undefined;
+	return root ? (wf.linksDenial(root, file) ?? wf.discussDenial(root, file)) : undefined;
 }
