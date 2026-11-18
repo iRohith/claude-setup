@@ -109,6 +109,12 @@ Changed: added 1.6 (placed before 1.2); intent principle 13; guidance line in im
 Why it's a steer: sets how sessions run, and how friction is handled.
 Changed: intent principles 14 and 15; two guidance lines in implementation.md.
 
+## 2026-11-18 · affects all
+> I just told you I was going away and you still fucking stopped in middle? cant we just edit claude.md later? will it fucking end the world if you started other todo tasks instead of stopping and wasting my time? add this as an important guideline.
+
+Why it's a steer: waiting on the owner must never stop the work.
+Changed: the one-major rule moved from `wf start` into guidance; `wf next` skips minors in progress; CLAUDE.md, states.md and `wf help` say never wait idle; global learning 11.
+
 ## 2026-11-18 · affects 1.12, 1.13, 2.1, 5.1, 5.4
 > the first wf init/setup whatever that runs first that guidance, instructions everything need to some in place. ... if its just next part, then its fine. implement everything first.
 

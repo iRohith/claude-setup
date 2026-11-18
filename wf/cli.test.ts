@@ -166,6 +166,12 @@ test('doc writes a whole document or one section', () => {
 	writeFileSync(part, 'Later.\n');
 	wf('doc', 'implementation', '--section', 'Risks', '--from', part);
 	assert.match(doc(), /## Page\n\nSvelte\.\n\n## Risks\n\nLater\.\n$/);
+	writeFileSync(part, 'Format:\n\n```\n# Todo\n## [ ] 0 · Title\n```\n');
+	assert.equal(wf('doc', 'implementation', '--section', 'Store', '--from', part).code, 0);
+	assert.match(doc(), /## Store\n\nFormat:\n\n```\n# Todo\n## \[ \] 0 · Title\n```\n\n## Page\n/);
+	writeFileSync(part, 'Second write.\n');
+	wf('doc', 'implementation', '--section', 'Store', '--from', part);
+	assert.match(doc(), /## Store\n\nSecond write\.\n\n## Page\n/);
 	writeFileSync(part, '## sneaky\n');
 	assert.match(
 		wf('doc', 'implementation', '--section', 'X', '--from', part).err,

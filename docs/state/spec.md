@@ -106,8 +106,9 @@ Deliverable: <what the owner can inspect>
 - `[x]` done.
 
 **Rules `wf` enforces:**
-- Only one major can have in-progress minors at a time. Several minors may be in progress within that
-  major.
+- `todo.md` is always in id order.
+- `wf start` only on an open minor. Minors in any number of majors may be in progress. Finishing a major
+  before moving on is guidance, so an item waiting on the owner never stalls the work.
 - `wf done` only on an in-progress item.
 - A major can be checked only when all its minors are checked.
 - Implementation details are added only to an in-progress or done minor.

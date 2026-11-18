@@ -26,8 +26,9 @@ export const HELP: Record<string, Help> = {
 		usage: ['wf next'],
 		summary: 'what to work on next',
 		details: [
-			'While a major has minors in progress: its first open minor, or nothing (finish what is active).',
-			'Otherwise: the first unfinished major, its first open minor, or the major itself when it needs minors or is ready to check.'
+			'The first open minor of the first unfinished major that has one, in id order.',
+			'Otherwise the first unfinished major that needs minors added or is ready to check.',
+			'Minors in progress elsewhere (waiting on the owner, say) never hold it up.'
 		]
 	},
 	show: {
@@ -85,7 +86,8 @@ export const HELP: Record<string, Help> = {
 		summary: 'mark a minor in progress before working on it',
 		details: [
 			'Choose the item first, start it, then work. Never claim work after the fact.',
-			'Only one major may have minors in progress; several minors in that major are fine.',
+			'Finish a major before moving on, but never wait idle: when an item waits on the owner,',
+			'note it in the handoff and start the next one, in any major.',
 			'Starting a minor marks its major in progress.'
 		]
 	},

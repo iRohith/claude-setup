@@ -60,7 +60,7 @@ function main(argv: string[]): void {
 			return status();
 		case 'next': {
 			const item = wf.nextItem(wf.readTodo(wf.findRoot(process.cwd())));
-			console.log(item ? describeNext(item) : 'nothing open; finish the minors in progress');
+			console.log(item ? describeNext(item) : 'nothing open; only the minors in progress remain');
 			return;
 		}
 		case 'show':

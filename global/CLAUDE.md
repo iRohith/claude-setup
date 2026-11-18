@@ -57,8 +57,8 @@ with `# <Title>`) or `--section "<heading>"` (one `##` section). Keep `<` inside
 
 ## Working an item
 1. Choose it: `wf next`, or the item the owner steers to.
-2. `wf start <id>` before touching it. Never record work after the fact. Several minors may be in progress
-   only within one major.
+2. `wf start <id>` before touching it. Never record work after the fact. Finish a major before moving to
+   the next, except when its remaining items wait on the owner.
 3. Build it, with tests that check real behaviour.
 4. Verify the proof the way the owner would: a real end-to-end run, screenshots, a benchmark. Never fake,
    weaken or skip a test.
@@ -104,8 +104,12 @@ When every minor of a major is done and its deliverable is verified, `wf done <m
 - When a tool, permission, package or answer is missing, tell the owner exactly what is needed and get it.
   Never work around it, substitute something silently or fall back. Meanwhile, carry on with whatever does
   not depend on it.
-- Long-running by default: when an item is done, start the next. Stop only at a blocker only the owner can
-  clear. When the owner is away, do only work that won't need their input.
+- **Never wait idle on the owner.** When an item needs the owner (a review, a check, a session only they
+  can run, an answer), put exactly what they must do in the handoff as `--open`, leave the item in
+  progress, and start the next todo item right away, in any major. Fix whatever their check turns up
+  when they report it. Stopping while open items remain wastes the owner's time.
+- Long-running by default: when an item is done, start the next. Stop only when every remaining item is
+  blocked on the owner. When the owner is away, do only work that won't need their input.
 
 ## High-risk actions
 - Deleting files, branches or repos, schema migrations, force-pushes and anything hard to undo happen only

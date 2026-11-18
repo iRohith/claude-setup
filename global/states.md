@@ -51,11 +51,12 @@ The project is in discuss: planning only. Nothing in the project changes except 
 ## build
 
 The project is in build: implement the todo. Full write access to the project.
-1. `wf next`, or the item the owner steers to. One major at a time; several of its minors may run together.
+1. `wf next`, or the item the owner steers to. Finish a major before the next, but never wait idle: an
+   item waiting on the owner goes into the handoff as `--open`, and work moves on to the next item.
 2. For each minor, follow "Working an item" in CLAUDE.md: start, build, prove, check, record, commit,
    push. Micro commits for change boundaries along the way.
 3. A steer during build updates the plan first (todo and plan documents, `steers.md`), then the code.
 4. When every minor of a major is done and its deliverable is verified, `wf done <major>`. Squash to
    `main` only when the owner says so.
-5. Keep going to the next item without stopping. Stop only at a blocker only the owner can clear, and say
-   exactly what is needed.
+5. Keep going to the next item without stopping. Stop only when every remaining item is blocked on the
+   owner, and then say exactly what each one needs.

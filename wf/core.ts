@@ -62,12 +62,30 @@ const outsideCode = (text: string, fn: (s: string) => string) =>
 export const escapeMd = (text: string) => outsideCode(text, (s) => s.replaceAll('<', '\\<'));
 export const unescapeMd = (text: string) => outsideCode(text, (s) => s.replaceAll('\\<', '<'));
 
+/** For each line: whether it belongs to a ``` code fence (the fence lines included). */
+function fencedLines(lines: string[]): boolean[] {
+	let open = false;
+	return lines.map((line) => {
+		if (/^\s*```/.test(line)) {
+			open = !open;
+			return true;
+		}
+		return open;
+	});
+}
+
+/** A markdown heading of level 1 or 2 outside code fences: where a section starts or ends. */
+const topHeadings = (lines: string[]): boolean[] => {
+	const fenced = fencedLines(lines);
+	return lines.map((l, i) => !fenced[i] && /^#{1,2} /.test(l));
+};
+
 /** For whole markdown documents: names the first line with a bare tag outside code. */
 function checkNoBareTags(text: string, file: string): void {
-	let fenced = false;
-	text.split('\n').forEach((line, i) => {
-		if (/^\s*```/.test(line)) fenced = !fenced;
-		if (fenced) return;
+	const lines = text.split('\n');
+	const fenced = fencedLines(lines);
+	lines.forEach((line, i) => {
+		if (fenced[i]) return;
 		const bare = line.replace(/`[^`]*`/g, '').match(/(?<!\\)<\/?[A-Za-z][^>]*>/);
 		if (bare)
 			throw new WfError(
@@ -218,12 +236,8 @@ export function start(todo: Todo, id: string): Minor {
 	const minor = findMinor(todo, id);
 	if (minor.mark !== ' ')
 		throw new WfError(`${id} is already ${minor.mark === '~' ? 'in progress' : 'done'}`);
-	const majorId = id.split('.')[0];
-	const busy = todo.majors.find((n) => n.id !== majorId && n.minors.some((k) => k.mark === '~'));
-	if (busy)
-		throw new WfError(`major ${busy.id} has minors in progress; finish them before starting ${id}`);
 	minor.mark = '~';
-	const major = findMajor(todo, majorId);
+	const major = findMajor(todo, id.split('.')[0]);
 	if (major.mark === ' ') major.mark = '~';
 	return minor;
 }
@@ -342,15 +356,17 @@ export const activeMinors = (todo: Todo): Minor[] =>
 	todo.majors.flatMap((n) => n.minors.filter((k) => k.mark === '~'));
 
 /**
- * While a major has minors in progress: its first open minor, or nothing (finish what's active).
- * Otherwise the first unfinished major: its first open minor, or the major itself when it needs
- * minors added or is ready to be checked.
+ * The first open minor, in id order, of the first unfinished major that has one; otherwise the first
+ * unfinished major with no minors or with every minor done (it needs minors, or checking). Minors
+ * still in progress elsewhere (waiting on the owner, say) never hold up the next item.
  */
 export function nextItem(todo: Todo): Minor | Major | undefined {
-	const activeMajor = todo.majors.find((n) => n.minors.some((k) => k.mark === '~'));
-	if (activeMajor) return activeMajor.minors.find((k) => k.mark === ' ');
-	const major = todo.majors.find((n) => n.mark !== 'x');
-	return major && (major.minors.find((k) => k.mark === ' ') ?? major);
+	const unfinished = todo.majors.filter((n) => n.mark !== 'x');
+	for (const major of unfinished) {
+		const open = major.minors.find((k) => k.mark === ' ');
+		if (open) return open;
+	}
+	return unfinished.find((n) => n.minors.every((k) => k.mark === 'x'));
 }
 
 export const isMinor = (item: Minor | Major): item is Minor => isMinorId(item.id);
@@ -465,15 +481,18 @@ export function writeDoc(
 		after = body + '\n';
 	} else {
 		const heading = `## ${required(section, 'section')}`;
-		if (/^#{1,2} /m.test(body))
-			throw new WfError('a section body has no "# " or "## " headings; use "### " inside it');
+		if (topHeadings(body.split('\n')).includes(true))
+			throw new WfError(
+				'a section body has no "# " or "## " headings outside code fences; use "### " inside it'
+			);
 		const lines = before.replace(/\n+$/, '').split('\n');
-		const start = lines.indexOf(heading);
+		const heads = topHeadings(lines);
+		const start = lines.findIndex((l, k) => heads[k] && l === heading);
 		const block = [heading, '', body];
 		if (start === -1) {
 			lines.push('', ...block);
 		} else {
-			let end = lines.findIndex((l, k) => k > start && /^#{1,2} /.test(l));
+			let end = heads.findIndex((h, k) => k > start && h);
 			if (end === -1) end = lines.length;
 			const tail = end < lines.length ? [''] : [];
 			lines.splice(start, end - start, ...block, ...tail);

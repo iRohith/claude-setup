@@ -1,8 +1,8 @@
 # Handoff
 State: build
 Active: 1.12, 1.13
-Next: 1.12 and 1.13 wait on the owner: read global/CLAUDE.md and global/states.md, then re-run the demo prompt in a fresh session in scratch/temp/demo; then major 1 closes and major 2 starts
-Verify: pnpm --dir wf test passes 43; the demo session-start context is about 3,460 characters; ~/.claude/CLAUDE.md links to global/CLAUDE.md
-Don't: change the todo format; amend or force-push unless the owner says so; mark 1.12/1.13 done before the owner's sign-off and demo re-run; hand-edit todo, handoff or the plan docs; write PII into any file
-Open: owner: read global/CLAUDE.md and global/states.md; re-run the demo prompt in a fresh session in scratch/temp/demo
+Next: 2.1 wf state, then the rest of majors 2 to 6 in order; 1.12/1.13 stay in progress until the owner's check
+Verify: pnpm --dir wf test passes 43; pnpm --dir dashboard test passes 10
+Don't: change the todo format; stop while open items remain; amend or force-push unless the owner says so; hand-edit todo, handoff or the plan docs; write PII into any file
+Open: owner: read global/CLAUDE.md and global/states.md; re-run the demo prompt in a fresh session in scratch/temp/demo (proof for 1.12 and 1.13)
 Open: owner: may the four fixture screenshots scratch/images/1.5-*.png be deleted?

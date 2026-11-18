@@ -10,3 +10,4 @@
 8. Marked items done before they were verified → verify, run the checks, mark done, commit, push.
 9. Proved UI with screenshots of a test fixture → proof screenshots show the real app with real data.
 10. Wrote guidance that leaned on context other projects never see → every instruction lives in the global files, complete on its own.
+11. Stopped and waited for the owner while other todo items were open → put what the owner must do in the handoff and start the next item.

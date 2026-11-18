@@ -62,10 +62,14 @@ test('parse errors name the line', () => {
 	);
 });
 
-test('starting minors in two majors is rejected', () => {
+test('a minor waiting on the owner does not block starting the next one, in any major', () => {
 	const todo = parseTodo(sample);
 	start(todo, '0.2');
-	assert.throws(() => start(todo, '1.1'), /major 0 has minors in progress/);
+	start(todo, '1.1');
+	assert.deepEqual(
+		todo.majors.flatMap((m) => m.minors.filter((n) => n.mark === '~').map((n) => n.id)),
+		['0.2', '1.1']
+	);
 });
 
 test('several minors in one major may be in progress', () => {
@@ -111,17 +115,18 @@ test('implementation details need a started minor', () => {
 	assert.deepEqual(todo.majors[1].minors[0].impl, ['wrote the parser']);
 });
 
-test('next stays inside the active major, then points at majors that need attention', () => {
+test('next is the first open minor, so work in progress never stalls it', () => {
 	const todo = parseTodo(sample);
 	assert.equal(nextItem(todo)?.id, '0.2');
 	start(todo, '0.2');
-	assert.equal(nextItem(todo), undefined);
+	assert.equal(nextItem(todo)?.id, '1.1');
+	start(todo, '1.1');
+	assert.equal(nextItem(todo)?.id, '2');
 	done(todo, '0.2');
 	assert.equal(nextItem(todo)?.id, '0');
 	done(todo, '0');
-	assert.equal(nextItem(todo)?.id, '1.1');
-	start(todo, '1.1');
 	done(todo, '1.1');
+	assert.equal(nextItem(todo)?.id, '1');
 	done(todo, '1');
 	assert.equal(nextItem(todo)?.id, '2');
 });

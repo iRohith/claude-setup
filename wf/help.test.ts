@@ -33,7 +33,7 @@ test('every command has help with its usage, both as wf help <cmd> and <cmd> --h
 });
 
 test('help states the rules a command enforces', () => {
-	assert.match(wf('help', 'start').stdout, /Only one major may have minors in progress/);
+	assert.match(wf('help', 'start').stdout, /never wait idle: when an item waits on the owner/);
 	assert.match(wf('add', '--help').stdout, /Ids are assigned/);
 	assert.match(wf('help', 'done').stdout, /verify the proof, run the pre-commit checks/);
 });
