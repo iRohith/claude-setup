@@ -1,6 +1,6 @@
 # Todo
 
-## [ ] 0 · Setup
+## [x] 0 · Setup
 Deliverable: a fresh public `claude-setup` repo (public for this repo only; project repos stay private) with
 `work` and `main`, one `init` commit pushed after "setup done", and no PII or secrets anywhere in it.
 
@@ -50,6 +50,7 @@ Deliverable: a fresh public `claude-setup` repo (public for this repo only; proj
     each force-push is logged in `risks.md`
   - `main` gets created at `init` after the push. It is verified, and major 0 checked, in the first build
     commit, because `init` can't record its own branch
+  - verified: `git ls-remote --heads origin` shows `main` and `work` both at `5ad00ff` (`init`)
 
 ## [ ] 1 · Crude end to end: plan through `wf`, can't hand-edit state, a new session picks up
 Deliverable: in a throwaway project, a Claude session adds a major and two minors with `wf`, fails to edit
