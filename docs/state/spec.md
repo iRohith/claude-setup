@@ -14,7 +14,9 @@ The exact formats and commands. `implementation.md` says how they get built.
 | `<project>/scratch/{temp,refs,links,thirdparty}/` | logs and temp output; refs to the owner's own projects; links to collaborating projects; other cloned repos | no |
 | `claude-setup/global/learnings.md` | global learnings | yes |
 | `claude-setup/global/CLAUDE.md` | global guidance, linked to `~/.claude/CLAUDE.md` | yes |
-| `claude-setup/global/skills/` | vetted, modified skills | yes |
+| `claude-setup/global/rules/` | vetted, adapted always-on rules, each linked into `~/.claude/rules/` | yes |
+| `claude-setup/global/skills/` | vetted, adapted skills, each linked into `~/.claude/skills/` | yes |
+| `claude-setup/global/THIRD-PARTY.md` | each adapted file's upstream, commit, licence and changes | yes |
 | `claude-setup/local/projects.json` | registered projects and their admin flag, machine-local | no |
 claude-setup's repo is public. Every project repo is private.
 

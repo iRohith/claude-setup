@@ -167,3 +167,13 @@ Changed: spec 3.3 and section 4, implementation dashboard section, 4.4 proof
 Steer: The dashboard edits every section of steers, risks, memory and the plan docs, each checked by its file's rules before writing
 Why: the owner wants full control of the state records from the dashboard, logs included
 Changed: 4.6 scope covers steers and risks too
+
+## 2026-11-19 · affects 5, 5.1, 5.2
+Steer: Adopt ponytail and karpathy as adapted copies imported by global/CLAUDE.md, and only mattpocock's tdd, diagnosing-bugs and codebase-design; CLAUDE.md stays complete rather than near 80 lines
+Why: the owner chose the coding skills that don't duplicate wf, and completeness for downstream projects over a line count
+Changed: major 5 deliverable, 5.2 title, implementation Skills section
+
+## 2026-11-19 · affects 5.2, 5.4
+Steer: The adapted ponytail and karpathy rules load through ~/.claude/rules/ links made by wf install, not @imports
+Why: an @import inside the symlinked ~/.claude/CLAUDE.md may not resolve, and an absolute path would expose a home path in a public repo
+Changed: implementation layout and Skills, spec locations, 5.4 title

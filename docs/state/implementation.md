@@ -14,14 +14,18 @@ This is how claude-setup gets built, start to finish. The exact formats and comm
 - **The dashboard:** `dashboard/` is SvelteKit with pure runes and shadcn-svelte. Its server routes import
   `wf/core.ts`, so the dashboard and the CLI share every rule.
 - **Global files:**
-  - `global/CLAUDE.md`: global guidance, short;
+  - `global/CLAUDE.md`: global guidance, complete on its own;
+  - `global/states.md`: the per-state steps injected at session start;
   - `global/learnings.md`;
-  - `global/skills/`: the vetted skills.
+  - `global/rules/`: the vetted always-on rules (ponytail, karpathy);
+  - `global/skills/`: the vetted skills (tdd, diagnosing-bugs, codebase-design);
+  - `global/THIRD-PARTY.md`: where each adapted file came from and what changed.
 - **`wf install`** (`wf/install.ts`, TypeScript, not shell): the owner runs it once per machine, in a
   terminal; it refuses to run inside Claude Code.
   - **What it does:** links `~/.local/bin/wf` to `wf/cli.ts` and adds the hooks to
     `~/.claude/settings.json`, idempotently and keeping the existing settings. It also links
-    `~/.claude/CLAUDE.md` and the skills (added in 5.1 and 5.2).
+    `~/.claude/CLAUDE.md`, each file of `global/rules/` into `~/.claude/rules/` and each skill folder of
+    `global/skills/` into `~/.claude/skills/` (5.4), never replacing a file it didn't link.
   - **What it doesn't do:** copy anything into projects. `pnpm install` stays the owner's normal step
     after cloning.
 
@@ -84,13 +88,22 @@ The guidance exists from a project's first moment, before any work.
 
 ## Skills
 
-- **ponytail:** always loaded, by `@import` from `global/CLAUDE.md`.
-- **mattpocock and karpathy:** always loaded, copied into `global/skills/` and edited first, so the owner's
-  rules win wherever they conflict. For example: dead code removed at every micro commit, and only code that
-  is actively used now stays.
-- **impeccable:** on demand, as a skill for UI work.
+- **ponytail and karpathy:** always loaded. Adapted copies live in `global/rules/ponytail.md` and
+  `global/rules/karpathy.md`; `wf install` links each into `~/.claude/rules/`, which Claude Code loads in
+  every session like `CLAUDE.md`. Only their rules text is taken; ponytail's hooks, statusline, commands,
+  levels and plugin manifests are left out.
+- **mattpocock:** `tdd`, `diagnosing-bugs` and `codebase-design` only, copied into `global/skills/<name>/`
+  as skills (their `SKILL.md` and reference files, no scripts); `wf install` links each into
+  `~/.claude/skills/`. His tracker flows, GLOSSARY and ADR skills are left out: wf's todo and
+  `docs/state/` cover them.
+- **Adaptation:** every copy is edited so the owner's rules win where they conflict. For example: dead code
+  is removed at every micro commit, open items go to `wf defer` instead of "later" comments, and an
+  unanswered question goes into the handoff instead of stopping the work.
+- **impeccable:** on demand, as a skill for UI work (its markdown only; its launcher and scripts are never
+  run).
 - **Vetting:** each skill is checked before it's added, so nothing upstream runs hidden code: no hooks, no
-  binaries, no telemetry.
+  binaries, no telemetry. `global/THIRD-PARTY.md` names each upstream repo, the commit it was taken from,
+  its MIT licence, and what was changed.
 
 ## How the dashboard looks
 

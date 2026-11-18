@@ -190,6 +190,7 @@ Deliverable: the owner manages todos and learnings across all projects without t
   - +layout.svelte: an $effect interval calls invalidateAll every 2000 ms (REFRESH_MS, the spec's freshness rule) while the tab is visible, re-running the layout and page loads; component state such as open edit forms survives a refresh
   - e2e: the real wf CLI adds a major in the fixture project while the page stays open; the region appears within 3 s with no reload; the full suite passed 26 of 26 three runs in a row
   - fix found in 4.6: a refresh reset every field fed from page data, losing typed text; todo, learning and section fields now bind to local drafts copied when an editor opens, and refresh-probe.e2e.ts types into each kind of field across a refresh
+  - refresh scheduling: the next refresh is set only after invalidateAll finishes (setTimeout chain, not setInterval), found when a busy machine made refreshes pile up and stall pages
 - [x] 4.6 steers, risks, memory and the plan docs editable section by section in the dashboard, through wf's own writers
   Proof: screenshots from the real dashboard at desktop and mobile of a section edited and a malformed edit rejected; the file changes only by that section
   - started late: the work ran before wf start 4.6, which the impl check caught at the end; recorded as learning 10
@@ -199,16 +200,22 @@ Deliverable: the owner manages todos and learnings across all projects without t
   - tests: wf 71 (every section of the real steers, risks, memory, implementation and spec written back leaves them byte-identical; an edit changes only its lines; each file's rule refuses a broken edit); dashboard e2e 36; screenshots refuse a malformed steer on this repo with its hash unchanged and edit the throwaway's memory, restored in afterEach
 
 ## [~] 5 · Guidance and skills
-Deliverable: `global/CLAUDE.md` under about 80 lines, with the four skills installed as spec'd.
+Deliverable: global/CLAUDE.md complete and readable in one sitting, importing the adapted ponytail and karpathy rules; tdd, diagnosing-bugs and codebase-design installed as adapted skills
 
 - [ ] 5.1 fold the vetted skills' always-on parts into `global/CLAUDE.md` (with 5.2), keeping it short
   Proof: the owner reads the updated `global/CLAUDE.md` in one sitting and signs off
-- [~] 5.2 vet and adapt ponytail, mattpocock, karpathy; impeccable on demand
+- [x] 5.2 vet and adapt ponytail and karpathy (always-on rules) and mattpocock's tdd, diagnosing-bugs and codebase-design (skills)
   Proof: a diff of each adaptation against upstream; no hooks or binaries present
+  - impeccable vetted earlier: only SKILL.src.md and reference/*.md are usable; scripts/ (a launcher that downloads a binary and pings impeccable.style), agents/ and hermes-plugin/ are excluded; installing it as a skill moved to 5.5
+  - cloned shallow into scratch/thirdparty (refs had been emptied): ponytail 96608e0, andrej-karpathy-skills 2c60614, mattpocock/skills 5863806; vetted: karpathy is markdown only; ponytail ships JS hooks, a statusline, commands and many plugin manifests; mattpocock ships shell scripts; only markdown is taken
+  - global/rules/ponytail.md and karpathy.md (always-on, to be linked into ~/.claude/rules/ by 5.4) and global/skills/{tdd,diagnosing-bugs,codebase-design}/, copied verbatim then edited so the owner's rules win; global/THIRD-PARTY.md has each upstream, commit, what was left out, what changed, and the MIT texts
+  - proof: diff -ru of each copy against its upstream path shows only the listed changes; every file under global/ is mode 644 markdown, with no hooks, scripts or binaries
 - [ ] 5.3 seed global learnings from the three failed attempts
   Proof: `wf status` shows them; under the budget
-- [ ] 5.4 `wf install` also links the vetted skills into claude-setup (the CLAUDE.md link is 1.12)
+- [~] 5.4 wf install also links global/rules/ files into ~/.claude/rules/ and global/skills/ folders into ~/.claude/skills/ (the CLAUDE.md link is 1.12)
   Proof: on a fresh HOME, install links the skills into claude-setup; a second run changes nothing
+- [ ] 5.5 impeccable installed as a launcher-free skill in global/skills/impeccable: its router and design references, Setup rewritten for the no-launcher path, live mode, detect, hooks, doctor and pin left out
+  Proof: a diff against upstream with no launcher call left; in a fresh session /impeccable loads and a UI task follows its craft floor; Apache-2.0 notice and changes in THIRD-PARTY.md
 
 ## [ ] 6 · Real use
 Deliverable: one real project taken from setup through its first major task with this setup, and the friction recorded as learnings.
