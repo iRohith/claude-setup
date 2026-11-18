@@ -258,6 +258,62 @@ test('steers and assumptions are recorded as summaries and listed by wf show', (
 	assert.match(wf('steer', 'chatter', '--log', 'false').out, /not logged/);
 });
 
+test('risk needs every field, names the missing ones, and logs the entry', () => {
+	const missing = wf(
+		'risk',
+		'--item',
+		'0.2',
+		'--action',
+		'rm old.json',
+		'--why',
+		'replaced',
+		'--level',
+		'low',
+		'--surface',
+		'one file'
+	);
+	assert.equal(missing.code, 1);
+	assert.match(missing.err, /missing --recover; the action must not run/);
+	assert.match(wf('risk').err, /missing --item, --action, --why, --level, --surface, --recover/);
+	assert.match(
+		wf(
+			'risk',
+			'--item',
+			'0.2',
+			'--action',
+			'a',
+			'--why',
+			'b',
+			'--level',
+			'huge',
+			'--surface',
+			'c',
+			'--recover',
+			'd'
+		).err,
+		/--level is one of low, medium, high/
+	);
+	const ok = wf(
+		'risk',
+		'--item',
+		'0.2',
+		'--action',
+		'rm old.json',
+		'--why',
+		'replaced by notes.json',
+		'--level',
+		'low',
+		'--surface',
+		'one file',
+		'--recover',
+		'git checkout old.json'
+	);
+	assert.equal(ok.code, 0, ok.err);
+	assert.match(ok.out, /^\+ ## \d{4}-\d{2}-\d{2} · 0\.2 · low$/m);
+	assert.match(ok.out, /^\+ Recover: git checkout old\.json$/m);
+	assert.match(ok.out, /the action may run now/);
+});
+
 test('commands outside a project explain what to do', () => {
 	// Everything under scratch/ sits inside this repo, so run from / (read-only) instead.
 	const r = spawnSync(process.execPath, [cli, 'status'], { cwd: '/', encoding: 'utf8' });

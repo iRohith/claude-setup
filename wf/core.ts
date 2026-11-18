@@ -449,6 +449,7 @@ const WF_OWNED: Record<string, string> = {
 	'handoff.md': 'wf handoff',
 	'learnings.md': 'wf learn',
 	'steers.md': 'wf steer or wf assume',
+	'risks.md': 'wf risk',
 	...Object.fromEntries(DOC_NAMES.map((d) => [`${d}.md`, `wf doc ${d}`]))
 };
 
@@ -668,6 +669,51 @@ export function steersFor(root: string, id: string): Steer[] {
 	return parseSteers(readFileSync(path, 'utf8')).filter(
 		(s) => s.affects.includes(id) || s.affects.includes(major)
 	);
+}
+
+// ---------- risks ----------
+
+export interface Risk {
+	item: string;
+	action: string;
+	why: string;
+	level: string;
+	surface: string;
+	recover: string;
+}
+
+const RISK_LEVELS = ['low', 'medium', 'high'];
+
+/**
+ * Logs a high-risk action before it runs. Every field is required; a request missing any of them is
+ * rejected, naming each one, and the action must not run.
+ */
+export function addRisk(root: string, r: Partial<Risk>): { before: string; after: string } {
+	const fields: (keyof Risk)[] = ['item', 'action', 'why', 'level', 'surface', 'recover'];
+	const missing = fields.filter((f) => !r[f]?.trim());
+	if (missing.length)
+		throw new WfError(
+			`missing ${missing.map((f) => `--${f}`).join(', ')}; the action must not run until every field is given`
+		);
+	const risk = r as Risk;
+	if (!RISK_LEVELS.includes(risk.level))
+		throw new WfError(`--level is one of ${RISK_LEVELS.join(', ')}, got ${risk.level}`);
+	const todo = readTodo(root);
+	if (isMinorId(risk.item)) findMinor(todo, risk.item);
+	else findMajor(todo, risk.item);
+	const path = statePath(root, 'risks.md');
+	const before = existsSync(path) ? readFileSync(path, 'utf8') : '# Risks\n';
+	const date = new Date().toLocaleDateString('sv');
+	const entry = [
+		`## ${date} · ${risk.item} · ${risk.level}`,
+		`Action: ${escapeMd(required(risk.action, 'action'))}`,
+		`Why: ${escapeMd(required(risk.why, 'why'))}`,
+		`Surface: ${escapeMd(required(risk.surface, 'surface'))}`,
+		`Recover: ${escapeMd(required(risk.recover, 'recover'))}`
+	];
+	const after = `${before.replace(/\n+$/, '')}\n\n${entry.join('\n')}\n`;
+	writeAtomic(path, after);
+	return { before, after };
 }
 
 // ---------- session context and learnings ----------

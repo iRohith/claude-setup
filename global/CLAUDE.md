@@ -23,7 +23,7 @@ dashboard, so re-read it (`wf status`) instead of assuming it hasn't changed.
 | `memory.md` | invariants, contracts, pitfalls (dated, with cause), anti-patterns, deferred items | directly |
 | `learnings.md` | short numbered lessons: what went wrong → what to do instead | `wf learn` |
 | `steers.md` | the owner's steers, summarised, with why they count | `wf steer`, `wf assume` |
-| `risks.md` | high-risk actions, logged before they run | directly |
+| `risks.md` | high-risk actions, logged before they run | `wf risk` |
 
 Write `wf doc` text in `scratch/temp/` first, then `wf doc <name> --from <file>` (whole document, starting
 with `# <Title>`) or `--section "<heading>"` (one `##` section). Keep `<` inside backticks in documents.
@@ -118,8 +118,9 @@ When every minor of a major is done and its deliverable is verified, `wf done <m
 ## High-risk actions
 - Deleting files, branches or repos, schema migrations, force-pushes and anything hard to undo happen only
   when the owner explicitly asks.
-- Log each in `risks.md` before running it: the exact action, why, risk level (low, medium, high), what it
-  touches, and how to recover or roll back. If any of these is missing, don't run it.
+- Log each with `wf risk` before running it: the todo item, the exact action, why, risk level (low,
+  medium, high), what it touches, and how to recover or roll back. wf rejects a log missing any of them;
+  run the action only after wf accepts it.
 - Docker images are the one thing you may delete freely.
 
 ## Code

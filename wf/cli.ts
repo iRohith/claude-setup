@@ -15,6 +15,11 @@ const OPTIONS = {
 	affects: { type: 'string' },
 	changed: { type: 'string' },
 	log: { type: 'string' },
+	item: { type: 'string' },
+	action: { type: 'string' },
+	level: { type: 'string' },
+	surface: { type: 'string' },
+	recover: { type: 'string' },
 	title: { type: 'string' },
 	from: { type: 'string' },
 	section: { type: 'string' },
@@ -128,6 +133,21 @@ function main(argv: string[]): void {
 					changed: values.changed
 				});
 				printChanges(before, after);
+			});
+		}
+		case 'risk': {
+			const root = wf.findRoot(process.cwd());
+			return wf.withLock(root, () => {
+				const { before, after } = wf.addRisk(root, {
+					item: values.item,
+					action: values.action,
+					why: values.why,
+					level: values.level,
+					surface: values.surface,
+					recover: values.recover
+				});
+				printChanges(before, after);
+				console.log('\nlogged; the action may run now');
 			});
 		}
 		case 'learn': {

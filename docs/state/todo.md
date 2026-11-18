@@ -141,8 +141,9 @@ Deliverable: every record type from spec section 3 written and queried through `
 - [x] 3.2 steers and assumptions with `--why` and `--log`
   Proof: `wf show <id>` lists the steer that changed it
   - core `parseSteers`, `addSteer` (ids must exist or be all; steers need --changed; summaries escaped), `steersFor` (an item or its major); `wf steer ... --log true|false` (false records nothing), `wf assume`; `wf show` lists an item's steers; steers.md joined the deny map
-- [ ] 3.3 `wf risk` with all four fields required
+- [x] 3.3 `wf risk` with all four fields required
   Proof: a request missing `--recover` is rejected naming the field
+  - core `addRisk`: item, action, why, level, surface and recover all required, every missing one named; level is low, medium or high; item must exist; `wf risk` prints the entry and that the action may run; risks.md joined the deny map
 - [ ] 3.4 memory sections, `wf find`, `wf get`
   Proof: `wf find` hits across files; `wf get` prints one section
 - [ ] 3.5 `wf env set` and `wf env keys`; `.env` read, print and direct Edit/Write denied

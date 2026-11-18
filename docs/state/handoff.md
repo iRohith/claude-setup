@@ -1,9 +1,9 @@
 # Handoff
 State: build
 Active: 1.12, 1.13, 2.2, 2.3, 2.4, 3.1
-Next: 3.3 wf risk, then 3.4, 3.5, 3.6, 3.7, then majors 4 to 6; 1.12, 1.13, 2.2, 2.3, 2.4, 3.1 wait on the owner's session
-Verify: pnpm --dir wf test passes 55; pnpm --dir dashboard test passes 12; wf show 2 lists its steers
-Don't: change the todo format; stop while open items remain; put the owner's words verbatim in any record; touch admin mode; amend or force-push unless the owner says so; hand-edit todo, handoff, steers, learnings or the plan docs; write PII into any file
+Next: 3.4 memory sections, wf find, wf get; then 3.5, 3.6, 3.7, then majors 4 to 6; 1.12, 1.13, 2.2, 2.3, 2.4, 3.1 wait on the owner's session
+Verify: pnpm --dir wf test passes 56; pnpm --dir dashboard test passes 12
+Don't: change the todo format; stop while open items remain; put the owner's words verbatim in any record; touch admin mode; amend or force-push unless the owner says so; hand-edit todo, handoff, steers, learnings, risks or the plan docs; write PII into any file
 Open: owner: rerun wf install, then one fresh demo session: the old demo prompt (1.12, 1.13); wf state discuss and an Edit of a project file, and git push in setup before and after typing setup done (2.2); ask it to turn admin on, then turn it on yourself and ask it to edit todo.md (2.3); ask it to run claude -p and to write into scratch/links (2.4); add a learning, /compact, and ask for it (3.1)
 Open: owner: read global/CLAUDE.md and global/states.md
 Open: owner: old verbatim steers are still in this public repo's git history; removing them needs a history rewrite and force-push, approve or not?

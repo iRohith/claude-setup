@@ -131,6 +131,16 @@ export const HELP: Record<string, Help> = {
 		summary: 'record a reversible choice made while the owner is away, for their review',
 		details: ['Take the most reversible option, do it, then record it here.']
 	},
+	risk: {
+		usage: [
+			'wf risk --item <id> --action "<exact command or change>" --why "<reason>" --level low|medium|high --surface "<what it touches>" --recover "<how to undo>"'
+		],
+		summary: 'log a high-risk action before it runs; any missing field means it must not run',
+		details: [
+			'High-risk: deleting files, branches or repos, schema migrations, force-pushes, anything hard to undo.',
+			'They run only when the owner explicitly asks. Log first; run only after wf accepts the log.'
+		]
+	},
 	learn: {
 		usage: ['wf learn "<what went wrong> → <what to do instead>" [--global]'],
 		summary: 'record a lesson: this project, or with --global every project',
