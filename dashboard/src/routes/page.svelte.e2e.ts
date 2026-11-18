@@ -1,52 +1,66 @@
 // Behaviour checks against the fixture registry built by e2e.setup.ts.
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
-test('projects page lists the project with state, active and next', async ({ page }) => {
-	await page.goto('/');
-	await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
-	const card = page.getByRole('listitem').filter({ hasText: 'notes' });
-	await expect(card.getByRole('link', { name: 'notes' })).toBeVisible();
-	await expect(card).toContainText('setup');
-	await expect(card).toContainText('0.1 notes store');
-	await expect(card).toContainText('0.2 notes page');
-});
+/** On mobile the projects sidebar is a sheet behind the trigger. */
+async function sidebar(page: Page, info: TestInfo) {
+	if (info.project.name === 'mobile') {
+		await page.waitForLoadState('networkidle');
+		await page.getByRole('button', { name: 'Toggle Sidebar' }).click();
+	}
+	return page.getByRole('navigation', { name: 'Projects' });
+}
 
-test('todo page shows majors, minors, proofs and details', async ({ page }) => {
+async function openNotes(page: Page) {
 	await page.goto('/');
 	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
 	await expect(page.getByRole('heading', { name: 'notes', level: 1 })).toBeVisible();
+	// A click before hydration finishes gets reset when Svelte applies state.
+	await page.waitForLoadState('networkidle');
+}
+
+test('projects page lists the project with state, active and next', async ({ page }) => {
+	await page.goto('/');
+	await expect(page.getByRole('heading', { name: 'Projects', level: 1 })).toBeVisible();
+	const row = page.getByRole('main').getByRole('listitem').filter({ hasText: 'notes' });
+	await expect(row.getByRole('link', { name: 'notes' })).toBeVisible();
+	await expect(row).toContainText('setup');
+	await expect(row).toContainText('0.1 notes store');
+	await expect(row).toContainText('0.2 notes page');
+	await expect(row.getByRole('img', { name: '1 of 3 done, 1 in progress' })).toBeVisible();
+});
+
+test('todo page shows majors, minors, proofs and details', async ({ page }) => {
+	await openNotes(page);
 	await expect(page.getByText('Deliverable: a page that lists notes')).toBeVisible();
 	await expect(page.getByText('Proof: a unit test saves and reloads two notes')).toBeVisible();
-	await expect(page.getByText('1 · Sharing')).toBeVisible();
+	await expect(page.getByRole('heading', { name: '1 Sharing', level: 2 })).toBeVisible();
+	await expect(
+		page.getByRole('region', { name: 'Crude end to end' }).getByRole('img')
+	).toHaveAccessibleName('1 of 3 done, 1 in progress');
 });
 
 test('code spans render as code, not backticks', async ({ page }) => {
-	await page.goto('/');
-	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
+	await openNotes(page);
 	await expect(page.locator('code', { hasText: 'notes.json' })).toBeVisible();
 	await expect(page.getByText('`notes.json`')).toHaveCount(0);
 });
 
 test('details stay open for work in progress and fold for finished work', async ({ page }) => {
-	await page.goto('/');
-	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
+	await openNotes(page);
 	await expect(page.locator('code', { hasText: 'notes.json' })).toBeVisible();
-	const done = page.getByRole('listitem').filter({ hasText: '0.3 setup' });
+	const done = page.getByRole('main').getByRole('listitem').filter({ hasText: '0.3 setup' });
 	await expect(done.getByText('scaffolded')).toBeHidden();
-	// A click before hydration finishes gets reset when Svelte applies `open`.
-	await page.waitForLoadState('networkidle');
 	await done.getByText('1 implementation detail').click();
 	await expect(done.getByText('scaffolded')).toBeVisible();
 });
 
 test('the owner turns admin mode on and off from the project page', async ({ page }) => {
-	await page.goto('/');
-	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
-	await page.waitForLoadState('networkidle');
+	await openNotes(page);
 	await page.getByRole('button', { name: 'Turn admin mode on' }).click();
 	await expect(page.getByText('Admin mode is on.')).toBeVisible();
 	await page.reload();
 	await expect(page.getByText('Admin mode is on.')).toBeVisible();
+	await page.waitForLoadState('networkidle');
 	await page.getByRole('button', { name: 'Turn off' }).click();
 	await expect(page.getByRole('button', { name: 'Turn admin mode on' })).toBeVisible();
 });
@@ -55,17 +69,16 @@ test('the owner adds, edits, checks and reopens items, with rule errors inline',
 	page
 }, info) => {
 	const title = `Edits on ${info.project.name}`;
-	await page.goto('/');
-	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
-	await page.waitForLoadState('networkidle');
+	await openNotes(page);
 
 	await page.getByText('Add a major').click();
 	await page.getByLabel('New major title').fill(title);
 	await page.getByLabel('New major deliverable').fill('a page the owner can edit');
 	await page.getByRole('button', { name: 'Add major' }).click();
-	const major = page.locator('main > details').filter({ hasText: title });
+	const major = page.getByRole('region', { name: title });
 	await expect(major).toBeVisible();
-	const id = (await major.locator('summary').first().textContent())?.match(/(\d+) ·/)?.[1];
+	const heading = await major.getByRole('heading', { level: 2 }).textContent();
+	const id = heading?.trim().match(/^(\d+)/)?.[1];
 	expect(id).toBeTruthy();
 
 	await major.getByText(`Add a minor to ${id}`).click();
@@ -76,36 +89,40 @@ test('the owner adds, edits, checks and reopens items, with rule errors inline',
 	await major.getByLabel(`New minor proof for ${id}`).fill('a screenshot shows it');
 	await major.getByRole('button', { name: 'Add minor' }).click();
 	const minor = major.getByRole('listitem').filter({ hasText: `${id}.1 first edit` });
-	await expect(minor).toContainText('open');
+	const checkbox = minor.getByRole('checkbox', { name: `Done ${id}.1` });
+	await expect(checkbox).not.toBeChecked();
 
 	await minor.getByRole('button', { name: `Start ${id}.1` }).click();
 	await expect(minor).toContainText('in progress');
-	await minor.getByRole('button', { name: `Check ${id}.1` }).click();
-	await expect(minor).toContainText('done');
-	await minor.getByRole('button', { name: `Reopen ${id}.1` }).click();
+	await checkbox.click();
+	await expect(checkbox).toBeChecked();
+	await expect(major.getByRole('button', { name: `Mark done ${id}` })).toBeVisible();
+	await checkbox.click();
+	await expect(checkbox).not.toBeChecked();
 	await expect(minor.getByRole('button', { name: `Start ${id}.1` })).toBeVisible();
 
-	await minor.getByText('Edit', { exact: true }).click();
+	await minor.getByRole('button', { name: `Edit ${id}.1` }).click();
 	await minor.getByLabel(`Title of ${id}.1`).fill('renamed edit');
 	await minor.getByRole('button', { name: 'Save' }).click();
 	await expect(
 		major.getByRole('listitem').filter({ hasText: `${id}.1 renamed edit` })
 	).toBeVisible();
+	await expect(major.getByLabel(`Title of ${id}.1`)).toBeHidden();
 });
 
-test('tabs lead to every project and to Global', async ({ page }) => {
+test('the sidebar leads to every project and to Global', async ({ page }, info) => {
 	await page.goto('/');
-	const tabs = page.getByRole('navigation', { name: 'Projects' });
-	await expect(tabs.getByRole('link', { name: 'All' })).toBeVisible();
-	await tabs.getByRole('link', { name: 'notes' }).click();
+	let nav = await sidebar(page, info);
+	await expect(nav.getByRole('link', { name: 'All projects' })).toBeVisible();
+	await nav.getByRole('link', { name: 'notes' }).click();
 	await expect(page.getByRole('heading', { name: 'notes', level: 1 })).toBeVisible();
-	await tabs.getByRole('link', { name: 'Global' }).click();
+	nav = await sidebar(page, info);
+	await nav.getByRole('link', { name: 'Global' }).click();
 	await expect(page.getByRole('heading', { name: 'Global', level: 1 })).toBeVisible();
 });
 
 test('each view shows its state file, and docs switch between documents', async ({ page }) => {
-	await page.goto('/');
-	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
+	await openNotes(page);
 	const views = page.getByRole('navigation', { name: 'Views' });
 	await views.getByRole('link', { name: 'memory' }).click();
 	await expect(page.getByRole('heading', { name: 'Invariants' })).toBeVisible();
@@ -119,26 +136,22 @@ test('each view shows its state file, and docs switch between documents', async 
 	await expect(page.getByText('Deliverable: a page that lists notes')).toBeVisible();
 });
 
+async function switchState(page: Page, state: string) {
+	await openNotes(page);
+	await page.getByRole('combobox', { name: 'State' }).click();
+	await page.getByRole('option', { name: state }).click();
+	await Promise.all([
+		page.waitForResponse((r) => r.url().includes('/state')),
+		page.getByRole('button', { name: 'Switch' }).click()
+	]);
+	await page.goto('/');
+	const row = page.getByRole('main').getByRole('listitem').filter({ hasText: 'notes' });
+	await expect(row).toContainText(state);
+}
+
 test('the owner switches the project state', async ({ page }) => {
-	await page.goto('/');
-	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
-	await page.waitForLoadState('networkidle');
-	await page.getByLabel('State').selectOption('discuss');
-	await Promise.all([
-		page.waitForResponse((r) => r.url().includes('/state')),
-		page.getByRole('button', { name: 'Switch' }).click()
-	]);
-	await page.goto('/');
-	await expect(page.getByRole('listitem').filter({ hasText: 'notes' })).toContainText('discuss');
-	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
-	await page.waitForLoadState('networkidle');
-	await page.getByLabel('State').selectOption('setup');
-	await Promise.all([
-		page.waitForResponse((r) => r.url().includes('/state')),
-		page.getByRole('button', { name: 'Switch' }).click()
-	]);
-	await page.goto('/');
-	await expect(page.getByRole('listitem').filter({ hasText: 'notes' })).toContainText('setup');
+	await switchState(page, 'discuss');
+	await switchState(page, 'setup');
 });
 
 test('an unregistered path is a 404', async ({ page }) => {

@@ -89,3 +89,23 @@ The guidance exists from a project's first moment, before any work.
 - **impeccable:** on demand, as a skill for UI work.
 - **Vetting:** each skill is checked before it's added, so nothing upstream runs hidden code: no hooks, no
   binaries, no telemetry.
+
+## How the dashboard looks
+
+Direction for the dashboard, set with the UI skill (impeccable, Operate mode, code-led). The world lends type,
+palette, density and one signature move; layout and controls stay standard shadcn-svelte.
+
+- **Scene:** the owner at a desk through long sessions, glancing between the Claude Code terminal and the
+  dashboard on a second screen, often in the evening. Dark, matching the terminal and editor around it.
+- **Palette:** ink-navy ground, a deeper layer for the sidebar, raised panels a step lighter. Iris accent for
+  primary actions and selection only. State colours carry meaning: amber in progress, jade done, coral errors,
+  muted slate open. Secondary text is tinted from the ground, never flat grey.
+- **Type:** Geist, one family, fixed rem scale (ratio about 1.15). Geist Mono only for data: ids, paths, hashes.
+- **Signature move:** a major's progress drawn as a segmented track, one segment per minor in its state colour,
+  shown on each major and on each project in the sidebar. It is the data itself, not decoration.
+- **Shell:** sidebar with projects (state, active-major track) and Global; it becomes a sheet on mobile. Project
+  header: name, path, state switch, admin control. View tabs: Todo, Steers, Risks, Memory, Learnings, Docs.
+- **Todo:** majors as sections with id, title, state, track and actions; minors as rows with a done checkbox,
+  Start, and an expandable body for proof, implementation details and editing. Finished majors fold.
+- **Browser surfaces:** selection, caret, focus rings, scrollbars and tabular numerals themed from the palette.
+- **Icons:** Lucide, one stroke weight. No glyph or emoji icons, no gradient text, no glow halos.

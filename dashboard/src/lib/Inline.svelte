@@ -4,6 +4,6 @@
 	const parts = $derived(text.split('`'));
 </script>
 
-{#each parts as part, i (i)}{#if i % 2}<code class="rounded bg-neutral-100 px-1 text-[0.9em]"
-			>{part}</code
+{#each parts as part, i (i)}{#if i % 2}<code
+			class="rounded bg-muted px-1 py-px font-mono text-[0.85em] text-foreground">{part}</code
 		>{:else}{part}{/if}{/each}

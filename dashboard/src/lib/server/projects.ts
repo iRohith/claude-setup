@@ -4,13 +4,25 @@ import { basename } from 'node:path';
 import { marked } from 'marked';
 import * as wf from 'wf';
 
-export interface ProjectSummary {
+/** A major's progress: one mark per minor, drawn as the segmented track. */
+export interface Track {
+	id: string;
+	title: string;
+	marks: wf.Mark[];
+}
+
+/** What the sidebar shows for each project. */
+export interface ProjectTab {
 	root: string;
 	name: string;
 	state?: wf.State;
+	admin: boolean;
+	current?: Track;
+}
+
+export interface ProjectSummary extends ProjectTab {
 	active: string[];
 	next?: string;
-	admin: boolean;
 	error?: string;
 }
 
@@ -26,8 +38,26 @@ export const DOCS = wf.DOC_NAMES;
 
 export const registeredRoots = (): string[] => Object.keys(wf.readRegistry()).sort();
 
-/** For the tab bar: every registered project. */
-export const tabs = () => registeredRoots().map((root) => ({ root, name: basename(root) }));
+/** The major a project is on: the first unfinished one, else the last. */
+function currentMajor(todo: wf.Todo): Track | undefined {
+	const major = todo.majors.find((m) => m.mark !== 'x') ?? todo.majors.at(-1);
+	return major && { id: major.id, title: major.title, marks: major.minors.map((n) => n.mark) };
+}
+
+/** For the sidebar: every registered project, with its state and current major. */
+export const tabs = (): ProjectTab[] =>
+	registeredRoots().map((root) => {
+		const tab = { root, name: basename(root), admin: wf.isAdmin(root) };
+		try {
+			return {
+				...tab,
+				state: wf.readHandoff(root).state,
+				current: currentMajor(wf.readTodo(root))
+			};
+		} catch {
+			return tab;
+		}
+	});
 
 export function summarize(root: string): ProjectSummary {
 	const base = { root, name: basename(root), active: [], admin: wf.isAdmin(root) };
@@ -37,6 +67,7 @@ export function summarize(root: string): ProjectSummary {
 		return {
 			...base,
 			state: wf.readHandoff(root).state,
+			current: currentMajor(todo),
 			active: wf.activeMinors(todo).map((n) => `${n.id} ${n.title}`),
 			next: next && `${next.id} ${next.title}`
 		};

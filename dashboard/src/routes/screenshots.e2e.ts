@@ -5,10 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 const images = fileURLToPath(new URL('../../../scratch/images/', import.meta.url));
 
-async function save(page: Page, info: TestInfo, name: string): Promise<void> {
+async function save(page: Page, info: TestInfo, name: string, fullPage = true): Promise<void> {
 	await page.screenshot({
 		path: `${images}${process.env.ITEM}-${name}-${info.project.name}.png`,
-		fullPage: true
+		fullPage
 	});
 }
 
@@ -19,7 +19,18 @@ test('real dashboard pages', async ({ page }, info) => {
 	expect(home?.ok()).toBe(true);
 	const base = page.url();
 	await save(page, info, 'projects');
-	const links = page.getByRole('listitem').getByRole('link');
+	if (info.project.name === 'mobile') {
+		await page.waitForLoadState('networkidle');
+		await page.getByRole('button', { name: 'Toggle Sidebar' }).click();
+		await expect(page.getByRole('navigation', { name: 'Projects' })).toBeVisible();
+		// The sheet slides in; shoot it once it has settled, as the owner sees it on the phone.
+		await page.waitForFunction(() =>
+			document.getAnimations().every((a) => a.playState !== 'running')
+		);
+		await save(page, info, 'sidebar', false);
+		await page.keyboard.press('Escape');
+	}
+	const links = page.getByRole('main').getByRole('listitem').getByRole('link');
 	const targets = await Promise.all(
 		(await links.all()).map(async (l) => ({
 			name: (await l.textContent())?.trim() ?? '',

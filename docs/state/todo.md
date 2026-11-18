@@ -169,8 +169,15 @@ Deliverable: the owner manages todos and learnings across all projects without t
   Proof: screenshots across two projects
   - a tab bar in the layout (All, one tab per registered project, Global); project views Todo, Steers, Risks, Memory, Learnings, Docs via ?view= links, the five plan docs via ?doc=, rendered with marked; a state switcher form action through core setState; /global shows the global learnings
   - proof: e2e at both sizes covers tabs, every view, doc switching and the state switch (waiting for the action's response); real-dashboard screenshots `scratch/images/4.2-*` across claude-setup, demo and a third registered project; the look is replaced in 4.3
-- [ ] 4.3 redesign the dashboard with the UI skill (impeccable) loaded: shadcn-svelte components, a beautiful dark theme, designed from how the owner actually uses it, mobile-friendly
+- [~] 4.3 redesign the dashboard with the UI skill (impeccable) loaded: shadcn-svelte components, a beautiful dark theme, designed from how the owner actually uses it, mobile-friendly
   Proof: real-dashboard screenshots at desktop and mobile of every page and view, reviewed against the skill's checklist and by the owner
+  - shadcn-svelte 1.8.1, nova preset, components.json with #lib aliases; bits-ui, cn, tw-animate-css and shadcn-svelte/tailwind.css (its data-state variants); init's CSS step written by hand because its prompt needs a TTY
+  - layout.css: dark-only tokens (ink-navy ground, deeper sidebar, raised cards, iris primary, amber/jade/slate/coral state colours), Geist and Geist Mono from fontsource, themed selection, caret, scrollbars, tabular numerals; .md prose on the same tokens
+  - AppSidebar: shadcn Sidebar listing each project with its state and current-major Track, Global at the foot, a sheet on mobile that closes after navigation; projects.ts tabs() and currentMajor()
+  - Track.svelte draws a major's minors as segments in state colours with a spoken label; MarkBadge shows item states; Inline code on the theme
+  - project page: shadcn Select state switch, admin Alert, link view tabs; majors as card sections with fold, status, track, actions and inline edit; minors with a done checkbox (check or reopen), id column, proof, folding details, inline edit; a form's item field places its error
+  - home: one bordered list of project rows with state, active, next and track; dashed empty states that teach, on every list; favicon drawn as a three-segment track
+  - e2e locators moved to regions, checkboxes and the shadcn select, the sidebar opened on mobile; screenshots add the mobile sidebar once its animation settles; eslint lets shadcn primitives take already-resolved hrefs
 - [ ] 4.4 edit project and global learnings in the dashboard, through the same core rules and size budget
   Proof: screenshots of a learning added and an over-budget one rejected, from the real dashboard at desktop and mobile
 

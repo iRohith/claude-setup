@@ -45,7 +45,9 @@ async function change(
 			wf.writeTodo(root, todo);
 		});
 	} catch (e) {
-		if (e instanceof wf.WfError) return fail(400, { error: e.message, item: field(form, 'id') });
+		// A form names where its error shows with `item`; otherwise it shows at the item it changes.
+		if (e instanceof wf.WfError)
+			return fail(400, { error: e.message, item: field(form, 'item') || field(form, 'id') });
 		throw e;
 	}
 }
