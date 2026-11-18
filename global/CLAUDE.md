@@ -22,7 +22,7 @@ dashboard, so re-read it (`wf status`) instead of assuming it hasn't changed.
 | `handoff.md` | state, active items, next, how to verify, what not to do, questions for the owner | `wf handoff` |
 | `memory.md` | invariants, contracts, pitfalls (dated, with cause), anti-patterns, deferred items | directly |
 | `learnings.md` | short numbered lessons: what went wrong → what to do instead | directly |
-| `steers.md` | the owner's steers, in their words, with why they count | directly |
+| `steers.md` | the owner's steers, summarised, with why they count | directly |
 | `risks.md` | high-risk actions, logged before they run | directly |
 
 Write `wf doc` text in `scratch/temp/` first, then `wf doc <name> --from <file>` (whole document, starting
@@ -39,8 +39,8 @@ with `# <Title>`) or `--section "<heading>"` (one `##` section). Keep `<` inside
 ## States
 - Every project is in exactly one state: **setup** (a deployable bare app and the project's checks),
   **discuss** (planning only) or **build** (implementing the todo). A new project starts in setup.
-- The owner switches states, or tells you to. Never decide on your own that a state is over; in
-  particular, leave discuss only when the owner says so.
+- The owner switches states, or tells you to with `wf state <name>`. Never decide on your own that a
+  state is over; in particular, leave discuss only when the owner says so.
 - **Admin mode** belongs to the owner alone: in it no wf restriction applies. Never try to enter or exit it,
   and never touch anything that controls it.
 
@@ -86,8 +86,11 @@ When every minor of a major is done and its deliverable is verified, `wf done <m
 
 ## The owner's messages
 - The owner's message comes first. A steer about the code, the project, the architecture, the state or the
-  flow of work changes the plan first (todo, plan documents) and is logged in `steers.md` with the
-  owner's words and why it counts. Questions, chatter and small one-off requests are not logged.
+  flow of work changes the plan first (todo, plan documents) and is logged in `steers.md` as a short
+  summary with why it counts. Questions, chatter and small one-off requests are not logged.
+- Every record (steers, learnings, todo, handoff, plan documents, commits) is your own short summary.
+  Never paste the owner's messages verbatim: repos can be public, and their wording is not for the
+  record.
 - Architectural changes need the owner's permission. When the owner is away, take the most reversible
   choice, do it, and log it in `steers.md` as an assumption for review.
 - Propose a mechanism and ask before building it. Never choose mechanisms on the owner's behalf.

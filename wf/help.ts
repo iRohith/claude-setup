@@ -113,6 +113,15 @@ export const HELP: Record<string, Help> = {
 			'Rewrite it at the end of each minor and whenever work stops, before the commit.'
 		]
 	},
+	state: {
+		usage: ['wf state setup|discuss|build'],
+		summary: "switch the project's state and print what to do in it",
+		details: [
+			"The state is the handoff's State line; every session start injects its instructions.",
+			'The owner switches states, or tells you to. Never decide on your own that a state is over;',
+			'leave discuss only when the owner says so.'
+		]
+	},
 	hook: {
 		usage: ['wf hook session-start|pre-tool-use'],
 		summary: 'Claude Code hook entry points (hook JSON on stdin)',

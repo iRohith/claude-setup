@@ -60,6 +60,21 @@ test('session start injects global learnings, project learnings and the handoff'
 	assert.doesNotMatch(ctx, /The project is in build/);
 });
 
+test('after wf state, the next session starts with the new state instructions', () => {
+	spawnSync(process.execPath, [cli, 'state', 'build'], {
+		cwd: project,
+		env: { ...process.env, WF_HOME: home }
+	});
+	const ctx: string = hook('session-start', { source: 'startup', cwd: project }).hookSpecificOutput
+		.additionalContext;
+	assert.match(ctx, /Instructions for the build state \(from wf\):\nThe project is in build/);
+	assert.match(ctx, /State: build/);
+	spawnSync(process.execPath, [cli, 'state', 'setup'], {
+		cwd: project,
+		env: { ...process.env, WF_HOME: home }
+	});
+});
+
 test('outside a project, session start injects global learnings only', () => {
 	const out = hook('session-start', { source: 'compact', cwd: '/' }, '/');
 	const ctx: string = out.hookSpecificOutput.additionalContext;

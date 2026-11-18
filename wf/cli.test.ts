@@ -188,6 +188,18 @@ test('doc writes a whole document or one section', () => {
 	assert.equal(wf('doc', 'spec').code, 2);
 });
 
+test('state switches the handoff state and prints the new instructions', () => {
+	const r = wf('state', 'discuss');
+	assert.equal(r.code, 0, r.err);
+	assert.match(r.out, /^- State: setup$/m);
+	assert.match(r.out, /^\+ State: discuss$/m);
+	assert.match(r.out, /Instructions for the discuss state:\nThe project is in discuss/);
+	assert.match(wf('status').out, /state: discuss/);
+	assert.match(wf('state', 'admin').err, /state must be one of setup, discuss, build/);
+	assert.equal(wf('state').code, 2);
+	wf('state', 'setup');
+});
+
 test('commands outside a project explain what to do', () => {
 	// Everything under scratch/ sits inside this repo, so run from / (read-only) instead.
 	const r = spawnSync(process.execPath, [cli, 'status'], { cwd: '/', encoding: 'utf8' });

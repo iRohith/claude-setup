@@ -105,6 +105,16 @@ function main(argv: string[]): void {
 			return editTodo((t) => wf.impl(t, arg(0, 'minor'), arg(1, 'detail')));
 		case 'handoff':
 			return handoff(values.next ?? '', values.verify ?? '', values.dont ?? '', values.open ?? []);
+		case 'state': {
+			const root = wf.findRoot(process.cwd());
+			return wf.withLock(root, () => {
+				const { before, after } = wf.setState(root, arg(0, 'setup|discuss|build'));
+				printChanges(wf.formatHandoff(before), wf.formatHandoff(after));
+				console.log(
+					`\nInstructions for the ${after.state} state:\n${wf.stateInstructions(after.state)}`
+				);
+			});
+		}
 		case 'hook':
 			process.stdout.write(runHook(arg(0, 'event'), readFileSync(0, 'utf8')));
 			return;

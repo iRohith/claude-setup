@@ -130,13 +130,14 @@ Deliverable: <what the owner can inspect>
 
 ```
 ## <date> · affects <ids>
-> <owner's words, verbatim>
-Why it's a steer: <reason>
+Steer: <short summary of what the owner wants>
+Why: <why it counts as a steer>
 Changed: <what in the plan changed>
 ```
 
-Assumptions use the same shape, with `assumption` in place of the quote. They are taken only when the owner
-is away, and they choose the most reversible option.
+Always a summary, never the owner's message verbatim. Assumptions use the same shape with `Assumption:`
+in place of `Steer:`. They are taken only when the owner is away, and they choose the most reversible
+option.
 
 ### 3.5 `risks.md`
 

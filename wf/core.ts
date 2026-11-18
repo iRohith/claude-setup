@@ -545,6 +545,16 @@ export const readHandoff = (root: string) =>
 export const writeHandoff = (root: string, h: Handoff) =>
 	writeAtomic(statePath(root, 'handoff.md'), formatHandoff(h));
 
+/** The project's state is the handoff's State line. Returns the handoff before and after. */
+export function setState(root: string, state: string): { before: Handoff; after: Handoff } {
+	if (!STATES.includes(state as State))
+		throw new WfError(`state must be one of ${STATES.join(', ')}, got ${state}`);
+	const before = readHandoff(root);
+	const after = { ...before, state: state as State };
+	writeHandoff(root, after);
+	return { before, after };
+}
+
 export const countLearnings = (path: string): number =>
 	existsSync(path)
 		? readFileSync(path, 'utf8')

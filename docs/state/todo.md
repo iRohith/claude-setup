@@ -113,11 +113,12 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   - `global/states.md` has a section per state; core `stateInstructions` reads it from wf's own folder; session start injects the current state's section; `wf init` prints it; denials say the rule is fixed and a retry will be denied again
   - states.md gives each state numbered steps: setup (init, repo, native scaffold, gitignore, gitleaks plus the owner's checks, majors-only pre-push, refs and links, the init and main rule), discuss (references first, plan documents via wf doc, todo via wf batch), build
 
-## [ ] 2 · States and admin
+## [~] 2 · States and admin
 Deliverable: setup/discuss/build behave as spec section 2 in a real session, and admin mode lifts every restriction only when the owner flips it.
 
-- [ ] 2.1 `wf state` switches setup, discuss and build, stored per project (the per-state instructions come from 1.13)
+- [x] 2.1 `wf state` switches setup, discuss and build, stored per project (the per-state instructions come from 1.13)
   Proof: `wf state discuss` changes the handoff state and the next session starts with the discuss instructions
+  - core `setState` rewrites the handoff's State line; `wf state <name>` prints the change and the new state's instructions; the next session starts with them (hook test)
 - [ ] 2.2 discuss write block; setup push block until "setup done"
   Proof: transcript showing a denied Edit in discuss and a denied push in setup, then the push allowed after "setup done"
 - [ ] 2.3 admin mode: dashboard toggle, `wf admin` refused inside Claude Code, hooks pass when on
