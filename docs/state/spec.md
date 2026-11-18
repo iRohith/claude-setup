@@ -123,8 +123,9 @@ Deliverable: <what the owner can inspect>
 
 - **Size:** one line each, at most 200 characters.
 - **Order:** numbered and cited by number.
-- **Budget:** `wf` refuses a write if the file would exceed 60 lines, and asks for a merge or a prune
-  instead.
+- **Budget:** `wf learn` refuses a learning that would bring any affected project's session-start context
+  over 9,000 characters (Claude Code caps hook context at 10,000), and asks for a merge or a prune instead.
+  A global learning affects every registered project.
 
 ### 3.4 `steers.md`
 

@@ -10,6 +10,7 @@ import { install } from './install.ts';
 
 const OPTIONS = {
 	help: { type: 'boolean', short: 'h' },
+	global: { type: 'boolean' },
 	title: { type: 'string' },
 	from: { type: 'string' },
 	section: { type: 'string' },
@@ -105,6 +106,14 @@ function main(argv: string[]): void {
 			return editTodo((t) => wf.impl(t, arg(0, 'minor'), arg(1, 'detail')));
 		case 'handoff':
 			return handoff(values.next ?? '', values.verify ?? '', values.dont ?? '', values.open ?? []);
+		case 'learn': {
+			const root = wf.tryFindRoot(process.cwd());
+			const write = () => {
+				const { before, after } = wf.addLearning(root, arg(0, 'learning'), values.global ?? false);
+				printChanges(before, after);
+			};
+			return root ? wf.withLock(root, write) : write();
+		}
 		case 'state': {
 			const root = wf.findRoot(process.cwd());
 			return wf.withLock(root, () => {

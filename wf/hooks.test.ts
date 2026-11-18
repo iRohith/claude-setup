@@ -182,6 +182,20 @@ test('linked projects are read-only and claude -p is never run', () => {
 	assert.equal(outside.hookSpecificOutput.permissionDecision, 'deny');
 });
 
+test('learnings are written only through wf learn and show up after a compaction', () => {
+	const projectFile = edit('Edit', join(project, 'docs', 'state', 'learnings.md'));
+	assert.match(projectFile.hookSpecificOutput.permissionDecisionReason, /Use wf learn instead/);
+	const globalFile = edit('Write', join(home, 'global', 'learnings.md'));
+	assert.match(
+		globalFile.hookSpecificOutput.permissionDecisionReason,
+		/Use wf learn --global instead/
+	);
+	wfIn('learn', 'compaction test → it stays in context');
+	const ctx: string = hook('session-start', { source: 'compact', cwd: project }).hookSpecificOutput
+		.additionalContext;
+	assert.match(ctx, /compaction test → it stays in context/);
+});
+
 test('wf admin refuses inside Claude Code', () => {
 	const r = spawnSync(process.execPath, [cli, 'admin', 'on'], {
 		cwd: project,

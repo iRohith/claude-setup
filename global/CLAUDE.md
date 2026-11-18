@@ -21,7 +21,7 @@ dashboard, so re-read it (`wf status`) instead of assuming it hasn't changed.
 | `todo.md` | majors and minors with their proofs and implementation details | `wf add`, `batch`, `edit`, `start`, `done`, `impl` |
 | `handoff.md` | state, active items, next, how to verify, what not to do, questions for the owner | `wf handoff` |
 | `memory.md` | invariants, contracts, pitfalls (dated, with cause), anti-patterns, deferred items | directly |
-| `learnings.md` | short numbered lessons: what went wrong → what to do instead | directly |
+| `learnings.md` | short numbered lessons: what went wrong → what to do instead | `wf learn` |
 | `steers.md` | the owner's steers, summarised, with why they count | directly |
 | `risks.md` | high-risk actions, logged before they run | directly |
 
@@ -98,10 +98,11 @@ When every minor of a major is done and its deliverable is verified, `wf done <m
   quoting the owner's goals back.
 
 ## Learnings
-- Record a lesson the moment it is learned, as one line in `learnings.md`: what went wrong → what to do
-  instead. Keep them short; they are injected into every session.
-- A lesson that holds for every project: tell the owner the exact line for the global learnings. Never
-  write outside this project to add it yourself.
+- Record a lesson the moment it is learned: `wf learn "<what went wrong> → <what to do instead>"`, one
+  line. Learnings are injected into every session, so wf keeps them within a size budget; when it
+  refuses, merge or prune before adding.
+- A lesson that holds for every project: `wf learn --global "…"`. That is the only way to write the
+  global learnings; never edit them directly.
 
 ## Friction and autonomy
 - When a tool, permission, package or answer is missing, tell the owner exactly what is needed and get it.

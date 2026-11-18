@@ -131,11 +131,13 @@ Deliverable: setup/discuss/build behave as spec section 2 in a real session, and
   Proof: hook tests and a real session show each one denied with its alternative
   - core `linksDenial` (Edit/Write under scratch/links/) and `claudeDenial` (Bash `claude` with `-p` or `--print`, inside or outside a project); wired into the pre-tool-use hook after the admin check
 
-## [ ] 3 · Records
+## [~] 3 · Records
 Deliverable: every record type from spec section 3 written and queried through `wf`.
 
-- [ ] 3.1 learnings (project and global) with a size budget that keeps the whole SessionStart context under Claude Code's 10,000-character cap; injected at SessionStart
+- [~] 3.1 learnings (project and global) with a size budget that keeps the whole SessionStart context under Claude Code's 10,000-character cap; injected at SessionStart
   Proof: a learning added in one session appears in the next session's context, including after `/compact`
+  - `wf learn "<wrong> → <instead>" [--global]`: core `addLearning` numbers the line, needs the arrow, at most 200 characters, and rolls back if any affected project's session context would pass 9,000 characters (a global learning affects every registered project)
+  - session-context assembly moved from hooks.ts into core (`sessionContext`, `tryFindRoot`) so the budget check and the hook share it; project and global learnings joined the deny map, naming `wf learn` and `wf learn --global`
 - [ ] 3.2 steers and assumptions with `--why` and `--log`
   Proof: `wf show <id>` lists the steer that changed it
 - [ ] 3.3 `wf risk` with all four fields required

@@ -447,12 +447,14 @@ export type DocName = (typeof DOC_NAMES)[number];
 const WF_OWNED: Record<string, string> = {
 	'todo.md': 'wf add, edit, batch, start, done or impl',
 	'handoff.md': 'wf handoff',
+	'learnings.md': 'wf learn',
 	...Object.fromEntries(DOC_NAMES.map((d) => [`${d}.md`, `wf doc ${d}`]))
 };
 
 /** The wf command to use instead, when `path` is a state file only wf may write. */
 export function wfAlternative(path: string): string | undefined {
 	const file = resolve(path);
+	if (file === resolve(globalLearningsPath())) return 'wf learn --global';
 	const dir = dirname(file);
 	if (basename(dir) !== 'state' || basename(dirname(dir)) !== 'docs') return undefined;
 	return WF_OWNED[basename(file)];
@@ -588,6 +590,91 @@ export function stateInstructions(state: State): string {
 		.trim();
 }
 export const projectLearningsPath = (root: string) => statePath(root, 'learnings.md');
+
+export function tryFindRoot(from: string): string | undefined {
+	try {
+		return findRoot(from);
+	} catch {
+		return undefined;
+	}
+}
+
+// ---------- session context and learnings ----------
+
+/** Claude Code caps hook context at 10,000 characters; keep headroom below it. */
+export const CONTEXT_BUDGET = 9000;
+const LEARNING_MAX = 200;
+
+/**
+ * What session start injects: global learnings always; inside a wf project also admin mode when
+ * on, the instructions for its current state, its learnings and its handoff.
+ */
+export function sessionContext(root: string | undefined): string {
+	const parts = [section('Global learnings (from wf)', globalLearningsPath())];
+	if (root) {
+		const state = readHandoff(root).state;
+		if (isAdmin(root))
+			parts.push(
+				'Admin mode is on for this project (set by the owner): no wf restriction applies until the owner turns it off.'
+			);
+		parts.push(
+			`Instructions for the ${state} state (from wf):\n${stateInstructions(state)}`,
+			section(`Project learnings for ${root} (from wf)`, projectLearningsPath(root)),
+			section('Project handoff (from wf)', statePath(root, 'handoff.md'))
+		);
+	}
+	return parts.filter(Boolean).join('\n\n');
+}
+
+function section(title: string, path: string): string {
+	if (!existsSync(path)) return '';
+	const body = readFileSync(path, 'utf8')
+		.replace(/^# .*\n/, '')
+		.trim();
+	return body ? `${title}:\n${body}` : '';
+}
+
+/**
+ * Appends a numbered learning, "what went wrong → what to do instead", to the project's learnings
+ * or (global) to every project's. Rejected, and nothing kept, when any affected project's session
+ * context would pass the budget.
+ */
+export function addLearning(
+	root: string | undefined,
+	text: string,
+	global: boolean
+): { path: string; before: string; after: string } {
+	const line = required(text, 'learning');
+	if (!line.includes('→'))
+		throw new WfError('a learning reads "what went wrong → what to do instead"');
+	if (line.length > LEARNING_MAX)
+		throw new WfError(
+			`a learning is at most ${LEARNING_MAX} characters; this one is ${line.length}`
+		);
+	if (!global && !root) throw new WfError('no project here; use --global for every project');
+	const path = global ? globalLearningsPath() : projectLearningsPath(root!);
+	const before = existsSync(path) ? readFileSync(path, 'utf8') : '# Learnings\n';
+	const numbers = before.split('\n').flatMap((l) => l.match(/^(\d+)\. /)?.slice(1) ?? []);
+	const next = Math.max(0, ...numbers.map(Number)) + 1;
+	const body = before.replace(/\n+$/, '');
+	const after = `${body}${numbers.length ? '\n' : '\n\n'}${next}. ${line}\n`;
+	mkdirSync(dirname(path), { recursive: true });
+	writeAtomic(path, after);
+	const roots = global
+		? [...new Set([...Object.keys(readRegistry()), ...(root ? [root] : [])])]
+		: [root!];
+	const over = roots
+		.filter((r) => existsSync(statePath(r, 'handoff.md')))
+		.map((r) => ({ r, size: sessionContext(r).length }))
+		.find((x) => x.size > CONTEXT_BUDGET);
+	if (over) {
+		writeAtomic(path, before);
+		throw new WfError(
+			`this learning would bring ${over.r}'s session context to ${over.size} characters, over the ${CONTEXT_BUDGET} budget; merge or prune learnings first`
+		);
+	}
+	return { path, before, after };
+}
 
 const registryPath = () => join(wfHome(), 'local', 'projects.json');
 

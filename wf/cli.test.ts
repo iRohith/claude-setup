@@ -200,6 +200,31 @@ test('state switches the handoff state and prints the new instructions', () => {
 	wf('state', 'setup');
 });
 
+test('learn numbers lessons, needs the arrow, and keeps the session context under budget', () => {
+	const file = join(project, 'docs', 'state', 'learnings.md');
+	const first = wf('learn', 'pushed before updating state → state first, then commit');
+	assert.equal(first.code, 0, first.err);
+	assert.match(first.out, /^\+ 1\. pushed before updating state → state first, then commit$/m);
+	assert.match(wf('learn', 'second lesson → do better').out, /^\+ 2\. second lesson → do better$/m);
+	assert.match(wf('learn', 'no arrow here').err, /what went wrong → what to do instead/);
+	assert.match(wf('learn', `${'x'.repeat(200)} → y`).err, /at most 200 characters/);
+	const global = wf('learn', 'a lesson for all → apply it', '--global');
+	assert.equal(global.code, 0, global.err);
+	assert.match(
+		readFileSync(join(home, 'global', 'learnings.md'), 'utf8'),
+		/^1\. a lesson for all → apply it$/m
+	);
+	let rejected = '';
+	for (let i = 0; i < 80 && !rejected; i++) {
+		const r = wf('learn', `filler lesson number ${i} ${'z'.repeat(150)} → keep it short`);
+		if (r.code !== 0) rejected = r.err;
+	}
+	assert.match(rejected, /over the 9000 budget; merge or prune/);
+	const kept = readFileSync(file, 'utf8');
+	wf('learn', `one more ${'z'.repeat(150)} → still over`);
+	assert.equal(readFileSync(file, 'utf8'), kept);
+});
+
 test('commands outside a project explain what to do', () => {
 	// Everything under scratch/ sits inside this repo, so run from / (read-only) instead.
 	const r = spawnSync(process.execPath, [cli, 'status'], { cwd: '/', encoding: 'utf8' });

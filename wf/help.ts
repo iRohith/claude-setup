@@ -113,6 +113,16 @@ export const HELP: Record<string, Help> = {
 			'Rewrite it at the end of each minor and whenever work stops, before the commit.'
 		]
 	},
+	learn: {
+		usage: ['wf learn "<what went wrong> → <what to do instead>" [--global]'],
+		summary: 'record a lesson: this project, or with --global every project',
+		details: [
+			'One line, at most 200 characters, with the arrow. Numbered automatically.',
+			'Learnings are injected into every session; a learning that would push any affected',
+			"project's session context over 9,000 characters is rejected: merge or prune first.",
+			"Record a lesson the moment it is learned. A summary, never the owner's words verbatim."
+		]
+	},
 	state: {
 		usage: ['wf state setup|discuss|build'],
 		summary: "switch the project's state and print what to do in it",

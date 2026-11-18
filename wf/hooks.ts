@@ -1,6 +1,5 @@
 // Claude Code hook entry points: read the hook JSON, ask the core, print the hook JSON.
-import { existsSync, readFileSync } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import * as wf from './core.ts';
 
 interface HookInput {
@@ -17,7 +16,10 @@ export function runHook(event: string, stdin: string): string {
 	const cwd = input.cwd ?? process.cwd();
 	if (event === 'session-start') {
 		return JSON.stringify({
-			hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: sessionContext(cwd) }
+			hookSpecificOutput: {
+				hookEventName: 'SessionStart',
+				additionalContext: wf.sessionContext(projectRoot(cwd))
+			}
 		});
 	}
 	if (event === 'pre-tool-use') {
@@ -47,43 +49,7 @@ export function runHook(event: string, stdin: string): string {
 	);
 }
 
-function projectRoot(cwd: string): string | undefined {
-	try {
-		return wf.findRoot(cwd);
-	} catch {
-		return undefined;
-	}
-}
-
-/**
- * Global learnings always; inside a wf project also the instructions for its current state, its
- * learnings and its handoff.
- */
-export function sessionContext(cwd: string): string {
-	const parts = [section('Global learnings (from wf)', wf.globalLearningsPath())];
-	const root = projectRoot(cwd);
-	if (root) {
-		const state = wf.readHandoff(root).state;
-		if (wf.isAdmin(root))
-			parts.push(
-				'Admin mode is on for this project (set by the owner): no wf restriction applies until the owner turns it off.'
-			);
-		parts.push(
-			`Instructions for the ${state} state (from wf):\n${wf.stateInstructions(state)}`,
-			section(`Project learnings for ${root} (from wf)`, wf.projectLearningsPath(root)),
-			section('Project handoff (from wf)', join(root, 'docs', 'state', 'handoff.md'))
-		);
-	}
-	return parts.filter(Boolean).join('\n\n');
-}
-
-function section(title: string, path: string): string {
-	if (!existsSync(path)) return '';
-	const body = readFileSync(path, 'utf8')
-		.replace(/^# .*\n/, '')
-		.trim();
-	return body ? `${title}:\n${body}` : '';
-}
+const projectRoot = (cwd: string) => wf.tryFindRoot(cwd);
 
 /** In admin mode nothing is denied. Otherwise: the admin store, wf-owned files, then state rules. */
 function denyReason(input: HookInput, cwd: string): string | undefined {
