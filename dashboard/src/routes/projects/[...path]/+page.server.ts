@@ -4,9 +4,10 @@ import {
 	DOCS,
 	VIEWS,
 	changeLearning,
-	renderState,
+	changeSection,
 	viewLearnings,
 	viewProject,
+	viewSections,
 	type View
 } from '#lib/server/projects.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -21,13 +22,14 @@ export const load: PageServerLoad = ({ params, url }) => {
 	const doc = (DOCS as readonly string[]).includes(url.searchParams.get('doc') ?? '')
 		? (url.searchParams.get('doc') as string)
 		: DOCS[0];
-	const file = view === 'docs' ? doc : view;
-	// The todo and the learnings are edited as lists; the other views are rendered markdown.
-	const listed = view === 'todo' || view === 'learnings' || project.summary.error;
-	const html = listed ? '' : renderState(root, file);
-	const learnings =
-		view === 'learnings' && !project.summary.error ? viewLearnings(root) : undefined;
-	return { ...project, view, views: VIEWS, doc, docs: DOCS, html, learnings };
+	// The todo and the learnings are edited as lists; every other view is a file edited by section.
+	const ok = !project.summary.error;
+	const learnings = ok && view === 'learnings' ? viewLearnings(root) : undefined;
+	const sections =
+		ok && view !== 'todo' && view !== 'learnings'
+			? viewSections(root, `${view === 'docs' ? doc : view}.md`)
+			: undefined;
+	return { ...project, view, views: VIEWS, doc, docs: DOCS, learnings, sections };
 };
 
 /** The registered root this request is about, or a 404. */
@@ -110,5 +112,6 @@ export const actions: Actions = {
 		change(params.path, request, (t, f) => wf.start(t, field(f, 'id'))),
 	reopen: ({ params, request }) =>
 		change(params.path, request, (t, f) => wf.reopen(t, field(f, 'id'))),
-	learning: ({ params, request }) => changeLearning(rootOf(params.path), request)
+	learning: ({ params, request }) => changeLearning(rootOf(params.path), request),
+	section: ({ params, request }) => changeSection(rootOf(params.path), request)
 };

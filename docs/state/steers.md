@@ -162,3 +162,8 @@ Changed: global/CLAUDE.md Code rules on Python rewritten
 Steer: Learnings can be edited and removed, not only added: core, wf learn --edit/--remove and the dashboard; removal renumbers the rest
 Why: agents are told to merge or prune over budget but had no way to; the dashboard needs full learnings editing
 Changed: spec 3.3 and section 4, implementation dashboard section, 4.4 proof
+
+## 2026-11-19 · affects 4.6
+Steer: The dashboard edits every section of steers, risks, memory and the plan docs, each checked by its file's rules before writing
+Why: the owner wants full control of the state records from the dashboard, logs included
+Changed: 4.6 scope covers steers and risks too

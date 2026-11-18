@@ -83,9 +83,43 @@ export function viewProject(root: string): ProjectView | undefined {
 	return { summary, todo: summary.error ? undefined : wf.readTodo(root) };
 }
 
-/** A state file rendered from its markdown, for the read-only views. */
-export function renderState(root: string, file: string): string {
-	return marked.parse(wf.getState(root, file), { async: false });
+/** A state file as rendered sections, each with its markdown for editing. */
+export interface SectionsView {
+	file: string;
+	preamble: string;
+	sections: { heading: string; text: string; html: string }[];
+}
+
+/** Steers and risks hold one field per line, so their line breaks are kept; docs are wrapped prose. */
+const LINE_FILES = ['steers.md', 'risks.md'];
+
+export function viewSections(root: string, file: string): SectionsView {
+	const { preamble, sections } = wf.readSections(root, file);
+	const breaks = LINE_FILES.includes(file);
+	const render = (markdown: string) => marked.parse(markdown, { async: false, breaks });
+	return {
+		file,
+		preamble: render(preamble),
+		sections: sections.map((s) => ({
+			heading: marked.parseInline(s.heading, { async: false }),
+			text: s.text,
+			html: render(s.text.split('\n').slice(1).join('\n'))
+		}))
+	};
+}
+
+/** One section edit from a dashboard form, through the core; a refusal comes back for its section. */
+export async function changeSection(root: string, request: Request) {
+	const form = await request.formData();
+	const index = Number(form.get('index'));
+	try {
+		wf.withLock(root, () =>
+			wf.writeSection(root, String(form.get('file') ?? ''), index, String(form.get('text') ?? ''))
+		);
+	} catch (e) {
+		if (e instanceof wf.WfError) return fail(400, { error: e.message, item: `section-${index}` });
+		throw e;
+	}
 }
 
 /** Learnings to edit, with how much of the session-context budget the fullest project uses. */

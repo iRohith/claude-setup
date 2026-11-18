@@ -31,8 +31,9 @@
 
 	const MAX = 200;
 
-	/** The learning whose edit form is open. */
+	/** The learning whose edit form is open, its text, and the new learning being written. */
 	let editing = $state<number | null>(null);
+	let edited = $state('');
 	let draft = $state('');
 
 	const closeOnSuccess: SubmitFunction =
@@ -89,7 +90,7 @@
 						{#if editing === n}
 							<form method="POST" {action} use:enhance={closeOnSuccess} class="grid gap-2">
 								<input type="hidden" name="n" value={n} />
-								<Input name="text" value={lesson} aria-label="Learning {n}" />
+								<Input name="text" bind:value={edited} aria-label="Learning {n}" />
 								<div class="flex flex-wrap items-center gap-2">
 									<Button type="submit" size="sm" name="op" value="edit">Save</Button>
 									<Button size="sm" variant="ghost" onclick={() => (editing = null)}>Cancel</Button>
@@ -118,7 +119,10 @@
 							variant="ghost"
 							class="text-muted-foreground"
 							aria-label="Edit learning {n}"
-							onclick={() => (editing = n)}><Pencil /></Button
+							onclick={() => {
+								edited = lesson;
+								editing = n;
+							}}><Pencil /></Button
 						>
 					{/if}
 				</li>

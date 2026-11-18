@@ -885,6 +885,122 @@ export function addDeferred(
 export const deferredFor = (root: string, id: string): Deferred[] =>
 	deferredRows(root).filter((d) => d.resolves === id || d.resolves.split('.')[0] === id);
 
+// ---------- section editing (the dashboard) ----------
+
+/** Reads risks.md: "## <date> · <item> · <level>", then Action, Why, Surface and Recover. */
+export function parseRisks(text: string): (Risk & { date: string })[] {
+	return text
+		.split(/^(?=## )/m)
+		.slice(1)
+		.map((block) => {
+			const lines = block.trim().split('\n');
+			const head = lines[0].match(/^## (\S+) · (\S+) · (\S+)$/);
+			const field = (i: number, name: string) =>
+				lines[i]?.match(new RegExp(`^${name}: (.+)$`))?.[1];
+			const [action, why, surface, recover] = ['Action', 'Why', 'Surface', 'Recover'].map((n, i) =>
+				field(i + 1, n)
+			);
+			if (!head || !action || !why || !surface || !recover || lines.length !== 5)
+				throw new WfError(
+					`risks.md: malformed entry: ${lines[0]} (a heading, then Action, Why, Surface, Recover)`
+				);
+			if (!RISK_LEVELS.includes(head[3]))
+				throw new WfError(`risks.md: ${lines[0]}: level is one of ${RISK_LEVELS.join(', ')}`);
+			return { date: head[1], item: head[2], level: head[3], action, why, surface, recover };
+		});
+}
+
+/** memory.md keeps the sections wf memory and wf defer write to, and the Deferred table. */
+function checkMemory(text: string): void {
+	const lines = text.split('\n');
+	for (const title of [...Object.values(MEMORY_SECTIONS), 'Deferred'])
+		if (!sectionRange(lines, title)) throw new WfError(`memory.md needs its "## ${title}" section`);
+	const [start, end] = sectionRange(lines, 'Deferred')!;
+	if (!lines.slice(start, end).some((l) => l.startsWith('| Item | Resolves in |')))
+		throw new WfError('memory.md\'s Deferred section keeps its "| Item | Resolves in |" table');
+}
+
+/** The files whose sections the dashboard edits, with the rule the whole file must still pass. */
+const SECTION_RULES: Record<string, (text: string) => void> = {
+	'steers.md': (text) => void parseSteers(text),
+	'risks.md': (text) => void parseRisks(text),
+	'memory.md': checkMemory,
+	...Object.fromEntries(DOC_NAMES.map((d) => [`${d}.md`, () => {}]))
+};
+export const SECTION_FILES = Object.keys(SECTION_RULES);
+
+export interface Section {
+	heading: string;
+	/** The section as written: its "## " line, then its body. */
+	text: string;
+}
+
+/** A file's lines, its "## " section starts, and where each section ends; fences respected. */
+function sectionSpans(path: string): { lines: string[]; spans: [number, number][] } {
+	const lines = readFileSync(path, 'utf8').replace(/\n+$/, '').split('\n');
+	const heads = topHeadings(lines);
+	const starts = lines.flatMap((l, i) => (heads[i] && l.startsWith('## ') ? [i] : []));
+	const spans = starts.map((start): [number, number] => {
+		const end = heads.findIndex((h, k) => k > start && h);
+		return [start, end === -1 ? lines.length : end];
+	});
+	return { lines, spans };
+}
+
+function sectionFile(root: string, file: string): string {
+	if (!SECTION_RULES[file])
+		throw new WfError(`${file} isn't edited by section; one of ${SECTION_FILES.join(', ')}`);
+	const path = statePath(root, file);
+	if (!existsSync(path)) throw new WfError(`no docs/state/${file}`);
+	return path;
+}
+
+/** What comes before the first section (the title and any intro), and each "## " section. */
+export function readSections(
+	root: string,
+	file: string
+): { preamble: string; sections: Section[] } {
+	const { lines, spans } = sectionSpans(sectionFile(root, file));
+	const preamble = lines
+		.slice(0, spans[0]?.[0] ?? lines.length)
+		.join('\n')
+		.trim();
+	const sections = spans.map(([start, end]) => ({
+		heading: lines[start].slice(3),
+		text: lines.slice(start, end).join('\n').trimEnd()
+	}));
+	return { preamble, sections };
+}
+
+/**
+ * Replaces section `index` (0-based) with `text`, which starts with its "## " line. Only that
+ * section's lines change; the whole file must still pass its own rules, or nothing is written.
+ */
+export function writeSection(
+	root: string,
+	file: string,
+	index: number,
+	text: string
+): { before: string; after: string } {
+	const path = sectionFile(root, file);
+	const before = readFileSync(path, 'utf8');
+	const { lines, spans } = sectionSpans(path);
+	if (!Number.isInteger(index) || index < 0 || index >= spans.length)
+		throw new WfError(`${file} has no section ${index + 1}; it has ${spans.length}`);
+	const block = text.replace(/\r/g, '').trim().split('\n');
+	if (!block[0].startsWith('## '))
+		throw new WfError('a section starts with its "## <heading>" line');
+	if (topHeadings(block).slice(1).includes(true))
+		throw new WfError('a section has one "## " heading; use "### " inside it');
+	checkNoBareTags(block.join('\n'), file);
+	const [start, end] = spans[index];
+	lines.splice(start, end - start, ...block, ...(end < lines.length ? [''] : []));
+	const after = lines.join('\n') + '\n';
+	SECTION_RULES[file](after);
+	writeAtomic(path, after);
+	return { before, after };
+}
+
 /** Case-insensitive search across every docs/state/ file: "file:line: text". */
 export function findInState(root: string, text: string): string[] {
 	const needle = required(text, 'search text').toLowerCase();

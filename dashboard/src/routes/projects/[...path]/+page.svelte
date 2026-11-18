@@ -15,6 +15,7 @@
 	import * as Select from '#lib/components/ui/select/index.js';
 	import Inline from '#lib/Inline.svelte';
 	import Learnings from '#lib/Learnings.svelte';
+	import Sections from '#lib/Sections.svelte';
 	import MarkBadge from '#lib/MarkBadge.svelte';
 	import Track from '#lib/Track.svelte';
 	import type { PageProps } from './$types';
@@ -30,11 +31,28 @@
 
 	/** The one item whose edit form is open. */
 	let editing = $state<string | null>(null);
-	const closeOnSave: SubmitFunction =
-		() =>
+
+	/**
+	 * What each form field holds, by field id. Fields bind here rather than to page data, so the
+	 * two-second refresh never resets what is being typed.
+	 */
+	const drafts: Record<string, string> = $state({});
+
+	/** Opens an item's edit form with its current text. */
+	function edit(id: string, fields: Record<string, string>) {
+		if (editing === id) return void (editing = null);
+		Object.assign(drafts, fields);
+		editing = id;
+	}
+
+	/** After a save that the core accepted, the form closes and its drafts clear. */
+	const saved: SubmitFunction =
+		({ formElement }) =>
 		async ({ result, update }) => {
 			await update();
-			if (result.type === 'success') editing = null;
+			if (result.type !== 'success') return;
+			for (const el of formElement.elements) if (el.id in drafts) delete drafts[el.id];
+			editing = null;
 		};
 
 	/** The done checkbox submits its row's form: check when ticked, reopen when cleared. */
@@ -72,10 +90,10 @@
 	</form>
 {/snippet}
 
-{#snippet field(id: string, name: string, label: string, value: string, aria: string)}
+{#snippet field(id: string, name: string, label: string, aria: string)}
 	<div class="grid gap-1.5">
 		<Label for={id} class="text-xs text-muted-foreground">{label}</Label>
-		<Input {id} {name} {value} aria-label={aria} />
+		<Input {id} {name} bind:value={drafts[id]} aria-label={aria} />
 	</div>
 {/snippet}
 
@@ -148,7 +166,7 @@
 	</Alert.Root>
 {:else if data.learnings}
 	<Learnings {...data.learnings} scope="this project" action="?view=learnings&/learning" {form} />
-{:else if data.view !== 'todo'}
+{:else if data.sections}
 	{#if data.view === 'docs'}
 		<div class="mt-4 flex flex-wrap gap-1">
 			{#each data.docs as d (d)}
@@ -161,8 +179,7 @@
 			{/each}
 		</div>
 	{/if}
-	<!-- eslint-disable-next-line svelte/no-at-html-tags -- the project's own state files, rendered -->
-	<div class="md mt-6">{@html data.html}</div>
+	<Sections view={data.sections} action="?view={data.view}&doc={data.doc}&/section" {form} />
 {:else if data.todo}
 	<Collapsible.Root>
 		<div class="mt-6 flex flex-wrap items-center justify-between gap-3">
@@ -179,16 +196,15 @@
 			<form
 				method="POST"
 				action="?/addMajor"
-				use:enhance
+				use:enhance={saved}
 				class="mt-3 grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-[1fr_1.4fr_auto] sm:items-end"
 			>
 				<input type="hidden" name="id" value="new" />
-				{@render field('new-title', 'title', 'Title', '', 'New major title')}
+				{@render field('new-title', 'title', 'Title', 'New major title')}
 				{@render field(
 					'new-deliverable',
 					'deliverable',
 					'Deliverable the owner can inspect',
-					'',
 					'New major deliverable'
 				)}
 				<Button type="submit">Add major</Button>
@@ -250,8 +266,11 @@
 											variant="ghost"
 											class="text-muted-foreground"
 											aria-label="Edit {major.id}"
-											onclick={() => (editing = editing === major.id ? null : major.id)}
-											><Pencil /></Button
+											onclick={() =>
+												edit(major.id, {
+													[`title-${major.id}`]: major.title,
+													[`deliverable-${major.id}`]: major.deliverable
+												})}><Pencil /></Button
 										>
 									</div>
 								</div>
@@ -265,22 +284,15 @@
 								<form
 									method="POST"
 									action="?/edit"
-									use:enhance={closeOnSave}
+									use:enhance={saved}
 									class="mt-3 grid gap-3 sm:grid-cols-[1fr_1.4fr_auto_auto] sm:items-end"
 								>
 									<input type="hidden" name="id" value={major.id} />
-									{@render field(
-										`title-${major.id}`,
-										'title',
-										'Title',
-										major.title,
-										`Title of ${major.id}`
-									)}
+									{@render field(`title-${major.id}`, 'title', 'Title', `Title of ${major.id}`)}
 									{@render field(
 										`deliverable-${major.id}`,
 										'deliverable',
 										'Deliverable',
-										major.deliverable,
 										`Deliverable of ${major.id}`
 									)}
 									<Button type="submit">Save</Button>
@@ -352,7 +364,7 @@
 											<form
 												method="POST"
 												action="?/edit"
-												use:enhance={closeOnSave}
+												use:enhance={saved}
 												class="mt-3 grid gap-3 sm:grid-cols-[1fr_1.4fr_auto_auto] sm:items-end"
 											>
 												<input type="hidden" name="id" value={minor.id} />
@@ -360,14 +372,12 @@
 													`title-${minor.id}`,
 													'title',
 													'Title',
-													minor.title,
 													`Title of ${minor.id}`
 												)}
 												{@render field(
 													`proof-${minor.id}`,
 													'proof',
 													'Proof',
-													minor.proof,
 													`Proof of ${minor.id}`
 												)}
 												<Button type="submit">Save</Button>
@@ -387,8 +397,11 @@
 											variant="ghost"
 											class="text-muted-foreground"
 											aria-label="Edit {minor.id}"
-											onclick={() => (editing = editing === minor.id ? null : minor.id)}
-											><Pencil /></Button
+											onclick={() =>
+												edit(minor.id, {
+													[`title-${minor.id}`]: minor.title,
+													[`proof-${minor.id}`]: minor.proof
+												})}><Pencil /></Button
 										>
 									</div>
 								</li>
@@ -409,7 +422,7 @@
 									<form
 										method="POST"
 										action="?/addMinor"
-										use:enhance
+										use:enhance={saved}
 										class="mt-2 grid gap-3 sm:grid-cols-[1fr_1.4fr_auto] sm:items-end"
 									>
 										<input type="hidden" name="id" value={major.id} />
@@ -418,14 +431,12 @@
 											`new-minor-title-${major.id}`,
 											'title',
 											'Title',
-											'',
 											`New minor title for ${major.id}`
 										)}
 										{@render field(
 											`new-minor-proof-${major.id}`,
 											'proof',
 											'Tangible, verifiable proof',
-											'',
 											`New minor proof for ${major.id}`
 										)}
 										<Button type="submit">Add minor</Button>

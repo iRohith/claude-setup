@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
 	WfError,
 	addMajor,
@@ -16,8 +18,10 @@ import {
 	parseHandoff,
 	parseLearnings,
 	parseTodo,
+	readSections,
 	reopen,
-	start
+	start,
+	writeSection
 } from './core.ts';
 
 const sample = `# Todo
@@ -295,4 +299,69 @@ test('handoff round-trips, checks the state, and is capped at 15 lines', () => {
 	assert.throws(() => parseHandoff(text.replace('build', 'admin')), /state must be one of/);
 	assert.throws(() => formatHandoff({ ...h, open: Array(10).fill('q') }), /limited to 15 lines/);
 	assert.throws(() => parseHandoff('# Handoff\nState: build\n'), WfError);
+});
+
+/** A scratch project holding copies of this repo's real state files. */
+function copyOfRealState(): string {
+	const root = fileURLToPath(new URL('../scratch/temp/core-sections', import.meta.url));
+	rmSync(root, { recursive: true, force: true });
+	mkdirSync(join(root, 'docs'), { recursive: true });
+	cpSync(fileURLToPath(new URL('../docs/state', import.meta.url)), join(root, 'docs', 'state'), {
+		recursive: true
+	});
+	return root;
+}
+
+test('every section written back unchanged leaves the real files byte-identical', () => {
+	const root = copyOfRealState();
+	for (const file of ['steers.md', 'risks.md', 'memory.md', 'implementation.md', 'spec.md']) {
+		const path = join(root, 'docs', 'state', file);
+		const original = readFileSync(path, 'utf8');
+		const { sections } = readSections(root, file);
+		assert.ok(sections.length > 0, file);
+		sections.forEach((s, i) => writeSection(root, file, i, s.text));
+		assert.equal(readFileSync(path, 'utf8'), original, file);
+	}
+});
+
+test('a section edit changes only that section, and each file keeps its own rules', () => {
+	const root = copyOfRealState();
+	const path = (f: string) => join(root, 'docs', 'state', f);
+	const steers = readSections(root, 'steers.md').sections;
+	const before = readFileSync(path('steers.md'), 'utf8');
+	const edited = steers[1].text.replace(/^Why: .*$/m, 'Why: reworded by the owner');
+	const { after } = writeSection(root, 'steers.md', 1, edited);
+	const changed = after.split('\n').filter((l, i) => l !== before.split('\n')[i]);
+	assert.deepEqual(changed, ['Why: reworded by the owner']);
+
+	const kept = readFileSync(path('steers.md'), 'utf8');
+	assert.throws(
+		() => writeSection(root, 'steers.md', 1, steers[1].text.replace(/^Why: .*\n/m, '')),
+		/steers\.md: malformed entry/
+	);
+	assert.equal(readFileSync(path('steers.md'), 'utf8'), kept);
+
+	const risk = readSections(root, 'risks.md').sections[0].text;
+	assert.throws(
+		() => writeSection(root, 'risks.md', 0, risk.replace(/ · medium$/m, ' · huge')),
+		/level is one of low, medium, high/
+	);
+	const pitfalls = readSections(root, 'memory.md').sections.findIndex(
+		(s) => s.heading === 'Pitfalls'
+	);
+	assert.throws(
+		() => writeSection(root, 'memory.md', pitfalls, '## Pitfall\n\n- renamed'),
+		/memory\.md needs its "## Pitfalls" section/
+	);
+	assert.throws(() => writeSection(root, 'spec.md', 0, 'no heading'), /starts with its "## /);
+	assert.throws(
+		() => writeSection(root, 'spec.md', 0, '## A\n\n## B'),
+		/one "## " heading; use "### "/
+	);
+	assert.throws(
+		() => writeSection(root, 'spec.md', 0, '## A\n\na <title> tag'),
+		/renders as an HTML tag/
+	);
+	assert.throws(() => writeSection(root, 'spec.md', 999, '## A'), /has no section 1000/);
+	assert.throws(() => readSections(root, 'todo.md'), /isn't edited by section/);
 });

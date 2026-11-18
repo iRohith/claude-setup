@@ -223,15 +223,77 @@ test('global learnings are edited on the Global page', async ({ page }, info) =>
 	await expect(item).toHaveCount(0);
 });
 
-test('the open dashboard shows a change made in a terminal within two seconds', async ({
+test('the open dashboard re-reads state within two seconds and shows a terminal change', async ({
 	page
 }, info) => {
 	await openNotes(page);
 	const title = `Added from a terminal on ${info.project.name}`;
 	await expect(page.getByRole('region', { name: title })).toHaveCount(0);
 	wf('add', 'major', title, '--deliverable', 'the page updates without a reload');
-	// Two seconds between refreshes, plus the request itself.
-	await expect(page.getByRole('region', { name: title })).toBeVisible({ timeout: 3000 });
+	// The refresh starts within two seconds of the write (plus timer slack), with no reload.
+	await page.waitForRequest((r) => r.url().includes('__data.json'), { timeout: 2500 });
+	await expect(page.getByRole('region', { name: title })).toBeVisible();
+});
+
+test('the owner edits a memory section, and a broken edit is refused with the file kept', async ({
+	page
+}, info) => {
+	await openNotes(page);
+	await page
+		.getByRole('navigation', { name: 'Views' })
+		.getByRole('link', { name: 'memory' })
+		.click();
+	await expect(page.getByRole('heading', { name: 'Invariants' })).toBeVisible();
+	await page.waitForLoadState('networkidle');
+
+	await page.getByRole('button', { name: 'Edit section 1' }).click();
+	const editor = page.getByLabel('Markdown of section 1');
+	// Earlier runs on other sizes may have written an invariant; the heading is always first.
+	await expect(editor).toHaveValue(/^## Invariants/);
+	await editor.fill('## Invariant\n\n1. renamed by mistake');
+	await page.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByRole('alert')).toHaveText('memory.md needs its "## Invariants" section');
+
+	const invariant = `notes are written atomically (${info.project.name})`;
+	await editor.fill(`## Invariants\n\n1. ${invariant}`);
+	await page.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByRole('region', { name: 'Invariants' })).toContainText(invariant);
+	await expect(editor).toBeHidden();
+});
+
+test('a steer is edited in place; one missing its Why is refused', async ({ page }, info) => {
+	wf(
+		'steer',
+		`notes open from links on ${info.project.name}`,
+		'--why',
+		'sharing needs it',
+		'--affects',
+		'1',
+		'--changed',
+		'1 deliverable',
+		'--log',
+		'true'
+	);
+	await openNotes(page);
+	await page
+		.getByRole('navigation', { name: 'Views' })
+		.getByRole('link', { name: 'steers' })
+		.click();
+	await page.waitForLoadState('networkidle');
+	const steer = page
+		.getByRole('main')
+		.getByRole('region')
+		.filter({ hasText: `notes open from links on ${info.project.name}` });
+	const n = (await steer.getAttribute('aria-labelledby'))?.replace('section-', '');
+	await steer.getByRole('button', { name: `Edit section ${Number(n) + 1}` }).click();
+	const editor = page.getByLabel(`Markdown of section ${Number(n) + 1}`);
+	const text = await editor.inputValue();
+	await editor.fill(text.replace(/^Why: .*$/m, ''));
+	await page.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByRole('alert')).toContainText('steers.md: malformed entry');
+	await editor.fill(text.replace(/^Why: .*$/m, 'Why: the owner reworded it'));
+	await page.getByRole('button', { name: 'Save' }).click();
+	await expect(steer).toContainText('the owner reworded it');
 });
 
 test('an unregistered path is a 404', async ({ page }) => {

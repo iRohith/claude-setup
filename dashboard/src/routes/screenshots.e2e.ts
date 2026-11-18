@@ -137,3 +137,47 @@ test('learnings added, edited, removed and refused over budget, on a throwaway p
 	await page.getByRole('alert').scrollIntoViewIfNeeded();
 	await save(page, info, `project-${name}-learning-over-budget`, false);
 });
+
+test('a section edited on a throwaway project, and a malformed edit refused on this repo', async ({
+	page
+}, info) => {
+	// The refusal runs on this repo's real steers: the core writes nothing, which the hash shows.
+	const repo = fileURLToPath(new URL('../../../', import.meta.url)).replace(/\/$/, '');
+	const steers = join(repo, 'docs', 'state', 'steers.md');
+	const steersBefore = readFileSync(steers, 'utf8');
+	await page.goto(`/projects${repo}?view=steers`);
+	await page.waitForLoadState('networkidle');
+	await page.getByRole('button', { name: 'Edit section 1', exact: true }).click();
+	const editor = page.getByLabel('Markdown of section 1', { exact: true });
+	await editor.fill((await editor.inputValue()).replace(/^Why: .*\n?/m, ''));
+	await page.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByRole('alert')).toContainText('steers.md: malformed entry');
+	await save(page, info, 'project-claude-setup-section-refused', false);
+	expect(readFileSync(steers, 'utf8')).toBe(steersBefore);
+
+	// The edit runs on the throwaway project, and afterEach puts the section back.
+	const root = Object.keys(wf.readRegistry()).find((r) => `${r}/`.startsWith(throwaway));
+	if (!root) throw new Error(`register a throwaway project under ${throwaway} with wf init first`);
+	const name = root.split('/').at(-1);
+	const file = join(root, 'docs', 'state', 'memory.md');
+	const original = readFileSync(file, 'utf8');
+	const invariants = wf.readSections(root, 'memory.md').sections[0].text;
+	restore = () => {
+		wf.writeSection(root, 'memory.md', 0, invariants);
+		expect(readFileSync(file, 'utf8')).toBe(original);
+	};
+	await page.goto(`/projects${root}?view=memory`);
+	await page.waitForLoadState('networkidle');
+	await page.getByRole('button', { name: 'Edit section 1', exact: true }).click();
+	await page
+		.getByLabel('Markdown of section 1', { exact: true })
+		.fill('## Invariants\n\n1. The screenshot run wrote this; it is put back right after.');
+	await page.getByRole('button', { name: 'Save' }).click();
+	const section = page.getByRole('region', { name: 'Invariants' });
+	await expect(section).toContainText('The screenshot run wrote this');
+	await save(page, info, `project-${name}-section-edited`);
+	// Only that section changed: everything after it is as it was.
+	const after = readFileSync(file, 'utf8');
+	const rest = (text: string) => text.slice(text.indexOf('## Contracts'));
+	expect(rest(after)).toBe(rest(original));
+});

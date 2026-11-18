@@ -189,8 +189,14 @@ Deliverable: the owner manages todos and learnings across all projects without t
   Proof: a wf command run in a terminal shows up on the open dashboard within two seconds, in a Playwright test against the fixture
   - +layout.svelte: an $effect interval calls invalidateAll every 2000 ms (REFRESH_MS, the spec's freshness rule) while the tab is visible, re-running the layout and page loads; component state such as open edit forms survives a refresh
   - e2e: the real wf CLI adds a major in the fixture project while the page stays open; the region appears within 3 s with no reload; the full suite passed 26 of 26 three runs in a row
-- [ ] 4.6 steers, risks, memory and the plan docs editable section by section in the dashboard, through wf's own writers
+  - fix found in 4.6: a refresh reset every field fed from page data, losing typed text; todo, learning and section fields now bind to local drafts copied when an editor opens, and refresh-probe.e2e.ts types into each kind of field across a refresh
+- [x] 4.6 steers, risks, memory and the plan docs editable section by section in the dashboard, through wf's own writers
   Proof: screenshots from the real dashboard at desktop and mobile of a section edited and a malformed edit rejected; the file changes only by that section
+  - started late: the work ran before wf start 4.6, which the impl check caught at the end; recorded as learning 10
+  - core: readSections and writeSection address a file's ## sections by position (steer headings repeat); a replacement starts with its ## line, has no other top heading or bare tag, and only its lines are spliced; the whole file then passes its own rule or nothing is written
+  - rules: steers through parseSteers, risks through a new strict parseRisks (heading, Action, Why, Surface, Recover, level low|medium|high), memory keeps its five sections and the Deferred table, docs need only the section rules
+  - dashboard: Sections.svelte replaces the rendered-file views for steers, risks, memory and docs: each section rendered (line breaks kept for steers and risks) with an Edit button that opens its markdown in a shadcn Textarea; one section action through changeSection; renderState removed
+  - tests: wf 71 (every section of the real steers, risks, memory, implementation and spec written back leaves them byte-identical; an edit changes only its lines; each file's rule refuses a broken edit); dashboard e2e 36; screenshots refuse a malformed steer on this repo with its hash unchanged and edit the throwaway's memory, restored in afterEach
 
 ## [~] 5 · Guidance and skills
 Deliverable: `global/CLAUDE.md` under about 80 lines, with the four skills installed as spec'd.
