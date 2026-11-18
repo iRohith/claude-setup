@@ -387,11 +387,19 @@ const TEMPLATES: Record<string, string> = {
 	'risks.md': '# Risks\n'
 };
 
-/** Creates docs/state/ from empty templates in setup state and registers the project. */
-export function initProject(dir: string): string {
+/**
+ * Creates docs/state/ from empty templates in setup state and registers the project. A project that
+ * already has docs/state/ is only registered, after its todo and handoff parse.
+ */
+export function initProject(dir: string): { root: string; created: boolean } {
 	const root = resolve(dir);
 	const stateDir = join(root, 'docs', 'state');
-	if (existsSync(stateDir)) throw new WfError(`${stateDir} already exists`);
+	if (existsSync(stateDir)) {
+		readTodo(root);
+		readHandoff(root);
+		register(root);
+		return { root, created: false };
+	}
 	mkdirSync(stateDir, { recursive: true });
 	for (const [name, text] of Object.entries(TEMPLATES)) writeFileSync(join(stateDir, name), text);
 	writeHandoff(root, {
@@ -403,5 +411,5 @@ export function initProject(dir: string): string {
 		open: []
 	});
 	register(root);
-	return root;
+	return { root, created: true };
 }

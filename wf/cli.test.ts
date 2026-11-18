@@ -39,7 +39,13 @@ test('init creates docs/state in setup state and registers the project', () => {
 	const registry = JSON.parse(readFileSync(join(home, 'local', 'projects.json'), 'utf8'));
 	assert.ok(project in registry);
 	assert.match(wf('status').out, /state: setup/);
-	assert.match(wf('init').err, /already exists/);
+	const again = wf('init');
+	assert.equal(again.code, 0, again.err);
+	assert.match(again.out, /already exists; registered it/);
+	assert.equal(
+		Object.keys(JSON.parse(readFileSync(join(home, 'local', 'projects.json'), 'utf8'))).length,
+		1
+	);
 });
 
 test('add prints the added lines and assigns ids', () => {

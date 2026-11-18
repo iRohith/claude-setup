@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import Inline from '#lib/Inline.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -22,35 +23,47 @@
 <main class="mx-auto max-w-4xl p-4 sm:p-8">
 	<a class="text-sm text-neutral-500 hover:underline" href={resolve('/')}>← projects</a>
 	<h1 class="mt-2 text-2xl font-semibold">{data.summary.name}</h1>
-	<p class="mb-6 text-sm text-neutral-500">{data.summary.root} · {data.summary.state ?? '?'}</p>
+	<p class="mb-6 text-sm break-all text-neutral-500">
+		{data.summary.root} · {data.summary.state ?? '?'}
+	</p>
 
 	{#if data.summary.error}
 		<p class="text-red-700">{data.summary.error}</p>
 	{:else if data.todo}
 		<h2 class="mb-3 text-lg font-semibold">Todo</h2>
 		{#each data.todo.majors as major (major.id)}
-			<section class="mb-6">
-				<h3 class="font-medium">
+			<!-- Finished majors fold away so the active work stays near the top. -->
+			<details class="mb-6" open={major.mark !== 'x'}>
+				<summary class="cursor-pointer font-medium">
 					{@render badge(major.mark)}
-					{major.id} · {major.title}
-				</h3>
-				<p class="mb-2 text-sm text-neutral-600">Deliverable: {major.deliverable}</p>
+					{major.id} · <Inline text={major.title} />
+				</summary>
+				<p class="mb-2 text-sm text-neutral-600">
+					Deliverable: <Inline text={major.deliverable} />
+				</p>
 				<ul class="space-y-2 border-l border-neutral-200 pl-4">
 					{#each major.minors as minor (minor.id)}
 						<li>
-							<p>{@render badge(minor.mark)} {minor.id} {minor.title}</p>
-							<p class="text-sm text-neutral-600">Proof: {minor.proof}</p>
+							<p>{@render badge(minor.mark)} {minor.id} <Inline text={minor.title} /></p>
+							<p class="text-sm text-neutral-600">Proof: <Inline text={minor.proof} /></p>
 							{#if minor.impl.length}
-								<ul class="mt-1 list-disc pl-5 text-sm text-neutral-700">
-									{#each minor.impl as detail, i (i)}
-										<li>{detail}</li>
-									{/each}
-								</ul>
+								<details class="mt-1 text-sm text-neutral-700" open={minor.mark === '~'}>
+									<summary class="cursor-pointer text-neutral-500">
+										{minor.impl.length} implementation {minor.impl.length === 1
+											? 'detail'
+											: 'details'}
+									</summary>
+									<ul class="list-disc pl-5">
+										{#each minor.impl as detail, i (i)}
+											<li><Inline text={detail} /></li>
+										{/each}
+									</ul>
+								</details>
 							{/if}
 						</li>
 					{/each}
 				</ul>
-			</section>
+			</details>
 		{/each}
 	{/if}
 </main>

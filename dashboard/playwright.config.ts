@@ -1,17 +1,25 @@
 import { defineConfig, devices } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 
-// The fixture registry the dev server reads; e2e.setup.ts fills it before the tests run.
+// Tests run against a fixture registry (e2e.setup.ts). SCREENSHOTS=1 runs only screenshots.e2e.ts,
+// against the owner's real registry, so proof screenshots show the real dashboard.
+const screenshots = Boolean(process.env.SCREENSHOTS);
 const home = fileURLToPath(new URL('../scratch/temp/e2e/home', import.meta.url));
 const port = 5198;
+const env = process.env as Record<string, string>;
 
 export default defineConfig({
-	testMatch: '**/*.e2e.ts',
-	globalSetup: './e2e.setup.ts',
+	...(screenshots
+		? { testMatch: '**/screenshots.e2e.ts' }
+		: {
+				testMatch: '**/*.e2e.ts',
+				testIgnore: '**/screenshots.e2e.ts',
+				globalSetup: './e2e.setup.ts'
+			}),
 	webServer: {
 		command: `pnpm dev --port ${port} --strictPort`,
 		port,
-		env: { ...(process.env as Record<string, string>), WF_HOME: home }
+		env: screenshots ? env : { ...env, WF_HOME: home }
 	},
 	use: { baseURL: `http://localhost:${port}`, channel: 'chrome' },
 	projects: [

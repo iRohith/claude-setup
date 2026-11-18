@@ -76,6 +76,12 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   - Playwright via `sv add playwright` on the system Chrome (`channel: 'chrome'`, no browser downloads); `e2e.setup.ts` builds a fixed fixture project with the wf CLI in `scratch/temp/e2e` and the dev server reads it through `WF_HOME`
   - 3 e2e tests at desktop (1440×900) and mobile (Pixel 7): project list, todo page, 404; in the pre-commit hook; `SCREENSHOTS=1` writes `scratch/images/1.5-{projects,todo}-{desktop,mobile}.png`
   - reviewing the screenshots found the ◐ glyph rendering as a clipped half-shape and the path wrapping mid-line on mobile; replaced with open / in progress / done badges and put the path on its own line
+  - correction: the committed screenshots showed the e2e fixture project, not the real dashboard or the throwaway project the proof names; the real-dashboard screenshots are 1.7
+- [x] 1.7 screenshots of the real dashboard: the owner's registry and projects, with claude-setup itself registered
+  Proof: scratch/images shows / and every registered project's page at desktop and mobile, taken from pnpm dev with the default registry
+  - `wf init` in a project that already has docs/state/ now checks it parses and registers it; registered claude-setup itself
+  - `SCREENSHOTS=1 ITEM=<id> pnpm --dir dashboard test` runs only `screenshots.e2e.ts` against the real registry (no `WF_HOME` override): `/` and every registered project, at desktop and mobile, failing on any non-OK page; the fixture tests no longer take screenshots
+  - real data showed raw backticks and a wall of finished work: `#lib/Inline.svelte` renders code spans; finished majors and finished minors' details fold; fixture tests cover both; a hydration race in one test fixed with networkidle, then 3 clean runs
 
 ## [ ] 2 · States and admin
 Deliverable: setup/discuss/build behave as spec section 2 in a real session, and admin mode lifts every restriction only when the owner flips it.

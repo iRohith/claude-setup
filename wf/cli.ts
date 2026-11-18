@@ -45,8 +45,13 @@ function main(argv: string[]): void {
 
 	switch (command) {
 		case 'init': {
-			const root = wf.initProject(process.cwd());
-			console.log(`created ${join(root, 'docs', 'state')}/ in setup state and registered it`);
+			const { root, created } = wf.initProject(process.cwd());
+			const state = join(root, 'docs', 'state');
+			console.log(
+				created
+					? `created ${state}/ in setup state and registered it`
+					: `${state}/ already exists; registered it`
+			);
 			return;
 		}
 		case 'status':

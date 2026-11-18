@@ -21,6 +21,10 @@ export default function setup(): void {
 	wf('add', 'minor', '0', 'notes store', '--proof', 'a unit test saves and reloads two notes');
 	wf('add', 'minor', '0', 'notes page', '--proof', 'screenshots show both notes');
 	wf('start', '0.1');
-	wf('impl', '0.1', 'notes kept in a JSON file');
+	wf('impl', '0.1', 'notes kept in `notes.json`');
+	wf('add', 'minor', '0', 'setup', '--proof', 'done first');
+	wf('start', '0.3');
+	wf('impl', '0.3', 'scaffolded');
+	wf('done', '0.3');
 	wf('add', 'major', 'Sharing', '--deliverable', 'a note opens from a link');
 }

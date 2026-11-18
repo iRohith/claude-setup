@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import Inline from '#lib/Inline.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -27,9 +28,13 @@
 							<dt class="text-neutral-500">state</dt>
 							<dd>{p.state}</dd>
 							<dt class="text-neutral-500">active</dt>
-							<dd>{p.active.length ? p.active.join('; ') : '—'}</dd>
+							<dd>
+								{#each p.active as item (item)}<p><Inline text={item} /></p>{:else}—{/each}
+							</dd>
 							<dt class="text-neutral-500">next</dt>
-							<dd>{p.next ?? '—'}</dd>
+							<dd>
+								{#if p.next}<Inline text={p.next} />{:else}—{/if}
+							</dd>
 						</dl>
 					{/if}
 				</li>
