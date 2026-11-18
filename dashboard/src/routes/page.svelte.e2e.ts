@@ -1,5 +1,17 @@
 // Behaviour checks against the fixture registry built by e2e.setup.ts.
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const e2e = fileURLToPath(new URL('../../../scratch/temp/e2e/', import.meta.url));
+const cli = fileURLToPath(new URL('../../../wf/cli.ts', import.meta.url));
+
+/** The real wf CLI, run in the fixture project as a terminal would. */
+const wf = (...args: string[]) =>
+	execFileSync(process.execPath, [cli, ...args], {
+		cwd: `${e2e}notes`,
+		env: { ...process.env, WF_HOME: `${e2e}home` }
+	});
 
 /** On mobile the projects sidebar is a sheet behind the trigger. */
 async function sidebar(page: Page, info: TestInfo) {
@@ -209,6 +221,17 @@ test('global learnings are edited on the Global page', async ({ page }, info) =>
 	await page.getByRole('button', { name: `Edit learning ${n}` }).click();
 	await page.getByRole('button', { name: 'Remove' }).click();
 	await expect(item).toHaveCount(0);
+});
+
+test('the open dashboard shows a change made in a terminal within two seconds', async ({
+	page
+}, info) => {
+	await openNotes(page);
+	const title = `Added from a terminal on ${info.project.name}`;
+	await expect(page.getByRole('region', { name: title })).toHaveCount(0);
+	wf('add', 'major', title, '--deliverable', 'the page updates without a reload');
+	// Two seconds between refreshes, plus the request itself.
+	await expect(page.getByRole('region', { name: title })).toBeVisible({ timeout: 3000 });
 });
 
 test('an unregistered path is a 404', async ({ page }) => {

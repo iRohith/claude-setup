@@ -185,8 +185,10 @@ Deliverable: the owner manages todos and learnings across all projects without t
   - cli: wf learn --edit \<n> and --remove \<n> (with --global), refusing both together or a non-integer n; help says how to merge and prune; global/CLAUDE.md names both for over-budget refusals
   - dashboard: Learnings.svelte on the project Learnings view and the Global page: a budget meter (shadcn Progress) for the fullest affected project, the list as wrong → instead, inline edit with Save, Cancel, Remove, an add form with a live count and arrow hint; one learning action through changeLearning, its form action keeping ?view=learnings
   - tests: wf 69 (parser round-trips both real files; edit, remove, renumbering and the budget through the CLI); dashboard e2e 24 (project and global learnings); screenshots change only the throwaway project under scratch/temp, fill it to the budget through the core, and restore it in afterEach with a byte check
-- [ ] 4.5 the dashboard refreshes while open, re-reading state every two seconds
+- [x] 4.5 the dashboard refreshes while open, re-reading state every two seconds
   Proof: a wf command run in a terminal shows up on the open dashboard within two seconds, in a Playwright test against the fixture
+  - +layout.svelte: an $effect interval calls invalidateAll every 2000 ms (REFRESH_MS, the spec's freshness rule) while the tab is visible, re-running the layout and page loads; component state such as open edit forms survives a refresh
+  - e2e: the real wf CLI adds a major in the fixture project while the page stays open; the region appears within 3 s with no reload; the full suite passed 26 of 26 three runs in a row
 - [ ] 4.6 steers, risks, memory and the plan docs editable section by section in the dashboard, through wf's own writers
   Proof: screenshots from the real dashboard at desktop and mobile of a section edited and a malformed edit rejected; the file changes only by that section
 

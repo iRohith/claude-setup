@@ -1,11 +1,21 @@
 <script lang="ts">
 	import './layout.css';
+	import { invalidateAll } from '$app/navigation';
 	import favicon from '#lib/assets/favicon.svg';
 	import AppSidebar from '#lib/AppSidebar.svelte';
 	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
+
+	/** The spec's freshness rule: state is re-read every two seconds while the tab is visible. */
+	const REFRESH_MS = 2000;
+	$effect(() => {
+		const timer = setInterval(() => {
+			if (document.visibilityState === 'visible') invalidateAll();
+		}, REFRESH_MS);
+		return () => clearInterval(timer);
+	});
 </script>
 
 <svelte:head>
