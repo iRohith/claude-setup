@@ -8,13 +8,23 @@
 
 	let { data, children }: LayoutProps = $props();
 
-	/** The spec's freshness rule: state is re-read every two seconds while the tab is visible. */
+	/**
+	 * The spec's freshness rule: state is re-read every two seconds while the tab is visible. The next
+	 * refresh is scheduled only after the last one finishes, so a slow server never gets a pile-up.
+	 */
 	const REFRESH_MS = 2000;
 	$effect(() => {
-		const timer = setInterval(() => {
-			if (document.visibilityState === 'visible') invalidateAll();
-		}, REFRESH_MS);
-		return () => clearInterval(timer);
+		let timer: ReturnType<typeof setTimeout>;
+		let stopped = false;
+		const refresh = async () => {
+			if (document.visibilityState === 'visible') await invalidateAll();
+			if (!stopped) timer = setTimeout(refresh, REFRESH_MS);
+		};
+		timer = setTimeout(refresh, REFRESH_MS);
+		return () => {
+			stopped = true;
+			clearTimeout(timer);
+		};
 	});
 </script>
 
