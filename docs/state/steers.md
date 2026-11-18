@@ -109,6 +109,12 @@ Changed: added 1.6 (placed before 1.2); intent principle 13; guidance line in im
 Why it's a steer: sets how sessions run, and how friction is handled.
 Changed: intent principles 14 and 15; two guidance lines in implementation.md.
 
+## 2026-11-18 · affects 1.5, 4, all
+> another guideline. for UI related stuff, playwright tests, screenshots (committed in scratch/images) at different resolutions like desktop, mobile etc are mandatory. via prompts. I installed chrome here - /usr/bin/google-chrome-stable
+
+Why it's a steer: a proof rule for every UI item, and the browser blocker is cleared.
+Changed: intent principle 16; guidance line; `scratch/images/` added to spec locations; 1.5 gets Playwright e2e tests that write desktop and mobile screenshots.
+
 ## 2026-11-18 · affects 1.4
 assumption: machine setup is `wf install` in TypeScript (`wf/install.ts`), not `install.sh`. It refuses to run when `CLAUDECODE` is set, so only the owner runs it, from a terminal.
 Why: the owner's rule is type-safe languages and TS over JS wherever possible, and install needs JSON merging that TS does safely. The refusal also keeps the agent from writing outside the project.

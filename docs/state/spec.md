@@ -10,6 +10,7 @@ The exact formats and commands. `implementation.md` says how they get built.
 | `<project>/.githooks/pre-commit` | the checks the owner named in setup, written by `wf checks` | yes |
 | `<project>/.githooks/pre-push` | optional: commands the owner names to run when a major is pushed (for example, a deploy), written by `wf push`; absent when there are none | yes |
 | `<project>/scratch/scripts/` | project scripts | yes |
+| `<project>/scratch/images/` | UI screenshots at each size, `<id>-<page>-<size>.png`, written by the Playwright tests | yes |
 | `<project>/scratch/{temp,refs,links,thirdparty}/` | logs and temp output; refs to the owner's own projects; links to collaborating projects; other cloned repos | no |
 | `claude-setup/global/learnings.md` | global learnings | yes |
 | `claude-setup/global/CLAUDE.md` | global guidance, linked to `~/.claude/CLAUDE.md` | yes |

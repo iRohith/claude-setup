@@ -34,6 +34,8 @@ xargs -0 -r git -C "$root" add -- < "$root/scratch/temp/staged.lst"
 pnpm --dir "$dash" lint
 pnpm --dir "$dash" check
 pnpm --dir "$dash" build
+# Playwright e2e at desktop and mobile sizes; screenshots only with SCREENSHOTS=1, as an item's proof.
+pnpm --dir "$dash" test
 pnpm --dir "$wf" lint
 pnpm --dir "$wf" check
 # wf tests also prove the real docs/state files stay canonical.

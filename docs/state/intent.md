@@ -66,7 +66,9 @@ The setup that makes it behave this way is itself simple, small and obvious.
     something only the owner can provide.
 15. Friction is never a reason to work around something. When a tool, permission or answer is missing,
     tell the owner exactly what's needed and get it. Meanwhile, carry on with whatever doesn't depend on it.
-16. pnpm is the default for everything (npm and npx are aliased to pnpm). System Python with uv.
+16. UI work always comes with Playwright tests and screenshots at several sizes, at least desktop and
+    mobile. The screenshots are committed in `scratch/images/`, named after the todo item.
+17. pnpm is the default for everything (npm and npx are aliased to pnpm). System Python with uv.
 
 ## Lessons from three failed attempts
 

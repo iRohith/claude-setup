@@ -84,6 +84,7 @@ This is how claude-setup gets built, start to finish. The exact formats and comm
 - "one shell command per call, long output to `scratch/temp/` then read";
 - "pnpm by default";
 - "type-safe languages only unless the owner allows otherwise; TypeScript over JavaScript, configs included";
+- "UI work: Playwright tests plus screenshots at desktop and mobile sizes (more when the UI calls for it), committed in `scratch/images/` as `<id>-<page>-<size>.png`";
 - "long-running by default: after a task, start the next; stop only at a blocker only the owner can clear";
 - "missing tool, permission or answer: say exactly what's needed and get it; no workarounds; meanwhile do what doesn't depend on it";
 - "latest stable versions";

@@ -4,8 +4,18 @@
 
 	let { data }: PageProps = $props();
 
-	const MARK = { ' ': '☐', '~': '◐', x: '☑' } as const;
+	const MARK = {
+		' ': { label: 'open', style: 'bg-neutral-100 text-neutral-600' },
+		'~': { label: 'in progress', style: 'bg-amber-100 text-amber-800' },
+		x: { label: 'done', style: 'bg-emerald-100 text-emerald-800' }
+	} as const;
 </script>
+
+{#snippet badge(mark: keyof typeof MARK)}
+	<span class="rounded px-1.5 py-0.5 align-middle text-xs font-normal {MARK[mark].style}"
+		>{MARK[mark].label}</span
+	>
+{/snippet}
 
 <svelte:head><title>wf · {data.summary.name}</title></svelte:head>
 
@@ -21,14 +31,14 @@
 		{#each data.todo.majors as major (major.id)}
 			<section class="mb-6">
 				<h3 class="font-medium">
-					<span aria-label="status">{MARK[major.mark]}</span>
+					{@render badge(major.mark)}
 					{major.id} · {major.title}
 				</h3>
 				<p class="mb-2 text-sm text-neutral-600">Deliverable: {major.deliverable}</p>
 				<ul class="space-y-2 border-l border-neutral-200 pl-4">
 					{#each major.minors as minor (minor.id)}
 						<li>
-							<p><span aria-label="status">{MARK[minor.mark]}</span> {minor.id} {minor.title}</p>
+							<p>{@render badge(minor.mark)} {minor.id} {minor.title}</p>
 							<p class="text-sm text-neutral-600">Proof: {minor.proof}</p>
 							{#if minor.impl.length}
 								<ul class="mt-1 list-disc pl-5 text-sm text-neutral-700">

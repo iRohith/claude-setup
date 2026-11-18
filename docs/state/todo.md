@@ -69,10 +69,13 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   Proof: transcript of a real session showing the injected context and the denied Edit with its alternative
 - [~] 1.4 install.sh: links, PATH, hook registration
   Proof: on a clean `~/.claude` the throwaway project works with no per-project step
-- [~] 1.5 dashboard: read-only project list and todo tab
+- [x] 1.5 dashboard: read-only project list and todo tab
   Proof: screenshot of the throwaway project's todo
   - dashboard reads through the core as the workspace package `wf` (`exports` → `core.ts`); `src/lib/server/projects.ts` lists the registry and summarises each project; `/` lists projects, `/projects/<abs path>` shows the todo; unregistered paths return 404
   - throwaway project `scratch/temp/demo` built with wf only (init, a major, two minors, one started, one detail); both pages render every field over curl; the screenshot waits on a browser for the Playwright MCP
+  - Playwright via `sv add playwright` on the system Chrome (`channel: 'chrome'`, no browser downloads); `e2e.setup.ts` builds a fixed fixture project with the wf CLI in `scratch/temp/e2e` and the dev server reads it through `WF_HOME`
+  - 3 e2e tests at desktop (1440×900) and mobile (Pixel 7): project list, todo page, 404; in the pre-commit hook; `SCREENSHOTS=1` writes `scratch/images/1.5-{projects,todo}-{desktop,mobile}.png`
+  - reviewing the screenshots found the ◐ glyph rendering as a clipped half-shape and the path wrapping mid-line on mobile; replaced with open / in progress / done badges and put the path on its own line
 
 ## [ ] 2 · States and admin
 Deliverable: setup/discuss/build behave as spec section 2 in a real session, and admin mode lifts every restriction only when the owner flips it.

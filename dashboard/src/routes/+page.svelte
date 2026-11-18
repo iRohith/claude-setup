@@ -19,7 +19,7 @@
 						class="font-medium hover:underline"
 						href={resolve('/projects/[...path]', { path: p.root.slice(1) })}>{p.name}</a
 					>
-					<span class="ml-2 text-xs text-neutral-500">{p.root}</span>
+					<span class="block text-xs break-all text-neutral-500">{p.root}</span>
 					{#if p.error}
 						<p class="mt-2 text-sm text-red-700">{p.error}</p>
 					{:else}
