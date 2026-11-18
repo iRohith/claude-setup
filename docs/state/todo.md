@@ -212,8 +212,10 @@ Deliverable: global/CLAUDE.md complete and readable in one sitting, importing th
   - proof: diff -ru of each copy against its upstream path shows only the listed changes; every file under global/ is mode 644 markdown, with no hooks, scripts or binaries
 - [ ] 5.3 seed global learnings from the three failed attempts
   Proof: `wf status` shows them; under the budget
-- [~] 5.4 wf install also links global/rules/ files into ~/.claude/rules/ and global/skills/ folders into ~/.claude/skills/ (the CLAUDE.md link is 1.12)
+- [x] 5.4 wf install also links global/rules/ files into ~/.claude/rules/ and global/skills/ folders into ~/.claude/skills/ (the CLAUDE.md link is 1.12)
   Proof: on a fresh HOME, install links the skills into claude-setup; a second run changes nothing
+  - install.ts linkEach: every entry of global/rules/ is linked into ~/.claude/rules/ and every folder of global/skills/ into ~/.claude/skills/, by the same name, through the existing linkTo, so a file the owner made there is never replaced
+  - proof: install.test.ts on a fresh HOME links both rules and all three skills beside the owner's own rule and skill, a second run prints 'already installed', and a same-named skill of the owner's is refused untouched; wf help install names the links
 - [ ] 5.5 impeccable installed as a launcher-free skill in global/skills/impeccable: its router and design references, Setup rewritten for the no-launcher path, live mode, detect, hooks, doctor and pin left out
   Proof: a diff against upstream with no launcher call left; in a fresh session /impeccable loads and a UI task follows its craft floor; Apache-2.0 notice and changes in THIRD-PARTY.md
 

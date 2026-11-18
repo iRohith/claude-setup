@@ -1,7 +1,16 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, writeFileSync } from 'node:fs';
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readdirSync,
+	readFileSync,
+	readlinkSync,
+	rmSync,
+	writeFileSync
+} from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -15,6 +24,10 @@ before(() => {
 	tmp = mkdtempSync(join(repo, 'scratch', 'temp', 'install-test-'));
 	home = join(tmp, 'home');
 	mkdirSync(join(home, '.claude'), { recursive: true });
+	mkdirSync(join(home, '.claude', 'rules'), { recursive: true });
+	writeFileSync(join(home, '.claude', 'rules', 'mine.md'), 'my rule');
+	mkdirSync(join(home, '.claude', 'skills', 'mine'), { recursive: true });
+	writeFileSync(join(home, '.claude', 'skills', 'mine', 'SKILL.md'), 'my skill');
 	writeFileSync(
 		join(home, '.claude', 'settings.json'),
 		JSON.stringify({
@@ -51,6 +64,41 @@ test('install links wf and CLAUDE.md and registers both hooks, keeping existing 
 	assert.equal(s.hooks.PreToolUse[0].hooks[0].command, `${cli} hook pre-tool-use`);
 	assert.equal(s.hooks.UserPromptSubmit[0].matcher, undefined);
 	assert.equal(s.hooks.UserPromptSubmit[0].hooks[0].command, `${cli} hook user-prompt-submit`);
+});
+
+test('install links every vetted rules file and skill folder, next to what is already there', () => {
+	// Set up before the first install: a rule and a skill of the owner's own stay untouched.
+	const rules = join(home, '.claude', 'rules');
+	const skills = join(home, '.claude', 'skills');
+	assert.ok(existsSync(join(rules, 'mine.md')));
+	assert.ok(existsSync(join(skills, 'mine', 'SKILL.md')));
+	for (const name of readdirSync(join(repo, 'global', 'rules')))
+		assert.equal(readlinkSync(join(rules, name)), join(repo, 'global', 'rules', name));
+	for (const name of readdirSync(join(repo, 'global', 'skills')))
+		assert.equal(readlinkSync(join(skills, name)), join(repo, 'global', 'skills', name));
+	assert.deepEqual(readdirSync(join(repo, 'global', 'rules')).sort(), [
+		'karpathy.md',
+		'ponytail.md'
+	]);
+	assert.deepEqual(readdirSync(join(repo, 'global', 'skills')).sort(), [
+		'codebase-design',
+		'diagnosing-bugs',
+		'tdd'
+	]);
+	assert.equal(readFileSync(join(rules, 'mine.md'), 'utf8'), 'my rule');
+});
+
+test('install refuses to replace a skill of the same name that it did not link', () => {
+	const other = join(tmp, 'home4');
+	mkdirSync(join(other, '.claude', 'skills', 'tdd'), { recursive: true });
+	writeFileSync(join(other, '.claude', 'skills', 'tdd', 'SKILL.md'), 'my own tdd');
+	const r = install({ HOME: other });
+	assert.equal(r.status, 1);
+	assert.match(r.stderr, /skills\/tdd exists and isn't a link/);
+	assert.equal(
+		readFileSync(join(other, '.claude', 'skills', 'tdd', 'SKILL.md'), 'utf8'),
+		'my own tdd'
+	);
 });
 
 test('install updates the matcher of a hook it already registered', () => {

@@ -1,6 +1,14 @@
 // One-time machine setup, run by the owner: wf on PATH, the global instructions as
-// ~/.claude/CLAUDE.md, and the Claude Code hooks in user settings.
-import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, symlinkSync } from 'node:fs';
+// ~/.claude/CLAUDE.md, the vetted rules and skills, and the Claude Code hooks in user settings.
+import {
+	existsSync,
+	lstatSync,
+	mkdirSync,
+	readFileSync,
+	readdirSync,
+	readlinkSync,
+	symlinkSync
+} from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,8 +33,17 @@ export function install(): string[] {
 	return [
 		...linkTo(join(homedir(), '.local', 'bin', 'wf'), cli),
 		...linkTo(join(homedir(), '.claude', 'CLAUDE.md'), globalFile('CLAUDE.md')),
+		...linkEach(join(homedir(), '.claude', 'rules'), globalFile('rules')),
+		...linkEach(join(homedir(), '.claude', 'skills'), globalFile('skills')),
 		...registerHooks()
 	];
+}
+
+/** Links each entry of `source` (a rules file or a skill folder) into `dir`, by the same name. */
+function linkEach(dir: string, source: string): string[] {
+	return readdirSync(source)
+		.sort()
+		.flatMap((name) => linkTo(join(dir, name), join(source, name)));
 }
 
 /** Links `link` to `target`; never replaces anything that isn't already that link. */

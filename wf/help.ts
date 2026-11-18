@@ -240,10 +240,13 @@ export const HELP: Record<string, Help> = {
 	},
 	install: {
 		usage: ['wf install'],
-		summary: 'once per machine, by the owner in a terminal: wf on PATH and the hooks registered',
+		summary:
+			'once per machine, by the owner in a terminal: wf on PATH, guidance, rules, skills, hooks',
 		details: [
-			'Links ~/.local/bin/wf and adds the hooks to ~/.claude/settings.json, keeping other settings.',
-			'Idempotent. Refuses to run inside Claude Code.'
+			'Links ~/.local/bin/wf, ~/.claude/CLAUDE.md, each global/rules file into ~/.claude/rules/ and',
+			'each global/skills folder into ~/.claude/skills/, and adds the hooks to ~/.claude/settings.json,',
+			'keeping other settings. Never replaces a file it did not link. Idempotent; rerun it after a new',
+			'rule or skill is added. Refuses to run inside Claude Code.'
 		]
 	},
 	help: {
