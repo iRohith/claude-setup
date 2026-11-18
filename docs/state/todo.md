@@ -65,9 +65,9 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   - every write prints its changed lines (an LCS line diff: `- ` removed, `+ ` added); writes hold a single-writer lock in `scratch/temp/wf.lock` and take it over from a dead process
   - core gained `activeMinors`, `nextItem` (stays in the active major; otherwise the first unfinished major), `withLock`, `initProject` (empty templates, setup state) and the registry `local/projects.json` under `WF_HOME` (default: claude-setup)
   - `wf/cli.test.ts`: 7 tests run the real CLI against a sample project in `scratch/temp/` with a temp `WF_HOME` (removed afterwards); 19 of 19 wf tests pass; also ran `wf status` and `wf show 1` on this repo
-- [ ] 1.3 hooks: SessionStart injection and the PreToolUse deny on `docs/state/**`
+- [~] 1.3 hooks: SessionStart injection and the PreToolUse deny on `docs/state/**`
   Proof: transcript of a real session showing the injected context and the denied Edit with its alternative
-- [ ] 1.4 install.sh: links, PATH, hook registration
+- [~] 1.4 install.sh: links, PATH, hook registration
   Proof: on a clean `~/.claude` the throwaway project works with no per-project step
 - [ ] 1.5 dashboard: read-only project list and todo tab
   Proof: screenshot of the throwaway project's todo
@@ -85,13 +85,13 @@ Deliverable: setup/discuss/build behave as spec section 2 in a real session, and
 ## [ ] 3 · Records
 Deliverable: every record type from spec section 3 written and queried through `wf`.
 
-- [ ] 3.1 learnings (project and global) with the size budget; injected at SessionStart
+- [ ] 3.1 learnings (project and global) with a size budget that keeps the whole SessionStart context under Claude Code's 10,000-character cap; injected at SessionStart
   Proof: a learning added in one session appears in the next session's context, including after `/compact`
 - [ ] 3.2 steers and assumptions with `--why` and `--log`
   Proof: `wf show <id>` lists the steer that changed it
 - [ ] 3.3 `wf risk` with all four fields required
   Proof: a request missing `--recover` is rejected naming the field
-- [ ] 3.4 memory sections, doc sections, `wf batch`, `wf find`, `wf get`
+- [ ] 3.4 memory sections, doc sections, `wf edit`, `wf move`, `wf batch`, `wf find`, `wf get`
   Proof: a batch with one bad line changes nothing; `wf find` hits across files
 - [ ] 3.5 `wf env set` and `wf env keys`; `.env` read and print denied
   Proof: `.env` gets the key; the transcript never shows a value; `cat .env` is denied

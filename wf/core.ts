@@ -10,7 +10,7 @@ import {
 	writeFileSync,
 	writeSync
 } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export class WfError extends Error {}
@@ -280,9 +280,25 @@ export function findRoot(from: string): string {
 
 const statePath = (root: string, name: string) => join(root, 'docs', 'state', name);
 
-function writeAtomic(path: string, text: string): void {
+export function writeAtomic(path: string, text: string): void {
 	writeFileSync(`${path}.tmp`, text);
 	renameSync(`${path}.tmp`, path);
+}
+
+/**
+ * State files only wf may write. Each file joins when wf gains the commands that write it, so a
+ * denial can always name the alternative.
+ */
+export const WF_OWNED_FILES = ['todo.md', 'handoff.md'];
+
+export function isWfOwned(path: string): boolean {
+	const file = resolve(path);
+	const dir = dirname(file);
+	return (
+		basename(dir) === 'state' &&
+		basename(dirname(dir)) === 'docs' &&
+		WF_OWNED_FILES.includes(basename(file))
+	);
 }
 
 /** One writer at a time per project. A lock left by a dead process is taken over. */

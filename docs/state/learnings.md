@@ -6,3 +6,4 @@
 4. Hooks used as the main control created friction → guidance first, hooks only for the hard limits.
 5. Asked the owner things already said (e.g. `docs/state/`) → check the conversation and refs before asking.
 6. Shrank a long requirement list into a todo tool → restate every requirement before proposing a shape.
+7. Started 1.3 without `wf start`, and hand-edited todo.md for lack of `wf edit` → start before working; plan every spec'd command into an item.

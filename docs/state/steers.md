@@ -109,6 +109,16 @@ Changed: added 1.6 (placed before 1.2); intent principle 13; guidance line in im
 Why it's a steer: sets how sessions run, and how friction is handled.
 Changed: intent principles 14 and 15; two guidance lines in implementation.md.
 
+## 2026-11-18 · affects 1.4
+assumption: machine setup is `wf install` in TypeScript (`wf/install.ts`), not `install.sh`. It refuses to run when `CLAUDECODE` is set, so only the owner runs it, from a terminal.
+Why: the owner's rule is type-safe languages and TS over JS wherever possible, and install needs JSON merging that TS does safely. The refusal also keeps the agent from writing outside the project.
+Changed: implementation.md now describes `wf install`; the 1.4 title still says install.sh until `wf edit` lands in 3.4; reversible by swapping in a shell script.
+
+## 2026-11-18 · affects 1.3
+assumption: the PreToolUse deny covers only the state files `wf` can write so far (`todo.md`, `handoff.md`). Each file joins `WF_OWNED_FILES` when its `wf` command lands in 3.x.
+Why: a denial must name the alternative, and steers, learnings, memory and docs have no `wf` command yet. Denying them now would block work with nothing to use instead.
+Changed: 1.3 denies two files instead of all of `docs/state/**`; reversible by extending one list in `wf/core.ts`.
+
 ## 2026-11-18 · affects 0, all
 > now move to pnpm instead of bun for everything.
 

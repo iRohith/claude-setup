@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 // Parses arguments, calls the core, prints plain text. No rules live here.
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import * as wf from './core.ts';
+import { runHook } from './hooks.ts';
+import { install } from './install.ts';
 
 const USAGE = `usage:
   wf init
@@ -14,7 +17,9 @@ const USAGE = `usage:
   wf start <minor>
   wf done <id>
   wf impl <minor> "<detail>"
-  wf handoff --next "<text>" --verify "<text>" --dont "<text>" [--open "<text>" ...]`;
+  wf handoff --next "<text>" --verify "<text>" --dont "<text>" [--open "<text>" ...]
+  wf hook session-start|pre-tool-use   (Claude Code hooks; hook JSON on stdin)
+  wf install                           (once per machine, by the owner, outside Claude Code)`;
 
 const OPTIONS = {
 	deliverable: { type: 'string' },
@@ -71,6 +76,16 @@ function main(argv: string[]): void {
 			return editTodo((t) => wf.impl(t, arg(0, 'minor'), arg(1, 'detail')));
 		case 'handoff':
 			return handoff(values.next ?? '', values.verify ?? '', values.dont ?? '', values.open ?? []);
+		case 'hook':
+			process.stdout.write(runHook(arg(0, 'event'), readFileSync(0, 'utf8')));
+			return;
+		case 'install': {
+			if (process.env.CLAUDECODE)
+				throw new wf.WfError('install writes outside the project; the owner runs it in a terminal');
+			const changes = install();
+			console.log(changes.length ? changes.join('\n') : 'already installed');
+			return;
+		}
 		default:
 			throw new UsageError(command ? `unknown command ${command}` : 'missing command');
 	}

@@ -17,9 +17,13 @@ This is how claude-setup gets built, start to finish. The exact formats and comm
   - `global/CLAUDE.md`: global guidance, short;
   - `global/learnings.md`;
   - `global/skills/`: the vetted skills.
-- **`install.sh`:** the owner runs it once per machine. It links `~/.claude/CLAUDE.md` and the skills,
-  puts `wf` on PATH, registers the hooks in `~/.claude/settings.json`, and runs `pnpm install` for the
-  dashboard. Nothing is copied into projects.
+- **`wf install`** (`wf/install.ts`, TypeScript, not shell): the owner runs it once per machine, in a
+  terminal; it refuses to run inside Claude Code.
+  - **What it does:** links `~/.local/bin/wf` to `wf/cli.ts` and adds the hooks to
+    `~/.claude/settings.json`, idempotently and keeping the existing settings. It also links
+    `~/.claude/CLAUDE.md` and the skills (added in 5.1 and 5.2).
+  - **What it doesn't do:** copy anything into projects. `pnpm install` stays the owner's normal step
+    after cloning.
 
 ## How the core works
 
