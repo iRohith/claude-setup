@@ -113,6 +113,24 @@ export const HELP: Record<string, Help> = {
 			'Rewrite it at the end of each minor and whenever work stops, before the commit.'
 		]
 	},
+	steer: {
+		usage: [
+			'wf steer "<summary>" --why "<reason>" --affects <ids|all> --changed "<what changed>" --log true|false'
+		],
+		summary: 'record an owner steer, after changing the plan it affects',
+		details: [
+			'A steer is the owner redirecting the code, project, architecture, state or flow of work.',
+			'Questions, chatter and small one-off requests are not steers.',
+			'Update the plan first (todo, plan documents), then record what changed with --changed.',
+			'--affects lists existing ids, comma-separated, or all. --log false records nothing.',
+			"The summary is yours, never the owner's words verbatim. wf show <id> lists the steers for an item."
+		]
+	},
+	assume: {
+		usage: ['wf assume "<summary>" --why "<reason>" --affects <ids|all> [--changed "<text>"]'],
+		summary: 'record a reversible choice made while the owner is away, for their review',
+		details: ['Take the most reversible option, do it, then record it here.']
+	},
 	learn: {
 		usage: ['wf learn "<what went wrong> → <what to do instead>" [--global]'],
 		summary: 'record a lesson: this project, or with --global every project',

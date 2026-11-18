@@ -225,6 +225,39 @@ test('learn numbers lessons, needs the arrow, and keeps the session context unde
 	assert.equal(readFileSync(file, 'utf8'), kept);
 });
 
+test('steers and assumptions are recorded as summaries and listed by wf show', () => {
+	const r = wf(
+		'steer',
+		'export must not need the network',
+		'--why',
+		'changes the architecture of 0.2',
+		'--affects',
+		'0.2',
+		'--changed',
+		'0.2 proof now runs offline',
+		'--log',
+		'true'
+	);
+	assert.equal(r.code, 0, r.err);
+	assert.match(r.out, /^\+ Steer: export must not need the network$/m);
+	assert.match(r.out, /^\+ Changed: 0\.2 proof now runs offline$/m);
+	const a = wf('assume', 'kept JSON over SQLite', '--why', 'most reversible', '--affects', '0');
+	assert.equal(a.code, 0, a.err);
+	const shown = wf('show', '0.2').out;
+	assert.match(shown, /Steers:\n- \d{4}-\d{2}-\d{2} steer: export must not need the network/);
+	assert.match(shown, /assumption: kept JSON over SQLite/);
+	assert.match(
+		wf('steer', 'x', '--why', 'y', '--affects', '9.9', '--changed', 'z', '--log', 'true').err,
+		/no major 9/
+	);
+	assert.match(
+		wf('steer', 'x', '--why', 'y', '--affects', '0', '--log', 'true').err,
+		/say what changed/
+	);
+	assert.equal(wf('steer', 'x', '--why', 'y', '--affects', '0').code, 2);
+	assert.match(wf('steer', 'chatter', '--log', 'false').out, /not logged/);
+});
+
 test('commands outside a project explain what to do', () => {
 	// Everything under scratch/ sits inside this repo, so run from / (read-only) instead.
 	const r = spawnSync(process.execPath, [cli, 'status'], { cwd: '/', encoding: 'utf8' });

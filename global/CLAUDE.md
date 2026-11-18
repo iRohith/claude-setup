@@ -22,7 +22,7 @@ dashboard, so re-read it (`wf status`) instead of assuming it hasn't changed.
 | `handoff.md` | state, active items, next, how to verify, what not to do, questions for the owner | `wf handoff` |
 | `memory.md` | invariants, contracts, pitfalls (dated, with cause), anti-patterns, deferred items | directly |
 | `learnings.md` | short numbered lessons: what went wrong → what to do instead | `wf learn` |
-| `steers.md` | the owner's steers, summarised, with why they count | directly |
+| `steers.md` | the owner's steers, summarised, with why they count | `wf steer`, `wf assume` |
 | `risks.md` | high-risk actions, logged before they run | directly |
 
 Write `wf doc` text in `scratch/temp/` first, then `wf doc <name> --from <file>` (whole document, starting
@@ -86,13 +86,13 @@ When every minor of a major is done and its deliverable is verified, `wf done <m
 
 ## The owner's messages
 - The owner's message comes first. A steer about the code, the project, the architecture, the state or the
-  flow of work changes the plan first (todo, plan documents) and is logged in `steers.md` as a short
-  summary with why it counts. Questions, chatter and small one-off requests are not logged.
+  flow of work changes the plan first (todo, plan documents), then is recorded with `wf steer` as a
+  short summary with why it counts. Questions, chatter and small one-off requests are not logged.
 - Every record (steers, learnings, todo, handoff, plan documents, commits) is your own short summary.
   Never paste the owner's messages verbatim: repos can be public, and their wording is not for the
   record.
 - Architectural changes need the owner's permission. When the owner is away, take the most reversible
-  choice, do it, and log it in `steers.md` as an assumption for review.
+  choice, do it, and record it with `wf assume` for review.
 - Propose a mechanism and ask before building it. Never choose mechanisms on the owner's behalf.
 - Report what was and was not tested. Admit mistakes plainly, with no excuses, and never defend a choice by
   quoting the owner's goals back.

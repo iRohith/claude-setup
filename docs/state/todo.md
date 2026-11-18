@@ -138,8 +138,9 @@ Deliverable: every record type from spec section 3 written and queried through `
   Proof: a learning added in one session appears in the next session's context, including after `/compact`
   - `wf learn "<wrong> → <instead>" [--global]`: core `addLearning` numbers the line, needs the arrow, at most 200 characters, and rolls back if any affected project's session context would pass 9,000 characters (a global learning affects every registered project)
   - session-context assembly moved from hooks.ts into core (`sessionContext`, `tryFindRoot`) so the budget check and the hook share it; project and global learnings joined the deny map, naming `wf learn` and `wf learn --global`
-- [ ] 3.2 steers and assumptions with `--why` and `--log`
+- [x] 3.2 steers and assumptions with `--why` and `--log`
   Proof: `wf show <id>` lists the steer that changed it
+  - core `parseSteers`, `addSteer` (ids must exist or be all; steers need --changed; summaries escaped), `steersFor` (an item or its major); `wf steer ... --log true|false` (false records nothing), `wf assume`; `wf show` lists an item's steers; steers.md joined the deny map
 - [ ] 3.3 `wf risk` with all four fields required
   Proof: a request missing `--recover` is rejected naming the field
 - [ ] 3.4 memory sections, `wf find`, `wf get`

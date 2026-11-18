@@ -11,6 +11,10 @@ import { install } from './install.ts';
 const OPTIONS = {
 	help: { type: 'boolean', short: 'h' },
 	global: { type: 'boolean' },
+	why: { type: 'string' },
+	affects: { type: 'string' },
+	changed: { type: 'string' },
+	log: { type: 'string' },
 	title: { type: 'string' },
 	from: { type: 'string' },
 	section: { type: 'string' },
@@ -106,6 +110,26 @@ function main(argv: string[]): void {
 			return editTodo((t) => wf.impl(t, arg(0, 'minor'), arg(1, 'detail')));
 		case 'handoff':
 			return handoff(values.next ?? '', values.verify ?? '', values.dont ?? '', values.open ?? []);
+		case 'steer':
+		case 'assume': {
+			if (command === 'steer' && values.log !== 'true' && values.log !== 'false')
+				throw new UsageError('steer needs --log true or --log false', 'steer');
+			if (values.log === 'false') {
+				console.log('steer acknowledged, not logged (update the plan as it requires)');
+				return;
+			}
+			const root = wf.findRoot(process.cwd());
+			return wf.withLock(root, () => {
+				const { before, after } = wf.addSteer(root, {
+					kind: command === 'steer' ? 'Steer' : 'Assumption',
+					summary: arg(0, 'summary'),
+					why: values.why ?? '',
+					affects: (values.affects ?? '').split(',').filter((s) => s.trim()),
+					changed: values.changed
+				});
+				printChanges(before, after);
+			});
+		}
 		case 'learn': {
 			const root = wf.tryFindRoot(process.cwd());
 			const write = () => {
@@ -204,16 +228,21 @@ function describeNext(item: wf.Minor | wf.Major): string {
 }
 
 function show(id: string): void {
-	const todo = wf.readTodo(wf.findRoot(process.cwd()));
+	const root = wf.findRoot(process.cwd());
+	const todo = wf.readTodo(root);
 	if (id.includes('.')) {
 		const minor = wf.findMinor(todo, id);
 		console.log(`[${minor.mark}] ${minor.id} ${minor.title}\nProof: ${minor.proof}`);
 		for (const detail of minor.impl) console.log(`- ${detail}`);
-		return;
+	} else {
+		const major = wf.findMajor(todo, id);
+		console.log(`[${major.mark}] ${major.id} · ${major.title}\nDeliverable: ${major.deliverable}`);
+		for (const minor of major.minors) console.log(`[${minor.mark}] ${minor.id} ${minor.title}`);
 	}
-	const major = wf.findMajor(todo, id);
-	console.log(`[${major.mark}] ${major.id} · ${major.title}\nDeliverable: ${major.deliverable}`);
-	for (const minor of major.minors) console.log(`[${minor.mark}] ${minor.id} ${minor.title}`);
+	const steers = wf.steersFor(root, id);
+	if (steers.length) console.log('\nSteers:');
+	for (const s of steers)
+		console.log(`- ${s.date} ${s.kind.toLowerCase()}: ${wf.unescapeMd(s.summary)}`);
 }
 
 /** Prints removed lines as "- " and added lines as "+ ", using a longest-common-subsequence diff. */

@@ -448,6 +448,7 @@ const WF_OWNED: Record<string, string> = {
 	'todo.md': 'wf add, edit, batch, start, done or impl',
 	'handoff.md': 'wf handoff',
 	'learnings.md': 'wf learn',
+	'steers.md': 'wf steer or wf assume',
 	...Object.fromEntries(DOC_NAMES.map((d) => [`${d}.md`, `wf doc ${d}`]))
 };
 
@@ -597,6 +598,76 @@ export function tryFindRoot(from: string): string | undefined {
 	} catch {
 		return undefined;
 	}
+}
+
+// ---------- steers ----------
+
+export interface Steer {
+	date: string;
+	affects: string[];
+	kind: 'Steer' | 'Assumption';
+	summary: string;
+	why: string;
+	changed?: string;
+}
+
+/** Reads steers.md: "## <date> · affects <ids>", then "Steer:"/"Assumption:", "Why:", optional "Changed:". */
+export function parseSteers(text: string): Steer[] {
+	const steers: Steer[] = [];
+	for (const block of text.split(/^(?=## )/m).slice(1)) {
+		const lines = block.trim().split('\n');
+		const head = lines[0].match(/^## (\S+) · affects (.+)$/);
+		const body = lines[1]?.match(/^(Steer|Assumption): (.+)$/);
+		const why = lines[2]?.match(/^Why: (.+)$/);
+		if (!head || !body || !why) throw new WfError(`steers.md: malformed entry: ${lines[0]}`);
+		const changed = lines[3]?.match(/^Changed: (.+)$/)?.[1];
+		steers.push({
+			date: head[1],
+			affects: head[2].split(/,\s*/),
+			kind: body[1] as Steer['kind'],
+			summary: body[2],
+			why: why[1],
+			...(changed && { changed })
+		});
+	}
+	return steers;
+}
+
+/** Appends a steer or assumption. Its ids must exist ("all" is allowed); steers say what changed. */
+export function addSteer(root: string, s: Omit<Steer, 'date'>): { before: string; after: string } {
+	const todo = readTodo(root);
+	const affects = s.affects.map((id) => required(id, 'affects'));
+	if (!affects.length) throw new WfError('affects is required: the ids this changes, or all');
+	for (const id of affects) {
+		if (id === 'all') continue;
+		if (isMinorId(id)) findMinor(todo, id);
+		else findMajor(todo, id);
+	}
+	if (s.kind === 'Steer' && !s.changed?.trim())
+		throw new WfError('a steer changes the plan first; say what changed with --changed');
+	const path = statePath(root, 'steers.md');
+	const before = existsSync(path) ? readFileSync(path, 'utf8') : '# Steers\n';
+	parseSteers(before);
+	const date = new Date().toLocaleDateString('sv');
+	const entry = [
+		`## ${date} · affects ${affects.join(', ')}`,
+		`${s.kind}: ${escapeMd(required(s.summary, 'summary'))}`,
+		`Why: ${escapeMd(required(s.why, 'why'))}`,
+		...(s.changed?.trim() ? [`Changed: ${escapeMd(required(s.changed, 'changed'))}`] : [])
+	];
+	const after = `${before.replace(/\n+$/, '')}\n\n${entry.join('\n')}\n`;
+	writeAtomic(path, after);
+	return { before, after };
+}
+
+/** The steers that name an item, or its major. */
+export function steersFor(root: string, id: string): Steer[] {
+	const path = statePath(root, 'steers.md');
+	if (!existsSync(path)) return [];
+	const major = id.split('.')[0];
+	return parseSteers(readFileSync(path, 'utf8')).filter(
+		(s) => s.affects.includes(id) || s.affects.includes(major)
+	);
 }
 
 // ---------- session context and learnings ----------
