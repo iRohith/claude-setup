@@ -43,15 +43,15 @@ This is how claude-setup gets built, start to finish. The exact formats and comm
 
 - **SessionStart** prints, in this order:
   - global learnings;
+  - the instructions for the project's current state, the `## <state>` section of
+    `global/states.md`;
   - project learnings;
-  - the handoff;
-  - three to six lines of guidance for the current state.
-  - The guidance text for each state lives in `global/CLAUDE.md` under a heading per state, and the hook
-    prints that section.
+  - the handoff.
 - **PreToolUse:**
   - looks up the project's state and admin flag;
   - checks the tool name and path or command against spec section 5;
-  - denies with a one-line reason and the alternative. Otherwise it stays silent.
+  - denies with a one-line reason that says the rule is fixed and names the alternative. Otherwise it
+    stays silent.
 - **UserPromptSubmit** looks for `setup done` (case-insensitive) in the owner's prompt while the project is
   in setup. If found, it writes `setupDone: true` for the project in `local/projects.json`.
 
@@ -70,27 +70,15 @@ This is how claude-setup gets built, start to finish. The exact formats and comm
 
 ## How guidance is written
 
-`global/CLAUDE.md` stays under about 80 lines. It covers:
-- the principles (from `intent.md`);
-- the per-state sections;
-- "use `wf` for state; prefer `wf` queries over reading files";
-- "a steer updates the plan first, via `wf steer`";
-- "every minor needs tangible proof: a real e2e run, a screenshot or a benchmark; never weakened tests";
-- "pick the item, `wf start`, finish, `wf done`; never claim work after the fact";
-- "verify the proof, run the pre-commit checks, then mark done (implementation details, handoff), then
-  commit, then push; never mark done because a commit is coming, and never record what happens after the
-  commit";
-- "risky actions go through `wf risk` first";
-- "one shell command per call, long output to `scratch/temp/` then read";
-- "pnpm by default";
-- "type-safe languages only unless the owner allows otherwise; TypeScript over JavaScript, configs included";
-- "UI work: Playwright tests plus screenshots at desktop and mobile sizes (more when the UI calls for it), committed in `scratch/images/` as `<id>-<page>-<size>.png`; proof screenshots show the real app with the owner's real data, never a test fixture";
-- "long-running by default: after a task, start the next; stop only at a blocker only the owner can clear";
-- "missing tool, permission or answer: say exactly what's needed and get it; no workarounds; meanwhile do what doesn't depend on it";
-- "latest stable versions";
-- "never `claude -p`";
-- "never write secrets or PII into any file, including the owner's names, usernames or email; identity
-  comes from git config".
+The guidance exists from a project's first moment, before any work.
+- **`global/CLAUDE.md`** holds the owner's rules for every project, in under about 80 lines: project
+  state, working an item, the owner's messages, friction, code and safety. `wf install` links it as
+  `~/.claude/CLAUDE.md`, so Claude Code loads it natively in every session, outside the 10,000-character
+  hook cap. It names only `wf` commands that exist.
+- **`global/states.md`** holds one `## <state>` section for each of setup, discuss and build: what to do
+  in that state. The session-start hook injects the current state's section, and `wf init` prints the
+  setup section.
+- Both ship with `wf`; they are read from the code's own folder, not from `WF_HOME`.
 
 ## Skills
 

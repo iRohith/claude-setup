@@ -56,6 +56,8 @@ test('session start injects global learnings, project learnings and the handoff'
 	assert.match(ctx, /Global learnings \(from wf\):\n1\. a global lesson/);
 	assert.match(ctx, /Project learnings for .* \(from wf\):\n1\. a project lesson/);
 	assert.match(ctx, /Project handoff \(from wf\):\nState: setup/);
+	assert.match(ctx, /Instructions for the setup state \(from wf\):\nThe project is in setup/);
+	assert.doesNotMatch(ctx, /The project is in build/);
 });
 
 test('outside a project, session start injects global learnings only', () => {
@@ -82,7 +84,9 @@ test('edits to wf-owned state files are denied with the alternative', () => {
 		assert.equal(out.hookSpecificOutput.permissionDecision, 'deny', `${tool} ${file}`);
 		assert.match(
 			out.hookSpecificOutput.permissionDecisionReason,
-			new RegExp(`only through wf\\. Use ${alternative}`)
+			new RegExp(
+				`only through wf\\. This is a fixed rule, so retrying the edit will be denied again\\. Use ${alternative}`
+			)
 		);
 	}
 });

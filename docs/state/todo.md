@@ -104,10 +104,12 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   Proof: a todo with items out of order is written back sorted; this repo's todo.md reads 0.1 to 0.6 and 1.1 to 1.11 in order
   - `parseTodo` sorts majors by number and minors by number within their major, so every write puts items in id order; ids already come from max + 1, so nothing else decides position
   - `wf move` removed from 3.4, 4.1 and spec section 4; `wf help add` states the id-order rule
-- [ ] 1.12 global instructions from the first session: `global/CLAUDE.md` (how to work, the owner's rules), linked as `~/.claude/CLAUDE.md` by `wf install`
+- [~] 1.12 global instructions from the first session: `global/CLAUDE.md` (how to work, the owner's rules), linked as `~/.claude/CLAUDE.md` by `wf install`
   Proof: the owner reads `global/CLAUDE.md` and signs off; after `wf install`, `~/.claude/CLAUDE.md` points to it
-- [ ] 1.13 instructions for the current state injected at every session start, `wf init` printing the setup instructions, and denials that say the rule is final
+  - `global/CLAUDE.md` (73 lines): project state, working an item, the owner's messages, friction, code, safety, scratch; names only existing wf commands; `wf install` links it as `~/.claude/CLAUDE.md` and never replaces an existing file
+- [~] 1.13 instructions for the current state injected at every session start, `wf init` printing the setup instructions, and denials that say the rule is final
   Proof: the owner's demo prompt re-run in a fresh session: one Edit attempt, the denial accepted, `wf edit` used instead, no chained commands
+  - `global/states.md` has a section per state; core `stateInstructions` reads it from wf's own folder; session start injects the current state's section; `wf init` prints it; denials say the rule is fixed and a retry will be denied again
 
 ## [ ] 2 · States and admin
 Deliverable: setup/discuss/build behave as spec section 2 in a real session, and admin mode lifts every restriction only when the owner flips it.

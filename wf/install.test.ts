@@ -37,10 +37,11 @@ function install(env: Record<string, string> = {}) {
 
 const settings = () => JSON.parse(readFileSync(join(home, '.claude', 'settings.json'), 'utf8'));
 
-test('install links wf and registers both hooks, keeping existing settings', () => {
+test('install links wf and CLAUDE.md and registers both hooks, keeping existing settings', () => {
 	const r = install();
 	assert.equal(r.status, 0, r.stderr);
 	assert.equal(readlinkSync(join(home, '.local', 'bin', 'wf')), cli);
+	assert.equal(readlinkSync(join(home, '.claude', 'CLAUDE.md')), join(repo, 'global', 'CLAUDE.md'));
 	const s = settings();
 	assert.equal(s.model, 'opus');
 	assert.equal(s.hooks.Stop.length, 1);
@@ -69,4 +70,14 @@ test('install refuses to replace a different wf on PATH', () => {
 	const r = install({ HOME: other });
 	assert.equal(r.status, 1);
 	assert.match(r.stderr, /exists and isn't a link/);
+});
+
+test('install refuses to replace an existing CLAUDE.md', () => {
+	const other = join(tmp, 'home3');
+	mkdirSync(join(other, '.claude'), { recursive: true });
+	writeFileSync(join(other, '.claude', 'CLAUDE.md'), 'my own rules');
+	const r = install({ HOME: other });
+	assert.equal(r.status, 1);
+	assert.match(r.stderr, /CLAUDE\.md exists and isn't a link/);
+	assert.equal(readFileSync(join(other, '.claude', 'CLAUDE.md'), 'utf8'), 'my own rules');
 });

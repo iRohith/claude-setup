@@ -34,6 +34,7 @@ function wf(...args: string[]) {
 test('init creates docs/state in setup state and registers the project', () => {
 	const r = wf('init');
 	assert.equal(r.code, 0, r.err);
+	assert.match(r.out, /Instructions for the setup state:\nThe project is in setup/);
 	for (const f of ['todo.md', 'handoff.md', 'learnings.md', 'memory.md', 'steers.md', 'risks.md'])
 		assert.ok(existsSync(join(project, 'docs', 'state', f)), f);
 	const registry = JSON.parse(readFileSync(join(home, 'local', 'projects.json'), 'utf8'));

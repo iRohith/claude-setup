@@ -540,6 +540,24 @@ export const wfHome = (): string =>
 	process.env.WF_HOME ?? fileURLToPath(new URL('..', import.meta.url));
 
 export const globalLearningsPath = () => join(wfHome(), 'global', 'learnings.md');
+
+/** Instructions ship with wf itself, unlike the data under WF_HOME. */
+export const globalFile = (name: string) =>
+	fileURLToPath(new URL(`../global/${name}`, import.meta.url));
+
+/** The "## <state>" section of global/states.md: what to do in that state. */
+export function stateInstructions(state: State): string {
+	const path = globalFile('states.md');
+	const lines = readFileSync(path, 'utf8').split('\n');
+	const start = lines.indexOf(`## ${state}`);
+	if (start === -1) throw new WfError(`${path} has no "## ${state}" section`);
+	let end = lines.findIndex((l, k) => k > start && l.startsWith('## '));
+	if (end === -1) end = lines.length;
+	return lines
+		.slice(start + 1, end)
+		.join('\n')
+		.trim();
+}
 export const projectLearningsPath = (root: string) => statePath(root, 'learnings.md');
 
 const registryPath = () => join(wfHome(), 'local', 'projects.json');

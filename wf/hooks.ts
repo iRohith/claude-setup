@@ -33,7 +33,10 @@ export function runHook(event: string, stdin: string): string {
 	throw new wf.WfError(`unknown hook ${event}; expected session-start or pre-tool-use`);
 }
 
-/** Global learnings always; project learnings and the handoff inside a wf project. */
+/**
+ * Global learnings always; inside a wf project also the instructions for its current state, its
+ * learnings and its handoff.
+ */
 export function sessionContext(cwd: string): string {
 	const parts = [section('Global learnings (from wf)', wf.globalLearningsPath())];
 	let root: string | undefined;
@@ -43,7 +46,9 @@ export function sessionContext(cwd: string): string {
 		// Not a wf project: global learnings only.
 	}
 	if (root) {
+		const state = wf.readHandoff(root).state;
 		parts.push(
+			`Instructions for the ${state} state (from wf):\n${wf.stateInstructions(state)}`,
 			section(`Project learnings for ${root} (from wf)`, wf.projectLearningsPath(root)),
 			section('Project handoff (from wf)', join(root, 'docs', 'state', 'handoff.md'))
 		);
@@ -65,5 +70,5 @@ function denyReason(input: HookInput, cwd: string): string | undefined {
 	if (typeof target !== 'string') return undefined;
 	const alternative = wf.wfAlternative(resolve(cwd, target));
 	if (!alternative) return undefined;
-	return `${basename(target)} is written only through wf. Use ${alternative} instead (wf help <command> for usage).`;
+	return `${basename(target)} is written only through wf. This is a fixed rule, so retrying the edit will be denied again. Use ${alternative} instead (wf help <command> for usage).`;
 }

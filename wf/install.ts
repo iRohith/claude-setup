@@ -1,9 +1,10 @@
-// One-time machine setup, run by the owner: wf on PATH and the Claude Code hooks in user settings.
+// One-time machine setup, run by the owner: wf on PATH, the global instructions as
+// ~/.claude/CLAUDE.md, and the Claude Code hooks in user settings.
 import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, symlinkSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { WfError, writeAtomic } from './core.ts';
+import { WfError, globalFile, writeAtomic } from './core.ts';
 
 interface HookGroup {
 	matcher?: string;
@@ -20,18 +21,22 @@ const HOOKS: [event: string, matcher: string, command: string][] = [
 
 /** Idempotent. Returns one line per change made. */
 export function install(): string[] {
-	return [...linkBinary(), ...registerHooks()];
+	return [
+		...linkTo(join(homedir(), '.local', 'bin', 'wf'), cli),
+		...linkTo(join(homedir(), '.claude', 'CLAUDE.md'), globalFile('CLAUDE.md')),
+		...registerHooks()
+	];
 }
 
-function linkBinary(): string[] {
-	const link = join(homedir(), '.local', 'bin', 'wf');
+/** Links `link` to `target`; never replaces anything that isn't already that link. */
+function linkTo(link: string, target: string): string[] {
 	if (existsSync(link) || isSymlink(link)) {
-		if (isSymlink(link) && readlinkSync(link) === cli) return [];
-		throw new WfError(`${link} exists and isn't a link to ${cli}; move it aside and rerun`);
+		if (isSymlink(link) && readlinkSync(link) === target) return [];
+		throw new WfError(`${link} exists and isn't a link to ${target}; move it aside and rerun`);
 	}
 	mkdirSync(dirname(link), { recursive: true });
-	symlinkSync(cli, link);
-	return [`linked ${link} → ${cli}`];
+	symlinkSync(target, link);
+	return [`linked ${link} → ${target}`];
 }
 
 function isSymlink(path: string): boolean {

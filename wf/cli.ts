@@ -46,12 +46,14 @@ function main(argv: string[]): void {
 		}
 		case 'init': {
 			const { root, created } = wf.initProject(process.cwd());
-			const state = join(root, 'docs', 'state');
+			const dir = join(root, 'docs', 'state');
+			const state = wf.readHandoff(root).state;
 			console.log(
 				created
-					? `created ${state}/ in setup state and registered it`
-					: `${state}/ already exists; registered it`
+					? `created ${dir}/ in setup state and registered it`
+					: `${dir}/ already exists; registered it`
 			);
+			console.log(`\nInstructions for the ${state} state:\n${wf.stateInstructions(state)}`);
 			return;
 		}
 		case 'status':
