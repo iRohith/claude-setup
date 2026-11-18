@@ -158,11 +158,13 @@ Deliverable: every record type from spec section 3 written and queried through `
   Proof: a deferral naming a missing id is rejected; `wf show` on the resolving id lists the entry
   - core `addDeferred` appends "| item | id |" to memory.md's Deferred table (pipes escaped, the resolving id must exist) and `deferredFor` reads it; `wf show` lists what is deferred to an item or its minors
 
-## [ ] 4 · Dashboard, full
+## [~] 4 · Dashboard, full
 Deliverable: the owner manages todos and learnings across all projects without touching a file.
 
-- [ ] 4.1 editing: add, edit, check, with core validation errors shown inline (items sit in id order, so there is no reordering)
+- [x] 4.1 editing: add, edit, check, with core validation errors shown inline (items sit in id order, so there is no reordering)
   Proof: screenshots of each action and of a rejected edit
+  - project page form actions (addMajor, addMinor, edit, check, start, reopen) apply core functions under the CLI's lock; a broken rule comes back as an inline error next to its item; checking an open minor starts it first; core `reopen` is the owner's undo
+  - proof: an e2e test at both sizes adds a major and minor, gets the inline proof error, starts, checks, reopens and renames; real-dashboard screenshots `scratch/images/4.1-*` show the controls and a rejected edit without changing real data (todo hashes equal before and after)
 - [ ] 4.2 tabs for every registered project plus Global; steers, risks, memory and docs views; state switcher
   Proof: screenshots across two projects
 - [ ] 4.3 UI designed from actual use (impeccable), mobile-friendly

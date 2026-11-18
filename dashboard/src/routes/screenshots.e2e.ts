@@ -31,5 +31,11 @@ test('real dashboard pages', async ({ page }, info) => {
 		const response = await page.goto(new URL(href, base).href);
 		expect(response?.ok(), `${name} → ${href}`).toBe(true);
 		await save(page, info, `project-${name}`);
+		// A rejected edit, shown inline. The core refuses an empty major, so nothing real changes.
+		await page.waitForLoadState('networkidle');
+		await page.getByText('Add a major').click();
+		await page.getByRole('button', { name: 'Add major' }).click();
+		await expect(page.getByRole('alert')).toHaveText('title is required');
+		await save(page, info, `project-${name}-rejected-edit`);
 	}
 });

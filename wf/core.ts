@@ -257,6 +257,25 @@ export function done(todo: Todo, id: string): void {
 	major.mark = 'x';
 }
 
+/**
+ * The owner's undo, from the dashboard: a minor goes back to open, a major back to in progress when
+ * it has started minors and to open otherwise.
+ */
+export function reopen(todo: Todo, id: string): void {
+	if (isMinorId(id)) {
+		const minor = findMinor(todo, id);
+		if (minor.mark === ' ') throw new WfError(`${id} is already open`);
+		minor.mark = ' ';
+		const major = findMajor(todo, id.split('.')[0]);
+		if (major.mark === 'x') major.mark = '~';
+		if (!major.minors.some((n) => n.mark !== ' ')) major.mark = ' ';
+		return;
+	}
+	const major = findMajor(todo, id);
+	if (major.mark !== 'x') throw new WfError(`major ${id} isn't done`);
+	major.mark = major.minors.some((n) => n.mark !== ' ') ? '~' : ' ';
+}
+
 export function impl(todo: Todo, id: string, detail: string): void {
 	if (!isMinorId(id)) throw new WfError(`implementation details go on a minor (x.x), got ${id}`);
 	const minor = findMinor(todo, id);

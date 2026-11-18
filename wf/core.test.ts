@@ -14,6 +14,7 @@ import {
 	nextItem,
 	parseHandoff,
 	parseTodo,
+	reopen,
 	start
 } from './core.ts';
 
@@ -245,6 +246,22 @@ test('the handoff escapes the same way', () => {
 	assert.match(text, /^Next: run with ITEM=\\<id>$/m);
 	assert.match(text, /^Verify: `ITEM=<id> pnpm test`$/m);
 	assert.deepEqual(parseHandoff(text), h);
+});
+
+test('reopen undoes marks for the owner', () => {
+	const todo = parseTodo(sample);
+	start(todo, '0.2');
+	done(todo, '0.2');
+	done(todo, '0');
+	reopen(todo, '0');
+	assert.equal(todo.majors[0].mark, '~');
+	reopen(todo, '0.2');
+	assert.equal(todo.majors[0].minors[1].mark, ' ');
+	assert.throws(() => reopen(todo, '0.2'), /already open/);
+	assert.throws(() => reopen(todo, '1'), /isn't done/);
+	start(todo, '1.1');
+	reopen(todo, '1.1');
+	assert.equal(todo.majors[1].mark, ' ');
 });
 
 test('fields are required and single-line', () => {
