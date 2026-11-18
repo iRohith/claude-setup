@@ -1,7 +1,7 @@
 # Handoff
 State: build
 Active: —
-Next: 1.2, the CLI (`init`, `status`, `next`, `show`, `add`, `start`, `done`, `impl`, `handoff`) with the single-writer lock.
-Verify: a commit runs gitleaks, then format, lint, check and build for `dashboard/`, and lint, check and test for `wf/`.
-Don't: amend or force-push unless the owner says so; mark done before verifying; write JS where TS works; write PII into any file.
+Next: 1.3, the hooks: SessionStart prints learnings, the handoff and state guidance; PreToolUse denies Edit/Write on docs/state/** and names wf instead
+Verify: pnpm --dir wf test passes 19 tests; node wf/cli.ts status works in this repo
+Don't: amend or force-push unless the owner says so; mark done before verifying; hand-edit todo.md or handoff.md now that wf covers them; write PII into any file
 Open: —

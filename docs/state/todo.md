@@ -59,8 +59,12 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   - hook: format both, restage, then dashboard lint, check, build, then wf lint, check, test
   - probes: a `string` assigned to a `number` was rejected by tsc (TS2322); an unused const was rejected by eslint; both removed
   - `git ls-files '*.js' '*.cjs' '*.mjs'` lists nothing
-- [ ] 1.2 cli: `init`, `status`, `next`, `show`, `add`, `start`, `done`, `impl`, `handoff`
+- [x] 1.2 cli: `init`, `status`, `next`, `show`, `add`, `start`, `done`, `impl`, `handoff`
   Proof: the commands run against a sample project and print the changed lines
+  - `wf/cli.ts` parses arguments with `node:util` parseArgs, calls the core and prints; usage errors exit 2, rule errors exit 1 as `wf: <reason>`
+  - every write prints its changed lines (an LCS line diff: `- ` removed, `+ ` added); writes hold a single-writer lock in `scratch/temp/wf.lock` and take it over from a dead process
+  - core gained `activeMinors`, `nextItem` (stays in the active major; otherwise the first unfinished major), `withLock`, `initProject` (empty templates, setup state) and the registry `local/projects.json` under `WF_HOME` (default: claude-setup)
+  - `wf/cli.test.ts`: 7 tests run the real CLI against a sample project in `scratch/temp/` with a temp `WF_HOME` (removed afterwards); 19 of 19 wf tests pass; also ran `wf status` and `wf show 1` on this repo
 - [ ] 1.3 hooks: SessionStart injection and the PreToolUse deny on `docs/state/**`
   Proof: transcript of a real session showing the injected context and the denied Edit with its alternative
 - [ ] 1.4 install.sh: links, PATH, hook registration

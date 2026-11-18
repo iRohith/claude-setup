@@ -62,7 +62,11 @@ The setup that makes it behave this way is itself simple, small and obvious.
     from git config at runtime. claude-setup is public; every project repo is private.
 13. Type-safe languages only, unless the owner allows otherwise. TypeScript over JavaScript wherever
     possible, config files included.
-14. pnpm is the default for everything (npm and npx are aliased to pnpm). System Python with uv.
+14. Long-running by default: when a task is done, start the next one. Stop only at a real blocker,
+    something only the owner can provide.
+15. Friction is never a reason to work around something. When a tool, permission or answer is missing,
+    tell the owner exactly what's needed and get it. Meanwhile, carry on with whatever doesn't depend on it.
+16. pnpm is the default for everything (npm and npx are aliased to pnpm). System Python with uv.
 
 ## Lessons from three failed attempts
 

@@ -1,6 +1,17 @@
 // The only code that reads and writes project state. Every rule lives here (spec.md section 3).
-import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import {
+	closeSync,
+	existsSync,
+	mkdirSync,
+	openSync,
+	readFileSync,
+	renameSync,
+	unlinkSync,
+	writeFileSync,
+	writeSync
+} from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export class WfError extends Error {}
 
@@ -189,6 +200,25 @@ export function impl(todo: Todo, id: string, detail: string): void {
 	minor.impl.push(required(detail, 'detail'));
 }
 
+// ---------- todo queries ----------
+
+export const activeMinors = (todo: Todo): Minor[] =>
+	todo.majors.flatMap((n) => n.minors.filter((k) => k.mark === '~'));
+
+/**
+ * While a major has minors in progress: its first open minor, or nothing (finish what's active).
+ * Otherwise the first unfinished major: its first open minor, or the major itself when it needs
+ * minors added or is ready to be checked.
+ */
+export function nextItem(todo: Todo): Minor | Major | undefined {
+	const activeMajor = todo.majors.find((n) => n.minors.some((k) => k.mark === '~'));
+	if (activeMajor) return activeMajor.minors.find((k) => k.mark === ' ');
+	const major = todo.majors.find((n) => n.mark !== 'x');
+	return major && (major.minors.find((k) => k.mark === ' ') ?? major);
+}
+
+export const isMinor = (item: Minor | Major): item is Minor => isMinorId(item.id);
+
 function required(value: string, name: string): string {
 	const v = value.trim();
 	if (!v) throw new WfError(`${name} is required`);
@@ -255,6 +285,39 @@ function writeAtomic(path: string, text: string): void {
 	renameSync(`${path}.tmp`, path);
 }
 
+/** One writer at a time per project. A lock left by a dead process is taken over. */
+export function withLock<T>(root: string, fn: () => T): T {
+	const dir = join(root, 'scratch', 'temp');
+	mkdirSync(dir, { recursive: true });
+	const path = join(dir, 'wf.lock');
+	let fd: number;
+	try {
+		fd = openSync(path, 'wx');
+	} catch (e) {
+		if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+		const pid = Number(readFileSync(path, 'utf8'));
+		if (alive(pid)) throw new WfError(`state is being written by process ${pid}; retry`);
+		fd = openSync(path, 'w');
+	}
+	try {
+		writeSync(fd, String(process.pid));
+		closeSync(fd);
+		return fn();
+	} finally {
+		unlinkSync(path);
+	}
+}
+
+function alive(pid: number): boolean {
+	if (!Number.isInteger(pid) || pid <= 0) return false;
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (e) {
+		return (e as NodeJS.ErrnoException).code === 'EPERM';
+	}
+}
+
 export const readTodo = (root: string) =>
 	parseTodo(readFileSync(statePath(root, 'todo.md'), 'utf8'));
 export const writeTodo = (root: string, todo: Todo) =>
@@ -263,3 +326,66 @@ export const readHandoff = (root: string) =>
 	parseHandoff(readFileSync(statePath(root, 'handoff.md'), 'utf8'));
 export const writeHandoff = (root: string, h: Handoff) =>
 	writeAtomic(statePath(root, 'handoff.md'), formatHandoff(h));
+
+export const countLearnings = (path: string): number =>
+	existsSync(path)
+		? readFileSync(path, 'utf8')
+				.split('\n')
+				.filter((l) => /^\d+\. /.test(l)).length
+		: 0;
+
+// ---------- projects ----------
+
+/** claude-setup itself: global learnings and the machine-local project registry live here. */
+export const wfHome = (): string =>
+	process.env.WF_HOME ?? fileURLToPath(new URL('..', import.meta.url));
+
+export const globalLearningsPath = () => join(wfHome(), 'global', 'learnings.md');
+export const projectLearningsPath = (root: string) => statePath(root, 'learnings.md');
+
+const registryPath = () => join(wfHome(), 'local', 'projects.json');
+
+export function readRegistry(): Record<string, object> {
+	const path = registryPath();
+	return existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as Record<string, object>) : {};
+}
+
+function register(root: string): void {
+	const registry = readRegistry();
+	registry[root] ??= {};
+	mkdirSync(dirname(registryPath()), { recursive: true });
+	writeAtomic(registryPath(), JSON.stringify(registry, null, '\t') + '\n');
+}
+
+const TEMPLATES: Record<string, string> = {
+	'overview.md': '# Overview\n',
+	'intent.md': '# Intent\n',
+	'references.md': '# References\n',
+	'implementation.md': '# Implementation\n',
+	'spec.md': '# Spec\n',
+	'todo.md': '# Todo\n',
+	'memory.md':
+		'# Memory\n\n## Invariants\n\n## Contracts\n\n## Pitfalls\n\n## Anti-patterns\n\n## Deferred\n\n| Item | Resolves in |\n|---|---|\n',
+	'learnings.md': '# Learnings\n',
+	'steers.md': '# Steers\n',
+	'risks.md': '# Risks\n'
+};
+
+/** Creates docs/state/ from empty templates in setup state and registers the project. */
+export function initProject(dir: string): string {
+	const root = resolve(dir);
+	const stateDir = join(root, 'docs', 'state');
+	if (existsSync(stateDir)) throw new WfError(`${stateDir} already exists`);
+	mkdirSync(stateDir, { recursive: true });
+	for (const [name, text] of Object.entries(TEMPLATES)) writeFileSync(join(stateDir, name), text);
+	writeHandoff(root, {
+		state: 'setup',
+		active: '—',
+		next: 'the owner names the stack, the checks and any pre-push commands',
+		verify: '—',
+		dont: 'commit anything but `init`; push before the owner says "setup done"',
+		open: []
+	});
+	register(root);
+	return root;
+}

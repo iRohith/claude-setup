@@ -9,6 +9,7 @@ import {
 	formatHandoff,
 	formatTodo,
 	impl,
+	nextItem,
 	parseHandoff,
 	parseTodo,
 	start
@@ -106,6 +107,21 @@ test('implementation details need a started minor', () => {
 	start(todo, '1.1');
 	impl(todo, '1.1', 'wrote the parser');
 	assert.deepEqual(todo.majors[1].minors[0].impl, ['wrote the parser']);
+});
+
+test('next stays inside the active major, then points at majors that need attention', () => {
+	const todo = parseTodo(sample);
+	assert.equal(nextItem(todo)?.id, '0.2');
+	start(todo, '0.2');
+	assert.equal(nextItem(todo), undefined);
+	done(todo, '0.2');
+	assert.equal(nextItem(todo)?.id, '0');
+	done(todo, '0');
+	assert.equal(nextItem(todo)?.id, '1.1');
+	start(todo, '1.1');
+	done(todo, '1.1');
+	done(todo, '1');
+	assert.equal(nextItem(todo)?.id, '2');
 });
 
 test('fields are required and single-line', () => {

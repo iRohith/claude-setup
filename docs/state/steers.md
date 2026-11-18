@@ -103,6 +103,12 @@ Changed: spec section 2 now has the five-step commit order; the guidance list ma
 Why it's a steer: adds checks for `wf/`, and a language rule for every project.
 Changed: added 1.6 (placed before 1.2); intent principle 13; guidance line in implementation.md.
 
+## 2026-11-18 · affects all
+> continue implementing, going to next task. And also I talked about friction too. For example if there is a tool missing, inform and get the tool instead of doing workarounds etc. no stopping until there are blockers. should be long running sessions by default
+
+Why it's a steer: sets how sessions run, and how friction is handled.
+Changed: intent principles 14 and 15; two guidance lines in implementation.md.
+
 ## 2026-11-18 · affects 0, all
 > now move to pnpm instead of bun for everything.
 
