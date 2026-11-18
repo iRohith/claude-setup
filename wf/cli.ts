@@ -21,6 +21,7 @@ const OPTIONS = {
 	level: { type: 'string' },
 	surface: { type: 'string' },
 	recover: { type: 'string' },
+	resolves: { type: 'string' },
 	title: { type: 'string' },
 	from: { type: 'string' },
 	section: { type: 'string' },
@@ -182,6 +183,13 @@ function main(argv: string[]): void {
 				printChanges(before, after);
 			});
 		}
+		case 'defer': {
+			const root = wf.findRoot(process.cwd());
+			return wf.withLock(root, () => {
+				const { before, after } = wf.addDeferred(root, arg(0, 'item'), values.resolves ?? '');
+				printChanges(before, after);
+			});
+		}
 		case 'find': {
 			const hits = wf.findInState(wf.findRoot(process.cwd()), arg(0, 'text'));
 			console.log(hits.length ? hits.join('\n') : 'no matches');
@@ -303,6 +311,10 @@ function show(id: string): void {
 	if (steers.length) console.log('\nSteers:');
 	for (const s of steers)
 		console.log(`- ${s.date} ${s.kind.toLowerCase()}: ${wf.unescapeMd(s.summary)}`);
+	const deferred = wf.deferredFor(root, id);
+	if (deferred.length) console.log('\nDeferred to it:');
+	for (const d of deferred)
+		console.log(`- ${wf.unescapeMd(d.item).replaceAll('\\|', '|')} (${d.resolves})`);
 }
 
 /** Prints removed lines as "- " and added lines as "+ ", using a longest-common-subsequence diff. */

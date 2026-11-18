@@ -154,8 +154,9 @@ Deliverable: every record type from spec section 3 written and queried through `
   Proof: pushing a major runs the commands, and a failing one blocks the push; pushing a minor or micro runs nothing; after `wf push set` with no commands, no hook exists
   - `wf/githooks.ts` writes plain-bash hooks that need no wf at commit time: pre-commit (gitleaks with the git config name and email, then the checks in order from the root, then restage what was staged) and pre-push (runs only if a pushed commit's subject starts with a bare integer); both set core.hooksPath
   - tested against a real throwaway repo and bare remote: failing check stops a commit, a rewrite is committed, the fake email is blocked, a minor push runs nothing, a major push runs the commands, a failing one blocks the push, no commands removes the hook; this repo's own hook regenerated with wf checks set
-- [ ] 3.7 deferred registry: `wf defer "<item>" --resolves <id>` writes the Deferred table in memory.md; an unknown id is rejected; `wf show <id>` lists the deferred entries that name it
+- [x] 3.7 deferred registry: `wf defer "<item>" --resolves <id>` writes the Deferred table in memory.md; an unknown id is rejected; `wf show <id>` lists the deferred entries that name it
   Proof: a deferral naming a missing id is rejected; `wf show` on the resolving id lists the entry
+  - core `addDeferred` appends "| item | id |" to memory.md's Deferred table (pipes escaped, the resolving id must exist) and `deferredFor` reads it; `wf show` lists what is deferred to an item or its minors
 
 ## [ ] 4 · Dashboard, full
 Deliverable: the owner manages todos and learnings across all projects without touching a file.

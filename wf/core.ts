@@ -820,6 +820,52 @@ export function addMemory(
 	return { before, after };
 }
 
+export interface Deferred {
+	item: string;
+	resolves: string;
+}
+
+const DEFERRED_ROW = /^\| (.+) \| (\d+(?:\.\d+)?) \|$/;
+
+function deferredRows(root: string): Deferred[] {
+	const lines = readFileSync(statePath(root, 'memory.md'), 'utf8').split('\n');
+	const range = sectionRange(lines, 'Deferred');
+	if (!range) return [];
+	return lines.slice(...range).flatMap((l) => {
+		const m = l.match(DEFERRED_ROW);
+		return m ? [{ item: m[1], resolves: m[2] }] : [];
+	});
+}
+
+/** Adds a row to memory.md's Deferred table; the item that resolves it must exist. */
+export function addDeferred(
+	root: string,
+	text: string,
+	resolves: string
+): { before: string; after: string } {
+	const item = escapeMd(required(text, 'item')).replaceAll('|', '\\|');
+	const todo = readTodo(root);
+	if (isMinorId(resolves)) findMinor(todo, resolves);
+	else findMajor(todo, required(resolves, '--resolves'));
+	const path = statePath(root, 'memory.md');
+	const before = readFileSync(path, 'utf8');
+	const lines = before.replace(/\n+$/, '').split('\n');
+	const range = sectionRange(lines, 'Deferred');
+	if (!range) throw new WfError('memory.md has no "## Deferred" section');
+	const [start, end] = range;
+	const last = lines.slice(start, end).findLastIndex((l) => l.startsWith('|'));
+	if (last === -1)
+		throw new WfError('memory.md\'s Deferred section has no "| Item | Resolves in |" table');
+	lines.splice(start + last + 1, 0, `| ${item} | ${resolves} |`);
+	const after = lines.join('\n') + '\n';
+	writeAtomic(path, after);
+	return { before, after };
+}
+
+/** Deferred items resolved by an item, or (for a major) by any of its minors. */
+export const deferredFor = (root: string, id: string): Deferred[] =>
+	deferredRows(root).filter((d) => d.resolves === id || d.resolves.split('.')[0] === id);
+
 /** Case-insensitive search across every docs/state/ file: "file:line: text". */
 export function findInState(root: string, text: string): string[] {
 	const needle = required(text, 'search text').toLowerCase();

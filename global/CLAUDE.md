@@ -20,7 +20,7 @@ dashboard, so re-read it (`wf status`) instead of assuming it hasn't changed.
 | `spec.md` | what the implementation leaves out: schemas, formats, commands, contracts | `wf doc spec` |
 | `todo.md` | majors and minors with their proofs and implementation details | `wf add`, `batch`, `edit`, `start`, `done`, `impl` |
 | `handoff.md` | state, active items, next, how to verify, what not to do, questions for the owner | `wf handoff` |
-| `memory.md` | invariants, contracts, pitfalls (dated, with cause), anti-patterns, deferred items | `wf memory` |
+| `memory.md` | invariants, contracts, pitfalls (dated, with cause), anti-patterns, deferred items | `wf memory`, `wf defer` |
 | `learnings.md` | short numbered lessons: what went wrong → what to do instead | `wf learn` |
 | `steers.md` | the owner's steers, summarised, with why they count | `wf steer`, `wf assume` |
 | `risks.md` | high-risk actions, logged before they run | `wf risk` |
@@ -55,7 +55,8 @@ with `# <Title>`) or `--section "<heading>"` (one `##` section). Keep `<` inside
 - Ids are integers, assigned by wf, never reused; `todo.md` is always in id order.
 - Arrange majors and minors so independent work can proceed in parallel, across agents and across linked
   projects. While a dependency is not ready, build against a known intermediate and convert later.
-- New work found along the way becomes a todo item now. No TODO comments, no "later".
+- New work found along the way becomes a todo item now. No TODO comments, no "later". Something left
+  open on purpose is recorded with `wf defer "<what>" --resolves <id>`, naming the item that closes it.
 
 ## Working an item
 1. Choose it: `wf next`, or the item the owner steers to.

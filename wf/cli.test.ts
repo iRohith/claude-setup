@@ -377,6 +377,22 @@ test('env set writes keys without ever printing values; keys lists names only', 
 	assert.equal(wf('env', 'show').code, 2);
 });
 
+test('defer adds to the Deferred table, checks the id, and shows up in wf show', () => {
+	const r = wf('defer', 'retry on network errors | backoff', '--resolves', '0.2');
+	assert.equal(r.code, 0, r.err);
+	assert.match(r.out, /^\+ \| retry on network errors \\\| backoff \| 0\.2 \|$/m);
+	assert.match(
+		readFileSync(join(project, 'docs', 'state', 'memory.md'), 'utf8'),
+		/\|---\|---\|\n\| retry on network errors/
+	);
+	assert.match(wf('defer', 'x', '--resolves', '7.1').err, /no major 7/);
+	assert.match(
+		wf('show', '0.2').out,
+		/Deferred to it:\n- retry on network errors \| backoff \(0\.2\)/
+	);
+	assert.match(wf('show', '0').out, /Deferred to it:/);
+});
+
 test('commands outside a project explain what to do', () => {
 	// Everything under scratch/ sits inside this repo, so run from / (read-only) instead.
 	const r = spawnSync(process.execPath, [cli, 'status'], { cwd: '/', encoding: 'utf8' });

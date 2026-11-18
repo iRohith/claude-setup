@@ -171,7 +171,17 @@ export const HELP: Record<string, Help> = {
 		usage: ['wf memory invariants|contracts|pitfalls|anti-patterns "<entry>"'],
 		summary: "add to memory.md: the project's invariants, contracts, pitfalls and anti-patterns",
 		details: [
-			'Invariants and anti-patterns are numbered; pitfalls are dated, so include the cause in the text.'
+			'Invariants and anti-patterns are numbered; pitfalls are dated, so include the cause in the text.',
+			'Deferred items have their own command: wf defer.'
+		]
+	},
+	defer: {
+		usage: ['wf defer "<what is left for later>" --resolves <id>'],
+		summary:
+			"record work left for later in memory.md's Deferred table, tied to the item that resolves it",
+		details: [
+			'No TODO comments or stubs in code: anything left open goes here, naming an existing item.',
+			'wf show <id> lists what is deferred to it.'
 		]
 	},
 	risk: {
