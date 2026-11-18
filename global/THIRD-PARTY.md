@@ -1,6 +1,6 @@
 # Third-party rules and skills
 
-Each file below is adapted from an MIT-licensed upstream. Only their markdown is taken: no hooks, scripts,
+Each file below is adapted from an MIT- or Apache-2.0-licensed upstream. Only their markdown is taken: no hooks, scripts,
 binaries, plugin manifests or telemetry. Every adaptation makes the owner's rules in `global/CLAUDE.md` win
 where they conflict. To see an exact change, diff the file against the upstream path at the commit named.
 
@@ -38,6 +38,32 @@ where they conflict. To see an exact change, diff the file against the upstream 
   becomes handoff steps; throwaway harnesses stay in `scratch/temp/` and causes go to `wf memory
   pitfalls`; restructuring needs the owner's permission, and design-it-twice sub-agents run only when the
   owner asks; old tests are removed only after the new ones cover the same behaviour.
+
+## impeccable
+
+- **Upstream:** `github.com/pbakaus/impeccable` at `d41d9860b0094dcb68030657da63461212835aaa`, Apache-2.0.
+  Its licence and NOTICE are copied unchanged into `global/skills/impeccable/` (`LICENSE`, `NOTICE.md`);
+  every changed file carries a change notice in its first lines.
+- **Taken:** `skill/SKILL.src.md` → `global/skills/impeccable/SKILL.md`; 35 of `skill/reference/*.md`;
+  `skill/agents/impeccable-{finish-reviewer,documenter,motion-reviewer}.md` →
+  `reference/agents/{finish-reviewer,documenter,motion-reviewer}.md`, as briefs for fresh subagents.
+- **Left out:** the launcher and engine (`skill/scripts/`), the detector, the live mode and its server,
+  the decision page, the catalog rolls (`concept-seed`, which calls impeccable's service), the comp-led
+  pipeline (`new-work-comp`, `visualize`, `region-map`, `component-review`), `live`, `live-setup`,
+  `generate`, `hooks`, `doctor`, `foundations`, the asset producer and manual-edit agents, and
+  `hermes-plugin/`.
+- **Changed:**
+  - build placeholders filled for Claude Code; the ask instruction adds the handoff fallback;
+  - Setup reads PRODUCT.md, DESIGN.md and the direction contract directly; every build is code-led;
+  - a new look is the agent's own ranked directions: the lead, one alternate and the category standard,
+    put to the owner with AskUserQuestion; a new surface's structures the same way;
+  - the direction contract is a "How <surface> looks" section of `docs/state/implementation.md`, written
+    with `wf doc`;
+  - critique runs one isolated design assessment with screenshots, no detector; critique snapshots and
+    audit reports are written as plain files that polish reads and closes;
+  - motion is captured with Playwright, and the finish reviewer, documenter and motion reviewer are fresh
+    general-purpose subagents briefed from the files above;
+  - screenshots go to `scratch/images/<id>-<page>-<size>.png`.
 
 ## Licences
 

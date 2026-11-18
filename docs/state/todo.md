@@ -218,8 +218,12 @@ Deliverable: global/CLAUDE.md complete and readable in one sitting, importing th
   Proof: on a fresh HOME, install links the skills into claude-setup; a second run changes nothing
   - install.ts linkEach: every entry of global/rules/ is linked into ~/.claude/rules/ and every folder of global/skills/ into ~/.claude/skills/, by the same name, through the existing linkTo, so a file the owner made there is never replaced
   - proof: install.test.ts on a fresh HOME links both rules and all three skills beside the owner's own rule and skill, a second run prints 'already installed', and a same-named skill of the owner's is refused untouched; wf help install names the links
-- [ ] 5.5 impeccable installed as a launcher-free skill in global/skills/impeccable: its router and design references, Setup rewritten for the no-launcher path, live mode, detect, hooks, doctor and pin left out
+- [~] 5.5 impeccable installed as a code-led skill in global/skills/impeccable: router and design references kept; launcher, detector, decision page, catalog rolls and the comp-led pipeline left out; a new look is three directions the owner picks from
   Proof: a diff against upstream with no launcher call left; in a fresh session /impeccable loads and a UI task follows its craft floor; Apache-2.0 notice and changes in THIRD-PARTY.md
+  - global/skills/impeccable: SKILL.md and 35 references copied from upstream d41d986, placeholders filled for Claude Code, Codex blocks dropped; Setup reads PRODUCT.md, DESIGN.md and the direction contract directly; live, generate, pin, hooks, doctor and foundations removed
+  - new-work and new-work-world rewritten code-led: the agent's ranked directions (lead, one alternate, the category standard) and a new surface's structures go to the owner via AskUserQuestion, with wf assume when away; the direction contract is a 'How \<surface> looks' section via wf doc; comp-led steps, seeds and the detector pass removed
+  - critique runs one isolated design assessment with screenshots; snapshots and audit reports are plain .impeccable files that routing, polish and the trend line read; animate captures with Playwright; finish reviewer, documenter and motion reviewer are briefs for fresh general-purpose subagents
+  - Apache-2.0: LICENSE and NOTICE.md copied unchanged, each of the 34 changed files carries a change notice, THIRD-PARTY.md lists what was taken, left out and changed; a sweep finds no launcher verb, placeholder or dead link left; install.test.ts expects the impeccable skill link
 
 ## [ ] 6 · Real use
 Deliverable: one real project taken from setup through its first major task with this setup, and the friction recorded as learnings.

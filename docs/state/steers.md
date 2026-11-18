@@ -177,3 +177,13 @@ Changed: major 5 deliverable, 5.2 title, implementation Skills section
 Steer: The adapted ponytail and karpathy rules load through ~/.claude/rules/ links made by wf install, not @imports
 Why: an @import inside the symlinked ~/.claude/CLAUDE.md may not resolve, and an absolute path would expose a home path in a public repo
 Changed: implementation layout and Skills, spec locations, 5.4 title
+
+## 2026-11-19 · affects 5.5
+Steer: impeccable is installed code-led only: no launcher, detector, decision page, catalog rolls or comp pipeline; a new look is three proposed directions the owner picks from
+Why: those parts need impeccable's binary and its paid catalog service
+Changed: 5.5 title
+
+## 2026-11-19 · affects 5.5
+Assumption: impeccable's direction contract goes into the project's implementation.md as a 'How \<surface> looks' section via wf doc, and its finish reviewer, documenter and motion reviewer run as fresh general-purpose subagents briefed from prompt files in the skill, with nothing installed into ~/.claude/agents
+Why: without the launcher its surface-brief files and shipped agents have no home; this reuses wf's records and the Agent tool, and is easy to change
+Changed: 5.5 adaptation plan

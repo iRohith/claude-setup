@@ -83,6 +83,7 @@ test('install links every vetted rules file and skill folder, next to what is al
 	assert.deepEqual(readdirSync(join(repo, 'global', 'skills')).sort(), [
 		'codebase-design',
 		'diagnosing-bugs',
+		'impeccable',
 		'tdd'
 	]);
 	assert.equal(readFileSync(join(rules, 'mine.md'), 'utf8'), 'my rule');

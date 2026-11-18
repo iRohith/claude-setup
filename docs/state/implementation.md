@@ -99,8 +99,10 @@ The guidance exists from a project's first moment, before any work.
 - **Adaptation:** every copy is edited so the owner's rules win where they conflict. For example: dead code
   is removed at every micro commit, open items go to `wf defer` instead of "later" comments, and an
   unanswered question goes into the handoff instead of stopping the work.
-- **impeccable:** on demand, as a skill for UI work (its markdown only; its launcher and scripts are never
-  run).
+- **impeccable:** on demand, as the UI skill in `global/skills/impeccable/`, adapted code-led: its router,
+  design references and three reviewer briefs, with no launcher, detector, decision page, catalog rolls or
+  comp pipeline. A new look is three directions the owner picks from; the direction contract is a section
+  of the project's `implementation.md`.
 - **Vetting:** each skill is checked before it's added, so nothing upstream runs hidden code: no hooks, no
   binaries, no telemetry. `global/THIRD-PARTY.md` names each upstream repo, the commit it was taken from,
   its MIT licence, and what was changed.
