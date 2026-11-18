@@ -141,9 +141,17 @@ When every minor of a major is done and its deliverable is verified, `wf done <m
 - Warnings are errors; if one truly can't be fixed, ask. No TODOs or stubs. Remove dead code at every
   micro commit; only code that is used now stays.
 - Nothing hardcoded: configurable values live in env.
-- Type-safe languages only unless the owner allows otherwise. TypeScript over JavaScript, configs included.
-- pnpm for everything Node. System Python with uv (no uv projects, no uv-downloaded Pythons), pacman
-  packages preferred, everything used listed in `requirements.txt`.
+- Type-safe code only, unless the owner allows otherwise. "Type-safe" is about how the code is written,
+  not a list of languages: Python is allowed when every function, argument, return and attribute is
+  typed and a strict type checker runs in the project's checks with zero errors. Untyped or partly typed
+  code is not allowed in any language. TypeScript over JavaScript, configs included.
+- pnpm for everything Node.
+- Python runs on the system Python, and its packages come from pacman. Never install a Python package
+  with uv or pip. When a package isn't installed, ask the owner to install it from pacman (no sudo).
+- Only when a package isn't in pacman, or the pacman version doesn't work: `uv venv
+  --system-site-packages` on the system Python, then install into it just the packages that override or
+  are missing. Never reinstall a big package the system already has (pytorch and the like). No uv
+  projects, no uv-downloaded Pythons. Everything used is listed in `requirements.txt`.
 - Latest stable versions when adding a package. Never upgrade existing ones without asking; report
   outdated ones. Scaffold with the stack's own tool (`pnpm dlx sv create`, `cargo init`, `zig init`).
 - Preferred web stack: SvelteKit with pure runes, shadcn-svelte, Cloudflare Workers; Modal for extra CPU,

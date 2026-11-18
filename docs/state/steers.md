@@ -147,3 +147,13 @@ Why: a denial must name an alternative.
 Steer: UI work loads the UI skill first and uses shadcn; the dashboard needs a beautiful dark theme; anything the owner calls a guideline goes into the global guidelines, not only a learning
 Why: the dashboard looked like a cheap internal tool because no UI skill guided it, and earlier guidelines landed only in learnings
 Changed: 4.3 reshaped around impeccable, shadcn-svelte and a dark theme; global/CLAUDE.md gains the UI-skill, shadcn and guideline-placement rules
+
+## 2026-11-18 · affects all
+Steer: Type-safe means fully typed code under a strict checker, not a language list; fully typed Python is allowed
+Why: downstream projects read the rule as banning Python
+Changed: global/CLAUDE.md Code rule on type safety reworded
+
+## 2026-11-18 · affects all
+Steer: Python packages come from pacman, never uv or pip installs; ask the owner for missing ones; a uv venv with system site packages only for packages pacman lacks or gets wrong, overriding just those; never reinstall big system packages like pytorch
+Why: downstream projects ignored the Python rules and installed packages with uv
+Changed: global/CLAUDE.md Code rules on Python rewritten
