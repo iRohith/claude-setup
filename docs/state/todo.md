@@ -210,8 +210,10 @@ Deliverable: global/CLAUDE.md complete and readable in one sitting, importing th
   - cloned shallow into scratch/thirdparty (refs had been emptied): ponytail 96608e0, andrej-karpathy-skills 2c60614, mattpocock/skills 5863806; vetted: karpathy is markdown only; ponytail ships JS hooks, a statusline, commands and many plugin manifests; mattpocock ships shell scripts; only markdown is taken
   - global/rules/ponytail.md and karpathy.md (always-on, to be linked into ~/.claude/rules/ by 5.4) and global/skills/{tdd,diagnosing-bugs,codebase-design}/, copied verbatim then edited so the owner's rules win; global/THIRD-PARTY.md has each upstream, commit, what was left out, what changed, and the MIT texts
   - proof: diff -ru of each copy against its upstream path shows only the listed changes; every file under global/ is mode 644 markdown, with no hooks, scripts or binaries
-- [ ] 5.3 seed global learnings from the three failed attempts
+- [x] 5.3 seed global learnings from the three failed attempts
   Proof: `wf status` shows them; under the budget
+  - global learnings 14 to 17 from intent.md's lessons and references.md's failures: hand-editing drift, too many loose states, hooks as the main control, logs that grew and facts copied in three places; the rest (claude -p, unasked mechanisms, honesty, friction) were already 1 to 5
+  - project learnings 3 and 4 removed as duplicates of global 15 and 16 (wf learn --remove), and learning 8's citation renumbered; wf status shows 17 global and 10 project, and the fullest session context is 7,015 of 9,000
 - [x] 5.4 wf install also links global/rules/ files into ~/.claude/rules/ and global/skills/ folders into ~/.claude/skills/ (the CLAUDE.md link is 1.12)
   Proof: on a fresh HOME, install links the skills into claude-setup; a second run changes nothing
   - install.ts linkEach: every entry of global/rules/ is linked into ~/.claude/rules/ and every folder of global/skills/ into ~/.claude/skills/, by the same name, through the existing linkTo, so a file the owner made there is never replaced
