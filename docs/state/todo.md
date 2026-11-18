@@ -165,19 +165,21 @@ Deliverable: the owner manages todos and learnings across all projects without t
   Proof: screenshots of each action and of a rejected edit
   - project page form actions (addMajor, addMinor, edit, check, start, reopen) apply core functions under the CLI's lock; a broken rule comes back as an inline error next to its item; checking an open minor starts it first; core `reopen` is the owner's undo
   - proof: an e2e test at both sizes adds a major and minor, gets the inline proof error, starts, checks, reopens and renames; real-dashboard screenshots `scratch/images/4.1-*` show the controls and a rejected edit without changing real data (todo hashes equal before and after)
-- [ ] 4.2 tabs for every registered project plus Global; steers, risks, memory and docs views; state switcher
+- [x] 4.2 tabs for every registered project plus Global; steers, risks, memory and docs views; state switcher
   Proof: screenshots across two projects
-- [ ] 4.3 UI designed from actual use (impeccable), mobile-friendly
-  Proof: desktop and phone-width screenshots reviewed by the owner
+  - a tab bar in the layout (All, one tab per registered project, Global); project views Todo, Steers, Risks, Memory, Learnings, Docs via ?view= links, the five plan docs via ?doc=, rendered with marked; a state switcher form action through core setState; /global shows the global learnings
+  - proof: e2e at both sizes covers tabs, every view, doc switching and the state switch (waiting for the action's response); real-dashboard screenshots `scratch/images/4.2-*` across claude-setup, demo and a third registered project; the look is replaced in 4.3
+- [ ] 4.3 redesign the dashboard with the UI skill (impeccable) loaded: shadcn-svelte components, a beautiful dark theme, designed from how the owner actually uses it, mobile-friendly
+  Proof: real-dashboard screenshots at desktop and mobile of every page and view, reviewed against the skill's checklist and by the owner
 - [ ] 4.4 edit project and global learnings in the dashboard, through the same core rules and size budget
   Proof: screenshots of a learning added and an over-budget one rejected, from the real dashboard at desktop and mobile
 
-## [ ] 5 · Guidance and skills
+## [~] 5 · Guidance and skills
 Deliverable: `global/CLAUDE.md` under about 80 lines, with the four skills installed as spec'd.
 
 - [ ] 5.1 fold the vetted skills' always-on parts into `global/CLAUDE.md` (with 5.2), keeping it short
   Proof: the owner reads the updated `global/CLAUDE.md` in one sitting and signs off
-- [ ] 5.2 vet and adapt ponytail, mattpocock, karpathy; impeccable on demand
+- [~] 5.2 vet and adapt ponytail, mattpocock, karpathy; impeccable on demand
   Proof: a diff of each adaptation against upstream; no hooks or binaries present
 - [ ] 5.3 seed global learnings from the three failed attempts
   Proof: `wf status` shows them; under the budget

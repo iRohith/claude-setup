@@ -95,6 +95,10 @@ When every minor of a major is done and its deliverable is verified, `wf done <m
 - Every record (steers, learnings, todo, handoff, plan documents, commits) is your own short summary.
   Never paste the owner's messages verbatim: repos can be public, and their wording is not for the
   record.
+- When the owner says something is a guideline, it goes into the global guidelines (claude-setup's
+  `global/CLAUDE.md`, or `global/states.md` for a state's procedure), not only into a learning. In
+  claude-setup, edit them. In any other project you can't: record it with `wf learn --global` and tell
+  the owner it needs adding to the guidelines.
 - Architectural changes need the owner's permission. When the owner is away, take the most reversible
   choice, do it, and record it with `wf assume` for review.
 - Propose a mechanism and ask before building it. Never choose mechanisms on the owner's behalf.
@@ -144,6 +148,10 @@ When every minor of a major is done and its deliverable is verified, `wf done <m
   outdated ones. Scaffold with the stack's own tool (`pnpm dlx sv create`, `cargo init`, `zig init`).
 - Preferred web stack: SvelteKit with pure runes, shadcn-svelte, Cloudflare Workers; Modal for extra CPU,
   GPU or storage.
+- **Before any UI work, load the UI skill (impeccable) and follow it**: design, layout, typography,
+  colour, states and its review checklist. UI built without it is not done.
+- UI is built with shadcn components: shadcn-svelte in Svelte, shadcn/ui in React. Don't hand-roll what
+  shadcn provides; extend it instead.
 - UI is never generic: design it from how it is actually used. Mobile-friendly from the start when it is
   used on mobile. Landing pages may be showy but stay fast.
 - UI work always has Playwright tests, and screenshots at desktop and mobile sizes committed as

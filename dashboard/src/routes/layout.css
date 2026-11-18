@@ -1,1 +1,40 @@
 @import 'tailwindcss';
+
+/* Rendered state files: just enough structure to read them. */
+.md h1 {
+	@apply mb-3 text-xl font-semibold;
+}
+.md h2 {
+	@apply mt-6 mb-2 text-lg font-semibold;
+}
+.md h3 {
+	@apply mt-4 mb-1 font-semibold;
+}
+.md p {
+	@apply my-2;
+}
+.md ul {
+	@apply my-2 list-disc pl-5;
+}
+.md ol {
+	@apply my-2 list-decimal pl-5;
+}
+.md li {
+	@apply my-1;
+}
+.md code {
+	@apply rounded bg-neutral-100 px-1 text-[0.9em];
+}
+.md pre {
+	@apply my-3 overflow-x-auto rounded bg-neutral-100 p-3 text-sm;
+}
+.md pre code {
+	@apply bg-transparent p-0;
+}
+.md table {
+	@apply my-3 block overflow-x-auto text-sm;
+}
+.md th,
+.md td {
+	@apply border border-neutral-200 px-2 py-1 text-left;
+}

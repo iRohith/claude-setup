@@ -1,12 +1,21 @@
 import { error, fail } from '@sveltejs/kit';
 import * as wf from 'wf';
-import { viewProject } from '#lib/server/projects.js';
+import { DOCS, VIEWS, renderState, viewProject, type View } from '#lib/server/projects.js';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ params }) => {
-	const view = viewProject(`/${params.path}`);
-	if (!view) error(404, 'not a registered project');
-	return view;
+export const load: PageServerLoad = ({ params, url }) => {
+	const root = `/${params.path}`;
+	const project = viewProject(root);
+	if (!project) error(404, 'not a registered project');
+	const view = (VIEWS as readonly string[]).includes(url.searchParams.get('view') ?? '')
+		? (url.searchParams.get('view') as View)
+		: 'todo';
+	const doc = (DOCS as readonly string[]).includes(url.searchParams.get('doc') ?? '')
+		? (url.searchParams.get('doc') as string)
+		: DOCS[0];
+	const file = view === 'docs' ? doc : view;
+	const html = view === 'todo' || project.summary.error ? '' : renderState(root, file);
+	return { ...project, view, views: VIEWS, doc, docs: DOCS, html };
 };
 
 /** The registered root this request is about, or a 404. */
@@ -46,6 +55,17 @@ export const actions: Actions = {
 	admin: async ({ params, request }) => {
 		const root = rootOf(params.path);
 		wf.setAdmin(root, (await request.formData()).get('on') === 'true');
+	},
+	/** The owner's state switch: setup, discuss or build. */
+	state: async ({ params, request }) => {
+		const root = rootOf(params.path);
+		const form = await request.formData();
+		try {
+			wf.withLock(root, () => wf.setState(root, field(form, 'state')));
+		} catch (e) {
+			if (e instanceof wf.WfError) return fail(400, { error: e.message, item: 'state' });
+			throw e;
+		}
 	},
 	addMajor: ({ params, request }) =>
 		change(params.path, request, (t, f) =>

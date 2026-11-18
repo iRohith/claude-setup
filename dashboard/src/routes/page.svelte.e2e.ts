@@ -13,7 +13,7 @@ test('projects page lists the project with state, active and next', async ({ pag
 
 test('todo page shows majors, minors, proofs and details', async ({ page }) => {
 	await page.goto('/');
-	await page.getByRole('link', { name: 'notes' }).click();
+	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
 	await expect(page.getByRole('heading', { name: 'notes', level: 1 })).toBeVisible();
 	await expect(page.getByText('Deliverable: a page that lists notes')).toBeVisible();
 	await expect(page.getByText('Proof: a unit test saves and reloads two notes')).toBeVisible();
@@ -22,14 +22,14 @@ test('todo page shows majors, minors, proofs and details', async ({ page }) => {
 
 test('code spans render as code, not backticks', async ({ page }) => {
 	await page.goto('/');
-	await page.getByRole('link', { name: 'notes' }).click();
+	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
 	await expect(page.locator('code', { hasText: 'notes.json' })).toBeVisible();
 	await expect(page.getByText('`notes.json`')).toHaveCount(0);
 });
 
 test('details stay open for work in progress and fold for finished work', async ({ page }) => {
 	await page.goto('/');
-	await page.getByRole('link', { name: 'notes' }).click();
+	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
 	await expect(page.locator('code', { hasText: 'notes.json' })).toBeVisible();
 	const done = page.getByRole('listitem').filter({ hasText: '0.3 setup' });
 	await expect(done.getByText('scaffolded')).toBeHidden();
@@ -41,7 +41,7 @@ test('details stay open for work in progress and fold for finished work', async 
 
 test('the owner turns admin mode on and off from the project page', async ({ page }) => {
 	await page.goto('/');
-	await page.getByRole('link', { name: 'notes' }).click();
+	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
 	await page.waitForLoadState('networkidle');
 	await page.getByRole('button', { name: 'Turn admin mode on' }).click();
 	await expect(page.getByText('Admin mode is on.')).toBeVisible();
@@ -56,7 +56,7 @@ test('the owner adds, edits, checks and reopens items, with rule errors inline',
 }, info) => {
 	const title = `Edits on ${info.project.name}`;
 	await page.goto('/');
-	await page.getByRole('link', { name: 'notes' }).click();
+	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
 	await page.waitForLoadState('networkidle');
 
 	await page.getByText('Add a major').click();
@@ -91,6 +91,54 @@ test('the owner adds, edits, checks and reopens items, with rule errors inline',
 	await expect(
 		major.getByRole('listitem').filter({ hasText: `${id}.1 renamed edit` })
 	).toBeVisible();
+});
+
+test('tabs lead to every project and to Global', async ({ page }) => {
+	await page.goto('/');
+	const tabs = page.getByRole('navigation', { name: 'Projects' });
+	await expect(tabs.getByRole('link', { name: 'All' })).toBeVisible();
+	await tabs.getByRole('link', { name: 'notes' }).click();
+	await expect(page.getByRole('heading', { name: 'notes', level: 1 })).toBeVisible();
+	await tabs.getByRole('link', { name: 'Global' }).click();
+	await expect(page.getByRole('heading', { name: 'Global', level: 1 })).toBeVisible();
+});
+
+test('each view shows its state file, and docs switch between documents', async ({ page }) => {
+	await page.goto('/');
+	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
+	const views = page.getByRole('navigation', { name: 'Views' });
+	await views.getByRole('link', { name: 'memory' }).click();
+	await expect(page.getByRole('heading', { name: 'Invariants' })).toBeVisible();
+	await views.getByRole('link', { name: 'steers' }).click();
+	await expect(page.getByRole('heading', { name: 'Steers', level: 1 })).toBeVisible();
+	await views.getByRole('link', { name: 'docs' }).click();
+	await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeVisible();
+	await page.getByRole('link', { name: 'spec', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'Spec', level: 1 })).toBeVisible();
+	await views.getByRole('link', { name: 'todo' }).click();
+	await expect(page.getByText('Deliverable: a page that lists notes')).toBeVisible();
+});
+
+test('the owner switches the project state', async ({ page }) => {
+	await page.goto('/');
+	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
+	await page.waitForLoadState('networkidle');
+	await page.getByLabel('State').selectOption('discuss');
+	await Promise.all([
+		page.waitForResponse((r) => r.url().includes('/state')),
+		page.getByRole('button', { name: 'Switch' }).click()
+	]);
+	await page.goto('/');
+	await expect(page.getByRole('listitem').filter({ hasText: 'notes' })).toContainText('discuss');
+	await page.getByRole('main').getByRole('link', { name: 'notes' }).click();
+	await page.waitForLoadState('networkidle');
+	await page.getByLabel('State').selectOption('setup');
+	await Promise.all([
+		page.waitForResponse((r) => r.url().includes('/state')),
+		page.getByRole('button', { name: 'Switch' }).click()
+	]);
+	await page.goto('/');
+	await expect(page.getByRole('listitem').filter({ hasText: 'notes' })).toContainText('setup');
 });
 
 test('an unregistered path is a 404', async ({ page }) => {

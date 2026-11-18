@@ -6,6 +6,8 @@
 
 	let { data, form }: PageProps = $props();
 
+	const here = $derived(resolve('/projects/[...path]', { path: data.summary.root.slice(1) }));
+
 	const MARK = {
 		' ': { label: 'open', style: 'bg-neutral-100 text-neutral-600' },
 		'~': { label: 'in progress', style: 'bg-amber-100 text-amber-800' },
@@ -38,33 +40,81 @@
 <svelte:head><title>wf · {data.summary.name}</title></svelte:head>
 
 <main class="mx-auto max-w-4xl p-4 sm:p-8">
-	<a class="text-sm text-neutral-500 hover:underline" href={resolve('/')}>← projects</a>
-	<h1 class="mt-2 text-2xl font-semibold">{data.summary.name}</h1>
-	<p class="text-sm text-neutral-500">
-		<span class="break-all">{data.summary.root}</span> · {data.summary.state ?? '?'}
-	</p>
+	<h1 class="text-2xl font-semibold">{data.summary.name}</h1>
+	<p class="text-sm break-all text-neutral-500">{data.summary.root}</p>
 
-	<form method="POST" action="?/admin" use:enhance class="mt-3 mb-6">
-		<input type="hidden" name="on" value={String(!data.summary.admin)} />
-		{#if data.summary.admin}
+	<div class="mt-3 flex flex-wrap items-center gap-3">
+		<form method="POST" action="?/state" use:enhance class="flex items-center gap-2 text-sm">
+			<label for="state">State</label>
+			<select
+				id="state"
+				name="state"
+				value={data.summary.state}
+				class="rounded border border-neutral-300 px-2 py-1"
+			>
+				<option value="setup">setup</option>
+				<option value="discuss">discuss</option>
+				<option value="build">build</option>
+			</select>
+			<button class="rounded border border-neutral-300 px-3 py-1 hover:bg-neutral-50">Switch</button
+			>
+		</form>
+		{@render problem('state')}
+		{#if !data.summary.admin}
+			<form method="POST" action="?/admin" use:enhance>
+				<input type="hidden" name="on" value="true" />
+				<button class="rounded border border-neutral-300 px-3 py-1 text-sm hover:bg-neutral-50">
+					Turn admin mode on
+				</button>
+			</form>
+		{/if}
+	</div>
+	{#if data.summary.admin}
+		<form method="POST" action="?/admin" use:enhance class="mt-3">
+			<input type="hidden" name="on" value="false" />
 			<div
 				class="flex flex-wrap items-center gap-3 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900"
 			>
 				<span><strong>Admin mode is on.</strong> No wf restriction applies to this project.</span>
 				<button class="rounded bg-red-700 px-3 py-1 text-white hover:bg-red-800">Turn off</button>
 			</div>
-		{:else}
-			<button class="rounded border border-neutral-300 px-3 py-1 text-sm hover:bg-neutral-50">
-				Turn admin mode on
-			</button>
-		{/if}
-	</form>
+		</form>
+	{/if}
+
+	<nav
+		aria-label="Views"
+		class="mt-5 mb-5 flex flex-wrap gap-1 border-b border-neutral-200 text-sm"
+	>
+		{#each data.views as v (v)}
+			<a
+				href="{here}?view={v}"
+				aria-current={data.view === v ? 'page' : undefined}
+				class="px-3 py-1.5 capitalize {data.view === v
+					? 'border-b-2 border-neutral-900 font-medium'
+					: 'text-neutral-500 hover:text-neutral-900'}">{v}</a
+			>
+		{/each}
+	</nav>
 
 	{#if data.summary.error}
 		<p class="text-red-700">{data.summary.error}</p>
+	{:else if data.view !== 'todo'}
+		{#if data.view === 'docs'}
+			<div class="mb-4 flex flex-wrap gap-2 text-sm">
+				{#each data.docs as d (d)}
+					<a
+						href="{here}?view=docs&doc={d}"
+						aria-current={data.doc === d ? 'page' : undefined}
+						class="rounded px-2 py-1 {data.doc === d
+							? 'bg-neutral-900 text-white'
+							: 'bg-neutral-100 hover:bg-neutral-200'}">{d}</a
+					>
+				{/each}
+			</div>
+		{/if}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- the project's own state files, rendered -->
+		<div class="md">{@html data.html}</div>
 	{:else if data.todo}
-		<h2 class="mb-3 text-lg font-semibold">Todo</h2>
-
 		<details class="mb-6">
 			<summary class="cursor-pointer text-sm text-neutral-600">Add a major</summary>
 			<form method="POST" action="?/addMajor" use:enhance class="mt-2 grid gap-2">

@@ -142,3 +142,8 @@ Why: TS over shell is the owner's rule, and the refusal keeps the agent from wri
 ## 2026-11-18 · affects 1.3
 Assumption: the edit hook denies only the state files `wf` can write; each file joins when its command exists.
 Why: a denial must name an alternative.
+
+## 2026-11-18 · affects 4.3, 5.2
+Steer: UI work loads the UI skill first and uses shadcn; the dashboard needs a beautiful dark theme; anything the owner calls a guideline goes into the global guidelines, not only a learning
+Why: the dashboard looked like a cheap internal tool because no UI skill guided it, and earlier guidelines landed only in learnings
+Changed: 4.3 reshaped around impeccable, shadcn-svelte and a dark theme; global/CLAUDE.md gains the UI-skill, shadcn and guideline-placement rules

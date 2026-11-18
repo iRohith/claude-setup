@@ -37,5 +37,13 @@ test('real dashboard pages', async ({ page }, info) => {
 		await page.getByRole('button', { name: 'Add major' }).click();
 		await expect(page.getByRole('alert')).toHaveText('title is required');
 		await save(page, info, `project-${name}-rejected-edit`);
+		await page
+			.getByRole('navigation', { name: 'Views' })
+			.getByRole('link', { name: 'memory' })
+			.click();
+		await expect(page.getByRole('heading', { name: 'Memory', level: 1 })).toBeVisible();
+		await save(page, info, `project-${name}-memory`);
 	}
+	expect((await page.goto(new URL('global', base).href))?.ok()).toBe(true);
+	await save(page, info, 'global');
 });

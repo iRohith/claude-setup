@@ -11,3 +11,5 @@
 9. Proved UI with screenshots of a test fixture → proof screenshots show the real app with real data.
 10. Wrote guidance that leaned on context other projects never see → every instruction lives in the global files, complete on its own.
 11. Stopped and waited for the owner while other todo items were open → put what the owner must do in the handoff and start the next item.
+12. Built UI without loading the UI skill → load the UI skill before any UI work and follow it
+13. Put rules the owner called guidelines only into learnings → guidelines go into global/CLAUDE.md, learnings record mistakes
