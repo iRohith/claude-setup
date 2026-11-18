@@ -1,0 +1,5 @@
+packages:
+  - dashboard
+  - wf
+allowBuilds:
+  esbuild: true

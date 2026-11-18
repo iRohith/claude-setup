@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Blocks secrets and PII in staged changes. PII patterns come from git config at runtime,
+# so they never land in a tracked file.
+set -euo pipefail
+
+root=$(git rev-parse --show-toplevel)
+
+rules=""
+n=0
+add_rule() {
+  local value=$1
+  [[ -z $value || $value == *"'''"* ]] && return
+  local escaped
+  escaped=$(printf '%s' "$value" | sed -E 's/[][\.^$*+?(){}|\\/]/\\&/g')
+  n=$((n + 1))
+  rules+=$'\n'"[[rules]]"$'\n'"id = 'pii-$n'"$'\n'"description = 'personal identifier'"$'\n'"regex = '''(?i)$escaped'''"$'\n'
+}
+
+add_rule "$(git config user.name || true)"
+add_rule "$(git config user.email || true)"
+
+GITLEAKS_CONFIG_TOML=$'[extend]\nuseDefault = true\n'"$rules" \
+  gitleaks git --pre-commit --staged --redact --no-banner --no-color --verbose \
+    --gitleaks-ignore-path "$root/.gitleaksignore" "$root"
+
+# The owner's checks for the dashboard. Format rewrites files, so what was staged is staged again.
+dash="$root/dashboard"
+mkdir -p "$root/scratch/temp"
+git -C "$root" diff --cached --name-only -z --diff-filter=ACMR > "$root/scratch/temp/staged.lst"
+pnpm --dir "$dash" format
+xargs -0 -r git -C "$root" add -- < "$root/scratch/temp/staged.lst"
+pnpm --dir "$dash" lint
+pnpm --dir "$dash" check
+pnpm --dir "$dash" build

@@ -1,0 +1,10 @@
+.env
+.env.local
+scratch/temp/
+scratch/refs/
+scratch/links/
+scratch/thirdparty/
+local/
+node_modules/
+# Claude Code's local state for sessions in this repo
+/.claude/
