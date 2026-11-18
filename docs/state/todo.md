@@ -67,7 +67,7 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   - `wf/cli.test.ts`: 7 tests run the real CLI against a sample project in `scratch/temp/` with a temp `WF_HOME` (removed afterwards); 19 of 19 wf tests pass; also ran `wf status` and `wf show 1` on this repo
 - [~] 1.3 hooks: SessionStart injection and the PreToolUse deny on `docs/state/**`
   Proof: transcript of a real session showing the injected context and the denied Edit with its alternative
-- [~] 1.4 install.sh: links, PATH, hook registration
+- [~] 1.4 `wf install`: wf on PATH and hook registration (links for CLAUDE.md and skills land in 5.1, 5.2)
   Proof: on a clean `~/.claude` the throwaway project works with no per-project step
 - [x] 1.5 dashboard: read-only project list and todo tab
   Proof: screenshot of the throwaway project's todo
@@ -86,8 +86,12 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   Proof: help for every command prints its usage and rules; a bare `wf` prints the overview; tests cover each command's help
   - `wf/help.ts` is the one list of commands: usage, a summary and the rules each enforces; the CLI rejects anything not listed, and a listed command without a handler fails loudly
   - bare `wf`, `wf help`, `--help` and `-h` print the overview; `wf help <cmd>` and `wf <cmd> --help` print usage and rules; usage mistakes exit 2 with that command's help; 4 tests in `help.test.ts` cover every command; 32 of 32 wf tests pass
-- [ ] 1.9 bulk planning: `wf batch <file>` adds majors and minors (with proofs) all or nothing, `wf edit` changes a title, proof or deliverable, `wf doc` writes overview, intent, references, implementation or spec, whole or one section
+- [x] 1.9 bulk planning: `wf batch <file>` adds majors and minors (with proofs) all or nothing, `wf edit` changes a title, proof or deliverable, `wf doc` writes overview, intent, references, implementation or spec, whole or one section
   Proof: a batch file writes a whole initial todo in one call; a batch with one bad entry changes nothing; `wf doc implementation --from <file>` replaces the plan and a direct Edit of it is denied
+  - core `applyBatch`: the todo.md shape without ids (`## <title>` + Deliverable, `## <id>`, `- <title>` + Proof), applied to a copy and swapped in only when every entry passes; errors name file:line
+  - core `editItem` (proofs on minors, deliverables on majors) and `writeDoc` (whole document from "# <Title>", or one "## <section>" replaced in place or appended; no #/## inside a section body)
+  - the deny list is now a map from file to its command: todo.md, handoff.md and the five plan documents; a denial names the exact command (e.g. `wf doc spec`); 39 of 39 wf tests pass
+  - used on this repo: `wf edit` moved edit/batch/doc out of 3.4 and fixed 1.4's stale install.sh title; `wf doc spec --section` rewrote spec section 4 to match what's built
 
 ## [ ] 2 · States and admin
 Deliverable: setup/discuss/build behave as spec section 2 in a real session, and admin mode lifts every restriction only when the owner flips it.
@@ -108,8 +112,8 @@ Deliverable: every record type from spec section 3 written and queried through `
   Proof: `wf show <id>` lists the steer that changed it
 - [ ] 3.3 `wf risk` with all four fields required
   Proof: a request missing `--recover` is rejected naming the field
-- [ ] 3.4 memory sections, doc sections, `wf edit`, `wf move`, `wf batch`, `wf find`, `wf get`
-  Proof: a batch with one bad line changes nothing; `wf find` hits across files
+- [ ] 3.4 memory sections, `wf move`, `wf find`, `wf get`
+  Proof: `wf move` reorders an item; `wf find` hits across files; `wf get` prints one section
 - [ ] 3.5 `wf env set` and `wf env keys`; `.env` read and print denied
   Proof: `.env` gets the key; the transcript never shows a value; `cat .env` is denied
 - [ ] 3.6 `wf checks set` (pre-commit) and `wf push set` (optional pre-push, majors only, for example a deploy)

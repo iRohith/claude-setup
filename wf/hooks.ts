@@ -62,6 +62,8 @@ function section(title: string, path: string): string {
 function denyReason(input: HookInput, cwd: string): string | undefined {
 	if (!EDIT_TOOLS.includes(input.tool_name ?? '')) return undefined;
 	const target = input.tool_input?.file_path ?? input.tool_input?.notebook_path;
-	if (typeof target !== 'string' || !wf.isWfOwned(resolve(cwd, target))) return undefined;
-	return `${basename(target)} is written only through wf. Use wf add, start, done, impl or handoff instead (wf help <command> for usage).`;
+	if (typeof target !== 'string') return undefined;
+	const alternative = wf.wfAlternative(resolve(cwd, target));
+	if (!alternative) return undefined;
+	return `${basename(target)} is written only through wf. Use ${alternative} instead (wf help <command> for usage).`;
 }

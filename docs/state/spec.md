@@ -173,6 +173,8 @@ Open: <questions waiting for the owner, or —>
 ## 4. `wf` commands
 
 The agent runs `wf` as one command per call. Every write prints the changed lines; reads print plain text.
+`wf help` lists every command; `wf help <command>` (or `wf <command> --help`) prints its usage and the
+rules it enforces. `wf/help.ts` is the one list of commands.
 
 **Queries**
 - `wf status`: the state, active items, the next open item, and the learnings count.
@@ -185,8 +187,15 @@ The agent runs `wf` as one command per call. Every write prints the changed line
 **Todos**
 - `wf add major "<title>" --deliverable "<text>"`
 - `wf add minor <major> "<title>" --proof "<text>"`
-- `wf batch <file>`: apply a list of `add`/`edit` lines from a file in `scratch/temp/`, all or nothing.
-- `wf edit <id> [--title ...] [--proof ...] [--deliverable ...]`
+- `wf batch <file>`: add many majors and minors at once, all or nothing. The file (written in
+  `scratch/temp/` first) is the `todo.md` shape without ids or marks:
+  - `## <title>` then `Deliverable: <text>`: a new major;
+  - `## <id>`: an existing major, to add minors to;
+  - `- <title>` then `  Proof: <text>`: a minor under the header above.
+
+  Any error names the batch file's line and nothing is written.
+- `wf edit <id> [--title ...] [--proof ...] [--deliverable ...]`: proofs belong to minors, deliverables to
+  majors.
 - `wf move <id> --before <id>`
 - `wf start <id>` and `wf done <id>`
 - `wf impl <id> "<detail>"`
@@ -197,16 +206,25 @@ The agent runs `wf` as one command per call. Every write prints the changed line
 - `wf assume "<assumption>" --why "<reason>" --changed "<text>"`
 - `wf learn "<line>"` (project) or `wf learn --global "<line>"`
 - `wf memory <section> "<entry>"`
-- `wf doc <file> <section> --from <scratch/temp file>`: replace one section of overview, intent,
-  references, implementation or spec.
+- `wf doc <name> [--section "<heading>"] --from <file>`: write overview, intent, references,
+  implementation or spec.
+  - **Whole document:** the file starts with `# <Title>`.
+  - **One section:** the file is the body of `## <heading>`, with no `#` or `##` headings inside (`###` is
+    fine). It replaces that section, or is appended if the section is new.
 - `wf risk --action "..." --why "..." --level low|medium|high --surface "..." --recover "..."`: rejects the
   request and names every missing field. The action may run only after it succeeds.
-- `wf handoff --next "..." --verify "..." --dont "..."`
+- `wf handoff --next "..." --verify "..." --dont "..." [--open "..." ...]`
 
 **State**
-- `wf init`: create `docs/state/` from empty templates, register the project, set the state to setup.
+- `wf init`: in a new project, create `docs/state/` from empty templates, register it and set the state to
+  setup. In a project that already has `docs/state/`, check it parses and register it.
 - `wf state setup|discuss|build`
 - `wf admin on|off`: refused when run from inside Claude Code (section 6).
+
+**Machine**
+- `wf install`: once per machine, by the owner in a terminal. Links `wf` onto PATH and registers the
+  hooks; refuses to run inside Claude Code.
+- `wf hook session-start|pre-tool-use`: the hook entry points (section 5).
 
 **Env and checks**
 - `wf env set <KEY> <value>`: add or overwrite one key in `.env`. It never prints or reads values back,

@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 import {
 	WfError,
 	addMajor,
+	applyBatch,
+	editItem,
 	addMinor,
 	done,
 	formatHandoff,
@@ -122,6 +124,61 @@ test('next stays inside the active major, then points at majors that need attent
 	done(todo, '1.1');
 	done(todo, '1');
 	assert.equal(nextItem(todo)?.id, '2');
+});
+
+const plan = `## Store
+Deliverable: notes persist across restarts
+
+- save and load
+  Proof: a test saves two notes and reloads them
+- migrate old file
+  Proof: an old-format file loads
+
+## Page
+Deliverable: a page lists the notes
+
+- list view
+  Proof: desktop and mobile screenshots show both notes
+`;
+
+test('a batch writes a whole plan, assigning ids', () => {
+	const todo = parseTodo('# Todo\n');
+	assert.deepEqual(applyBatch(todo, plan), ['0', '0.1', '0.2', '1', '1.1']);
+	assert.equal(todo.majors[1].deliverable, 'a page lists the notes');
+	assert.equal(todo.majors[0].minors[1].proof, 'an old-format file loads');
+	assert.equal(formatTodo(parseTodo(formatTodo(todo))), formatTodo(todo));
+});
+
+test('a batch adds minors to an existing major by id', () => {
+	const todo = parseTodo(sample);
+	assert.deepEqual(applyBatch(todo, '## 1\n- write\n  Proof: file written\n'), ['1.2']);
+	assert.throws(
+		() => applyBatch(parseTodo(sample), '## 9\n- x\n  Proof: p\n'),
+		/batch:1: no major 9/
+	);
+});
+
+test('a batch is all or nothing and names the bad line', () => {
+	const todo = parseTodo(sample);
+	const before = formatTodo(todo);
+	const bad = plan.replace('  Proof: an old-format file loads\n', '');
+	assert.throws(() => applyBatch(todo, bad, 'plan.md'), /plan\.md:7: expected " {2}Proof/);
+	assert.throws(() => applyBatch(todo, '- orphan\n  Proof: p\n'), /needs a "## " major header/);
+	assert.throws(() => applyBatch(todo, '\n\n'), /nothing to add/);
+	assert.throws(() => applyBatch(todo, 'stray\n'), /batch:1: unrecognised line/);
+	assert.equal(formatTodo(todo), before);
+});
+
+test('edit changes titles, proofs and deliverables, each on the right kind of item', () => {
+	const todo = parseTodo(sample);
+	editItem(todo, '1.1', { title: 'parse strictly', proof: 'round-trip test' });
+	editItem(todo, '1', { deliverable: 'the core works end to end' });
+	assert.equal(todo.majors[1].minors[0].title, 'parse strictly');
+	assert.equal(todo.majors[1].minors[0].proof, 'round-trip test');
+	assert.equal(todo.majors[1].deliverable, 'the core works end to end');
+	assert.throws(() => editItem(todo, '1.1', { deliverable: 'x' }), /minors have a proof/);
+	assert.throws(() => editItem(todo, '1', { proof: 'x' }), /majors have a deliverable/);
+	assert.throws(() => editItem(todo, '1', {}), /nothing to change/);
 });
 
 test('fields are required and single-line', () => {

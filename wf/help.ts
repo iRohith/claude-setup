@@ -49,6 +49,36 @@ export const HELP: Record<string, Help> = {
 			'Prints the changed lines of todo.md.'
 		]
 	},
+	batch: {
+		usage: ['wf batch <file>'],
+		summary: 'add many majors and minors at once, from a file (for planning a whole todo)',
+		details: [
+			'The file is the todo.md shape without ids or marks:',
+			'  ## <title>            a new major; next line "Deliverable: <text>"',
+			'  ## <id>               an existing major, to add minors to',
+			'  - <title>             a minor under the header above; next line "  Proof: <text>"',
+			'Blank lines are ignored. All or nothing: any error names file:line and writes nothing.',
+			'Write the file in scratch/temp/ first. Prints the changed lines of todo.md.'
+		]
+	},
+	edit: {
+		usage: ['wf edit <id> [--title "<text>"] [--proof "<text>"] [--deliverable "<text>"]'],
+		summary: 'change the text of a major or minor',
+		details: [
+			'Minors have a title and a proof; majors have a title and a deliverable.',
+			'Marks change only through start and done; ids never change.'
+		]
+	},
+	doc: {
+		usage: ['wf doc <name> --from <file>', 'wf doc <name> --section "<heading>" --from <file>'],
+		summary: 'write a plan document: overview, intent, references, implementation or spec',
+		details: [
+			'Whole document: the file starts with "# <Title>" and replaces the document.',
+			'One section: the file is the body of "## <heading>" (no "#" or "##" headings in it, "###" is fine);',
+			'it replaces that section, or is appended when the section is new.',
+			'Write the file in scratch/temp/ first. Prints the changed lines.'
+		]
+	},
 	start: {
 		usage: ['wf start <minor>'],
 		summary: 'mark a minor in progress before working on it',

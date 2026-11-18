@@ -200,6 +200,93 @@ export function impl(todo: Todo, id: string, detail: string): void {
 	minor.impl.push(required(detail, 'detail'));
 }
 
+export interface ItemChanges {
+	title?: string;
+	proof?: string;
+	deliverable?: string;
+}
+
+/** Changes the text of an item. Proofs belong to minors, deliverables to majors. */
+export function editItem(todo: Todo, id: string, changes: ItemChanges): void {
+	if (
+		changes.title === undefined &&
+		changes.proof === undefined &&
+		changes.deliverable === undefined
+	)
+		throw new WfError('nothing to change; pass --title, --proof or --deliverable');
+	if (isMinorId(id)) {
+		if (changes.deliverable !== undefined)
+			throw new WfError(`${id} is a minor; minors have a proof, not a deliverable`);
+		const minor = findMinor(todo, id);
+		if (changes.title !== undefined) minor.title = required(changes.title, 'title');
+		if (changes.proof !== undefined) minor.proof = required(changes.proof, 'proof');
+		return;
+	}
+	if (changes.proof !== undefined)
+		throw new WfError(`${id} is a major; majors have a deliverable, not a proof`);
+	const major = findMajor(todo, id);
+	if (changes.title !== undefined) major.title = required(changes.title, 'title');
+	if (changes.deliverable !== undefined)
+		major.deliverable = required(changes.deliverable, 'deliverable');
+}
+
+/**
+ * Applies a batch file, in the todo.md shape without ids or marks, all or nothing:
+ *   ## <title>            a new major; the next line must be "Deliverable: ..."
+ *   ## <id>               an existing major, to add minors to
+ *   - <title>             a new minor under the header above; the next line must be "  Proof: ..."
+ * Blank lines are ignored. Errors name the batch file's line and nothing is written.
+ */
+export function applyBatch(todo: Todo, text: string, file = 'batch'): string[] {
+	const lines = text.split('\n');
+	const work: Todo = structuredClone(todo);
+	const added: string[] = [];
+	let major: Major | undefined;
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
+		const at = (fn: () => void) => {
+			try {
+				fn();
+			} catch (e) {
+				if (e instanceof WfError) throw new WfError(`${file}:${i + 1}: ${e.message}`);
+				throw e;
+			}
+		};
+		let m: RegExpMatchArray | null;
+		if (line.trim() === '') continue;
+		if ((m = line.match(/^## (\d+)$/))) {
+			const id = m[1];
+			at(() => {
+				major = findMajor(work, id);
+				if (major.mark === 'x') throw new WfError(`major ${id} is done; add a new major instead`);
+			});
+		} else if ((m = line.match(/^## (.+)$/))) {
+			const title = m[1];
+			const dl = lines[i + 1]?.match(/^Deliverable: (.+)$/);
+			if (!dl) throw new WfError(`${file}:${i + 2}: expected "Deliverable: ..." under the major`);
+			at(() => {
+				major = addMajor(work, title, dl[1]);
+				added.push(major.id);
+			});
+			i++;
+		} else if ((m = line.match(/^- (.+)$/))) {
+			const title = m[1];
+			const pr = lines[i + 1]?.match(/^ {2}Proof: (.+)$/);
+			if (!pr) throw new WfError(`${file}:${i + 2}: expected "  Proof: ..." under the minor`);
+			if (!major)
+				throw new WfError(`${file}:${i + 1}: a minor needs a "## " major header above it`);
+			const parent = major;
+			at(() => added.push(addMinor(work, parent.id, title, pr[1]).id));
+			i++;
+		} else {
+			throw new WfError(`${file}:${i + 1}: unrecognised line: ${line}`);
+		}
+	}
+	if (!added.length) throw new WfError(`${file}: nothing to add`);
+	todo.majors = work.majors;
+	return added;
+}
+
 // ---------- todo queries ----------
 
 export const activeMinors = (todo: Todo): Minor[] =>
@@ -285,20 +372,66 @@ export function writeAtomic(path: string, text: string): void {
 	renameSync(`${path}.tmp`, path);
 }
 
-/**
- * State files only wf may write. Each file joins when wf gains the commands that write it, so a
- * denial can always name the alternative.
- */
-export const WF_OWNED_FILES = ['todo.md', 'handoff.md'];
+export const DOC_NAMES = ['overview', 'intent', 'references', 'implementation', 'spec'] as const;
+export type DocName = (typeof DOC_NAMES)[number];
 
-export function isWfOwned(path: string): boolean {
+/**
+ * State files only wf may write, each with the command that writes it. A file joins when wf gains
+ * that command, so a denial can always name the alternative.
+ */
+const WF_OWNED: Record<string, string> = {
+	'todo.md': 'wf add, edit, batch, start, done or impl',
+	'handoff.md': 'wf handoff',
+	...Object.fromEntries(DOC_NAMES.map((d) => [`${d}.md`, `wf doc ${d}`]))
+};
+
+/** The wf command to use instead, when `path` is a state file only wf may write. */
+export function wfAlternative(path: string): string | undefined {
 	const file = resolve(path);
 	const dir = dirname(file);
-	return (
-		basename(dir) === 'state' &&
-		basename(dirname(dir)) === 'docs' &&
-		WF_OWNED_FILES.includes(basename(file))
-	);
+	if (basename(dir) !== 'state' || basename(dirname(dir)) !== 'docs') return undefined;
+	return WF_OWNED[basename(file)];
+}
+
+/**
+ * Writes one of the plan documents: the whole file (text must start with "# "), or the body of one
+ * "## <section>" (replaced in place, or appended when new). Returns the text before and after.
+ */
+export function writeDoc(
+	root: string,
+	name: string,
+	text: string,
+	section?: string
+): { before: string; after: string } {
+	if (!(DOC_NAMES as readonly string[]).includes(name))
+		throw new WfError(`no document ${name}; one of ${DOC_NAMES.join(', ')}`);
+	const path = statePath(root, `${name}.md`);
+	const before = existsSync(path) ? readFileSync(path, 'utf8') : '';
+	const body = text.trim();
+	if (!body) throw new WfError('the document text is empty');
+	let after: string;
+	if (section === undefined) {
+		if (!body.startsWith('# ')) throw new WfError('a whole document starts with "# <Title>"');
+		after = body + '\n';
+	} else {
+		const heading = `## ${required(section, 'section')}`;
+		if (/^#{1,2} /m.test(body))
+			throw new WfError('a section body has no "# " or "## " headings; use "### " inside it');
+		const lines = before.replace(/\n+$/, '').split('\n');
+		const start = lines.indexOf(heading);
+		const block = [heading, '', body];
+		if (start === -1) {
+			lines.push('', ...block);
+		} else {
+			let end = lines.findIndex((l, k) => k > start && /^#{1,2} /.test(l));
+			if (end === -1) end = lines.length;
+			const tail = end < lines.length ? [''] : [];
+			lines.splice(start, end - start, ...block, ...tail);
+		}
+		after = lines.join('\n') + '\n';
+	}
+	writeAtomic(path, after);
+	return { before, after };
 }
 
 /** One writer at a time per project. A lock left by a dead process is taken over. */

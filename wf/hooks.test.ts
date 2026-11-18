@@ -66,10 +66,12 @@ test('outside a project, session start injects global learnings only', () => {
 });
 
 test('edits to wf-owned state files are denied with the alternative', () => {
-	for (const [tool, file] of [
-		['Edit', 'todo.md'],
-		['Write', 'handoff.md'],
-		['MultiEdit', 'todo.md']
+	for (const [tool, file, alternative] of [
+		['Edit', 'todo.md', 'wf add, edit, batch'],
+		['MultiEdit', 'todo.md', 'wf add, edit, batch'],
+		['Write', 'handoff.md', 'wf handoff'],
+		['Edit', 'implementation.md', 'wf doc implementation'],
+		['Write', 'spec.md', 'wf doc spec']
 	]) {
 		const out = hook('pre-tool-use', {
 			hook_event_name: 'PreToolUse',
@@ -78,7 +80,10 @@ test('edits to wf-owned state files are denied with the alternative', () => {
 			cwd: project
 		});
 		assert.equal(out.hookSpecificOutput.permissionDecision, 'deny', `${tool} ${file}`);
-		assert.match(out.hookSpecificOutput.permissionDecisionReason, /only through wf\. Use wf add/);
+		assert.match(
+			out.hookSpecificOutput.permissionDecisionReason,
+			new RegExp(`only through wf\\. Use ${alternative}`)
+		);
 	}
 });
 

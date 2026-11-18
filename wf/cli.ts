@@ -10,6 +10,9 @@ import { install } from './install.ts';
 
 const OPTIONS = {
 	help: { type: 'boolean', short: 'h' },
+	title: { type: 'string' },
+	from: { type: 'string' },
+	section: { type: 'string' },
 	deliverable: { type: 'string' },
 	proof: { type: 'string' },
 	next: { type: 'string' },
@@ -69,6 +72,28 @@ function main(argv: string[]): void {
 					wf.addMinor(t, arg(1, 'major'), arg(2, 'title'), values.proof ?? '')
 				);
 			throw new UsageError(`add takes major or minor, got ${kind}`, 'add');
+		}
+		case 'batch': {
+			const file = arg(0, 'file');
+			return editTodo((t) => wf.applyBatch(t, readFileSync(file, 'utf8'), file));
+		}
+		case 'edit':
+			return editTodo((t) =>
+				wf.editItem(t, arg(0, 'id'), {
+					title: values.title,
+					proof: values.proof,
+					deliverable: values.deliverable
+				})
+			);
+		case 'doc': {
+			const name = arg(0, 'name');
+			if (!values.from) throw new UsageError('missing --from <file>', 'doc');
+			const text = readFileSync(values.from, 'utf8');
+			const root = wf.findRoot(process.cwd());
+			return wf.withLock(root, () => {
+				const { before, after } = wf.writeDoc(root, name, text, values.section);
+				printChanges(before, after);
+			});
 		}
 		case 'start':
 			return editTodo((t) => wf.start(t, arg(0, 'minor')));

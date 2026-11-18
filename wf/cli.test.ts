@@ -120,6 +120,60 @@ test('the lock blocks a live writer and takes over from a dead one', () => {
 	assert.ok(!existsSync(lock));
 });
 
+test('batch writes a plan in one call, all or nothing', () => {
+	const file = join(tmp, 'plan.md');
+	writeFileSync(
+		file,
+		'## Page\nDeliverable: a page lists notes\n\n- list\n  Proof: screenshots\n\n## 0\n- export\n  Proof: a file is written\n'
+	);
+	const r = wf('batch', file);
+	assert.equal(r.code, 0, r.err);
+	assert.match(r.out, /^\+ ## \[ \] 1 · Page$/m);
+	assert.match(r.out, /^\+ - \[ \] 1\.1 list$/m);
+	assert.match(r.out, /^\+ - \[ \] 0\.3 export$/m);
+	const todo = readFileSync(join(project, 'docs', 'state', 'todo.md'), 'utf8');
+	writeFileSync(file, '## More\nDeliverable: d\n- no proof here\n');
+	const bad = wf('batch', file);
+	assert.equal(bad.code, 1);
+	assert.match(bad.err, /plan\.md:4: expected " {2}Proof/);
+	assert.equal(readFileSync(join(project, 'docs', 'state', 'todo.md'), 'utf8'), todo);
+});
+
+test('edit prints the changed line', () => {
+	const r = wf('edit', '1.1', '--title', 'list view');
+	assert.equal(r.code, 0, r.err);
+	assert.match(r.out, /^- - \[ \] 1\.1 list$/m);
+	assert.match(r.out, /^\+ - \[ \] 1\.1 list view$/m);
+	assert.match(wf('edit', '1', '--proof', 'x').err, /majors have a deliverable/);
+});
+
+test('doc writes a whole document or one section', () => {
+	const doc = () => readFileSync(join(project, 'docs', 'state', 'implementation.md'), 'utf8');
+	const whole = join(tmp, 'whole.md');
+	writeFileSync(whole, '# Implementation\n\n## Store\n\nJSON file.\n\n## Page\n\nSvelte.\n');
+	assert.equal(wf('doc', 'implementation', '--from', whole).code, 0);
+	const part = join(tmp, 'part.md');
+	writeFileSync(part, 'SQLite, one table.\n\n### Why\n\nConcurrent writers.\n');
+	const r = wf('doc', 'implementation', '--section', 'Store', '--from', part);
+	assert.equal(r.code, 0, r.err);
+	assert.match(r.out, /^- JSON file\.$/m);
+	assert.match(r.out, /^\+ SQLite, one table\.$/m);
+	assert.equal(
+		doc(),
+		'# Implementation\n\n## Store\n\nSQLite, one table.\n\n### Why\n\nConcurrent writers.\n\n## Page\n\nSvelte.\n'
+	);
+	writeFileSync(part, 'Later.\n');
+	wf('doc', 'implementation', '--section', 'Risks', '--from', part);
+	assert.match(doc(), /## Page\n\nSvelte\.\n\n## Risks\n\nLater\.\n$/);
+	writeFileSync(part, '## sneaky\n');
+	assert.match(
+		wf('doc', 'implementation', '--section', 'X', '--from', part).err,
+		/no "# " or "## "/
+	);
+	assert.match(wf('doc', 'notes', '--from', part).err, /no document notes/);
+	assert.equal(wf('doc', 'spec').code, 2);
+});
+
 test('commands outside a project explain what to do', () => {
 	// Everything under scratch/ sits inside this repo, so run from / (read-only) instead.
 	const r = spawnSync(process.execPath, [cli, 'status'], { cwd: '/', encoding: 'utf8' });
