@@ -4,24 +4,12 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import * as wf from './core.ts';
+import { HELP, commandHelp, overview } from './help.ts';
 import { runHook } from './hooks.ts';
 import { install } from './install.ts';
 
-const USAGE = `usage:
-  wf init
-  wf status
-  wf next
-  wf show <id>
-  wf add major "<title>" --deliverable "<text>"
-  wf add minor <major> "<title>" --proof "<text>"
-  wf start <minor>
-  wf done <id>
-  wf impl <minor> "<detail>"
-  wf handoff --next "<text>" --verify "<text>" --dont "<text>" [--open "<text>" ...]
-  wf hook session-start|pre-tool-use   (Claude Code hooks; hook JSON on stdin)
-  wf install                           (once per machine, by the owner, outside Claude Code)`;
-
 const OPTIONS = {
+	help: { type: 'boolean', short: 'h' },
 	deliverable: { type: 'string' },
 	proof: { type: 'string' },
 	next: { type: 'string' },
@@ -39,11 +27,20 @@ function main(argv: string[]): void {
 	const [command, ...args] = positionals;
 	const arg = (i: number, name: string): string => {
 		const value = args[i];
-		if (value === undefined) throw new UsageError(`missing <${name}>`);
+		if (value === undefined) throw new UsageError(`missing <${name}>`, command);
 		return value;
 	};
 
+	if (!command) return console.log(overview());
+	if (!(command in HELP)) throw new UsageError(`unknown command ${command}`);
+	if (values.help) return console.log(commandHelp(command));
+
 	switch (command) {
+		case 'help': {
+			const topic = args[0];
+			if (topic && !(topic in HELP)) throw new UsageError(`no help for ${topic}`);
+			return console.log(topic ? commandHelp(topic) : overview());
+		}
 		case 'init': {
 			const { root, created } = wf.initProject(process.cwd());
 			const state = join(root, 'docs', 'state');
@@ -71,7 +68,7 @@ function main(argv: string[]): void {
 				return editTodo((t) =>
 					wf.addMinor(t, arg(1, 'major'), arg(2, 'title'), values.proof ?? '')
 				);
-			throw new UsageError(`add takes major or minor, got ${kind}`);
+			throw new UsageError(`add takes major or minor, got ${kind}`, 'add');
 		}
 		case 'start':
 			return editTodo((t) => wf.start(t, arg(0, 'minor')));
@@ -92,11 +89,18 @@ function main(argv: string[]): void {
 			return;
 		}
 		default:
-			throw new UsageError(command ? `unknown command ${command}` : 'missing command');
+			throw new Error(`${command} is listed in help.ts but has no handler in cli.ts`);
 	}
 }
 
-class UsageError extends Error {}
+/** A mistake in how wf was called; `command` picks which help to show with it. */
+class UsageError extends Error {
+	command?: string;
+	constructor(message: string, command?: string) {
+		super(message);
+		this.command = command;
+	}
+}
 
 function editTodo(change: (todo: wf.Todo) => unknown): void {
 	const root = wf.findRoot(process.cwd());
@@ -187,7 +191,8 @@ try {
 		process.exit(1);
 	}
 	if (e instanceof UsageError || (e as NodeJS.ErrnoException).code?.startsWith('ERR_PARSE_ARGS')) {
-		console.error(`wf: ${(e as Error).message}\n${USAGE}`);
+		const help = e instanceof UsageError && e.command ? commandHelp(e.command) : overview();
+		console.error(`wf: ${(e as Error).message}\n\n${help}`);
 		process.exit(2);
 	}
 	throw e;

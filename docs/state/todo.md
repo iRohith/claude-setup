@@ -82,6 +82,12 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   - `wf init` in a project that already has docs/state/ now checks it parses and registers it; registered claude-setup itself
   - `SCREENSHOTS=1 ITEM=<id> pnpm --dir dashboard test` runs only `screenshots.e2e.ts` against the real registry (no `WF_HOME` override): `/` and every registered project, at desktop and mobile, failing on any non-OK page; the fixture tests no longer take screenshots
   - real data showed raw backticks and a wall of finished work: `#lib/Inline.svelte` renders code spans; finished majors and finished minors' details fold; fixture tests cover both; a hydration race in one test fixed with networkidle, then 3 clean runs
+- [x] 1.8 `wf help`, `wf --help` and `wf <command> --help`: usage plus the rules each command enforces
+  Proof: help for every command prints its usage and rules; a bare `wf` prints the overview; tests cover each command's help
+  - `wf/help.ts` is the one list of commands: usage, a summary and the rules each enforces; the CLI rejects anything not listed, and a listed command without a handler fails loudly
+  - bare `wf`, `wf help`, `--help` and `-h` print the overview; `wf help <cmd>` and `wf <cmd> --help` print usage and rules; usage mistakes exit 2 with that command's help; 4 tests in `help.test.ts` cover every command; 32 of 32 wf tests pass
+- [ ] 1.9 bulk planning: `wf batch <file>` adds majors and minors (with proofs) all or nothing, `wf edit` changes a title, proof or deliverable, `wf doc` writes overview, intent, references, implementation or spec, whole or one section
+  Proof: a batch file writes a whole initial todo in one call; a batch with one bad entry changes nothing; `wf doc implementation --from <file>` replaces the plan and a direct Edit of it is denied
 
 ## [ ] 2 · States and admin
 Deliverable: setup/discuss/build behave as spec section 2 in a real session, and admin mode lifts every restriction only when the owner flips it.

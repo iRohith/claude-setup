@@ -109,6 +109,12 @@ Changed: added 1.6 (placed before 1.2); intent principle 13; guidance line in im
 Why it's a steer: sets how sessions run, and how friction is handled.
 Changed: intent principles 14 and 15; two guidance lines in implementation.md.
 
+## 2026-11-18 · affects 1.8, 1.9, 3.4
+> the cli needs --help and more docs if the ai wants to query how to run. and also what about the batch creating todos, implementation plan, batch/bulk write initial todo etc via cli? are those planned yet?
+
+Why it's a steer: help was missing from the plan, and bulk planning was planned too late (3.4, after states), although discuss needs it first.
+Changed: added 1.8 (help) and 1.9 (batch, edit, doc) to major 1; 3.4 loses `wf edit`, `wf batch` and doc sections once `wf edit` exists.
+
 ## 2026-11-18 · affects 1.5, 4, all
 > another guideline. for UI related stuff, playwright tests, screenshots (committed in scratch/images) at different resolutions like desktop, mobile etc are mandatory. via prompts. I installed chrome here - /usr/bin/google-chrome-stable
 
