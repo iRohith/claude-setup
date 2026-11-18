@@ -947,16 +947,38 @@ function section(title: string, path: string): string {
 	return body ? `${title}:\n${body}` : '';
 }
 
-/**
- * Appends a numbered learning, "what went wrong → what to do instead", to the project's learnings
- * or (global) to every project's. Rejected, and nothing kept, when any affected project's session
- * context would pass the budget.
- */
-export function addLearning(
-	root: string | undefined,
-	text: string,
-	global: boolean
-): { path: string; before: string; after: string } {
+/** A learnings file: `# Learnings`, then lessons numbered 1..n, one per line. */
+export function parseLearnings(text: string, file: string): string[] {
+	const lines = text.split('\n');
+	if (lines[0] !== '# Learnings') throw new WfError(`${file}:1: expected "# Learnings"`);
+	const lessons: string[] = [];
+	lines.slice(1).forEach((line, i) => {
+		if (!line.trim()) return;
+		const m = line.match(/^(\d+)\. (.+)$/);
+		if (!m || Number(m[1]) !== lessons.length + 1)
+			throw new WfError(`${file}:${i + 2}: expected "${lessons.length + 1}. <learning>": ${line}`);
+		lessons.push(m[2]);
+	});
+	return lessons;
+}
+
+export const formatLearnings = (lessons: string[]): string =>
+	lessons.length
+		? `# Learnings\n\n${lessons.map((l, i) => `${i + 1}. ${l}`).join('\n')}\n`
+		: '# Learnings\n';
+
+function learningsPath(root: string | undefined, global: boolean): string {
+	if (!global && !root) throw new WfError('no project here; use --global for every project');
+	return global ? globalLearningsPath() : projectLearningsPath(root!);
+}
+
+/** The project's learnings, or (global) every project's, in order. */
+export function readLearnings(root: string | undefined, global: boolean): string[] {
+	const path = learningsPath(root, global);
+	return existsSync(path) ? parseLearnings(readFileSync(path, 'utf8'), path) : [];
+}
+
+function checkLearning(text: string): string {
 	const line = required(text, 'learning');
 	if (!line.includes('→'))
 		throw new WfError('a learning reads "what went wrong → what to do instead"');
@@ -964,15 +986,36 @@ export function addLearning(
 		throw new WfError(
 			`a learning is at most ${LEARNING_MAX} characters; this one is ${line.length}`
 		);
-	if (!global && !root) throw new WfError('no project here; use --global for every project');
-	const path = global ? globalLearningsPath() : projectLearningsPath(root!);
+	return line;
+}
+
+/** The index of learning n, or an error naming how many there are. */
+function learningIndex(lessons: string[], n: number): number {
+	if (!Number.isInteger(n) || n < 1 || n > lessons.length)
+		throw new WfError(
+			`no learning ${n}; there ${lessons.length === 1 ? 'is 1' : `are ${lessons.length}`}`
+		);
+	return n - 1;
+}
+
+/**
+ * Applies one change to a learnings file. With `budget`, the change is rolled back, and refused, when
+ * any affected project's session context would pass the budget; a global file affects every project.
+ */
+function changeLearnings(
+	root: string | undefined,
+	global: boolean,
+	change: (lessons: string[]) => void,
+	budget: boolean
+): { path: string; before: string; after: string } {
+	const path = learningsPath(root, global);
 	const before = existsSync(path) ? readFileSync(path, 'utf8') : '# Learnings\n';
-	const numbers = before.split('\n').flatMap((l) => l.match(/^(\d+)\. /)?.slice(1) ?? []);
-	const next = Math.max(0, ...numbers.map(Number)) + 1;
-	const body = before.replace(/\n+$/, '');
-	const after = `${body}${numbers.length ? '\n' : '\n\n'}${next}. ${line}\n`;
+	const lessons = parseLearnings(before, path);
+	change(lessons);
+	const after = formatLearnings(lessons);
 	mkdirSync(dirname(path), { recursive: true });
 	writeAtomic(path, after);
+	if (!budget) return { path, before, after };
 	const roots = global
 		? [...new Set([...Object.keys(readRegistry()), ...(root ? [root] : [])])]
 		: [root!];
@@ -987,6 +1030,33 @@ export function addLearning(
 		);
 	}
 	return { path, before, after };
+}
+
+/** Appends a learning, "what went wrong → what to do instead", within the budget. */
+export function addLearning(root: string | undefined, text: string, global: boolean) {
+	const line = checkLearning(text);
+	return changeLearnings(root, global, (lessons) => lessons.push(line), true);
+}
+
+/** Rewrites learning n in place, under the same rules and budget as adding one. */
+export function editLearning(root: string | undefined, n: number, text: string, global: boolean) {
+	const line = checkLearning(text);
+	return changeLearnings(
+		root,
+		global,
+		(lessons) => (lessons[learningIndex(lessons, n)] = line),
+		true
+	);
+}
+
+/** Removes learning n; the rest are renumbered. This is how a merge or a prune is done. */
+export function removeLearning(root: string | undefined, n: number, global: boolean) {
+	return changeLearnings(
+		root,
+		global,
+		(lessons) => lessons.splice(learningIndex(lessons, n), 1),
+		false
+	);
 }
 
 const registryPath = () => join(wfHome(), 'local', 'projects.json');

@@ -14,6 +14,7 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as Select from '#lib/components/ui/select/index.js';
 	import Inline from '#lib/Inline.svelte';
+	import Learnings from '#lib/Learnings.svelte';
 	import MarkBadge from '#lib/MarkBadge.svelte';
 	import Track from '#lib/Track.svelte';
 	import type { PageProps } from './$types';
@@ -37,7 +38,7 @@
 		};
 
 	/** The done checkbox submits its row's form: check when ticked, reopen when cleared. */
-	const doneForms: Record<string, HTMLFormElement> = {};
+	const doneForms: Record<string, HTMLFormElement> = $state({});
 
 	const counts = $derived.by(() => {
 		const majors = data.todo?.majors ?? [];
@@ -131,7 +132,7 @@
 		<a
 			href="{here}?view={v}"
 			aria-current={data.view === v ? 'page' : undefined}
-			class="-mb-px inline-flex h-9 shrink-0 items-center border-b-2 px-3 text-sm capitalize transition-colors {data.view ===
+			class="-mb-px inline-flex h-9 shrink-0 items-center border-b-2 px-3 text-sm capitalize transition-[color] {data.view ===
 			v
 				? 'border-primary font-medium text-foreground'
 				: 'border-transparent text-muted-foreground hover:text-foreground'}">{v}</a
@@ -145,6 +146,8 @@
 		<Alert.Title>This project's state doesn't parse</Alert.Title>
 		<Alert.Description>{data.summary.error}</Alert.Description>
 	</Alert.Root>
+{:else if data.learnings}
+	<Learnings {...data.learnings} scope="this project" action="?view=learnings&/learning" {form} />
 {:else if data.view !== 'todo'}
 	{#if data.view === 'docs'}
 		<div class="mt-4 flex flex-wrap gap-1">

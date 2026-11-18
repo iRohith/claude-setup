@@ -154,6 +154,63 @@ test('the owner switches the project state', async ({ page }) => {
 	await switchState(page, 'setup');
 });
 
+test('the owner adds, edits and removes project learnings, with rule errors inline', async ({
+	page
+}, info) => {
+	await openNotes(page);
+	await page
+		.getByRole('navigation', { name: 'Views' })
+		.getByRole('link', { name: 'learnings' })
+		.click();
+	await expect(page.getByText('No learnings yet')).toBeVisible();
+	await expect(page.getByRole('progressbar', { name: 'Session context used' })).toBeVisible();
+	await page.waitForLoadState('networkidle');
+
+	await page.getByLabel('New learning').fill('no arrow here');
+	await expect(page.getByText('needs the → arrow')).toBeVisible();
+	await page.getByRole('button', { name: 'Add learning' }).click();
+	await expect(page.getByRole('alert')).toHaveText(
+		'a learning reads "what went wrong → what to do instead"'
+	);
+
+	const lesson = `pushed first on ${info.project.name} → state first, then commit`;
+	await page.getByLabel('New learning').fill(lesson);
+	await page.getByRole('button', { name: 'Add learning' }).click();
+	const list = page.getByRole('main').getByRole('list');
+	await expect(list.getByRole('listitem')).toHaveCount(1);
+	await expect(list).toContainText(`pushed first on ${info.project.name}`);
+	await expect(page.getByLabel('New learning')).toHaveValue('');
+
+	await page.getByRole('button', { name: 'Edit learning 1' }).click();
+	await page.getByLabel('Learning 1').fill(`${'x'.repeat(200)} → y`);
+	await page.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByRole('alert')).toContainText('at most 200 characters');
+	await page.getByLabel('Learning 1').fill(`edited on ${info.project.name} → keep it`);
+	await page.getByRole('button', { name: 'Save' }).click();
+	await expect(list).toContainText(`edited on ${info.project.name}`);
+
+	await page.getByRole('button', { name: 'Edit learning 1' }).click();
+	await page.getByRole('button', { name: 'Remove' }).click();
+	await expect(page.getByText('No learnings yet')).toBeVisible();
+});
+
+test('global learnings are edited on the Global page', async ({ page }, info) => {
+	await page.goto('/global');
+	await page.waitForLoadState('networkidle');
+	const lesson = `global on ${info.project.name} → applies everywhere`;
+	await page.getByLabel('New learning').fill(lesson);
+	await page.getByRole('button', { name: 'Add learning' }).click();
+	const item = page
+		.getByRole('main')
+		.getByRole('listitem')
+		.filter({ hasText: lesson.slice(0, 12) });
+	await expect(item).toBeVisible();
+	const n = (await item.locator('span').first().textContent())?.trim();
+	await page.getByRole('button', { name: `Edit learning ${n}` }).click();
+	await page.getByRole('button', { name: 'Remove' }).click();
+	await expect(item).toHaveCount(0);
+});
+
 test('an unregistered path is a 404', async ({ page }) => {
 	const response = await page.goto('/projects/etc');
 	expect(response?.status()).toBe(404);

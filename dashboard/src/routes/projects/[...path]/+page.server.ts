@@ -1,6 +1,14 @@
 import { error, fail } from '@sveltejs/kit';
 import * as wf from 'wf';
-import { DOCS, VIEWS, renderState, viewProject, type View } from '#lib/server/projects.js';
+import {
+	DOCS,
+	VIEWS,
+	changeLearning,
+	renderState,
+	viewLearnings,
+	viewProject,
+	type View
+} from '#lib/server/projects.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ params, url }) => {
@@ -14,8 +22,12 @@ export const load: PageServerLoad = ({ params, url }) => {
 		? (url.searchParams.get('doc') as string)
 		: DOCS[0];
 	const file = view === 'docs' ? doc : view;
-	const html = view === 'todo' || project.summary.error ? '' : renderState(root, file);
-	return { ...project, view, views: VIEWS, doc, docs: DOCS, html };
+	// The todo and the learnings are edited as lists; the other views are rendered markdown.
+	const listed = view === 'todo' || view === 'learnings' || project.summary.error;
+	const html = listed ? '' : renderState(root, file);
+	const learnings =
+		view === 'learnings' && !project.summary.error ? viewLearnings(root) : undefined;
+	return { ...project, view, views: VIEWS, doc, docs: DOCS, html, learnings };
 };
 
 /** The registered root this request is about, or a 404. */
@@ -97,5 +109,6 @@ export const actions: Actions = {
 	start: ({ params, request }) =>
 		change(params.path, request, (t, f) => wf.start(t, field(f, 'id'))),
 	reopen: ({ params, request }) =>
-		change(params.path, request, (t, f) => wf.reopen(t, field(f, 'id')))
+		change(params.path, request, (t, f) => wf.reopen(t, field(f, 'id'))),
+	learning: ({ params, request }) => changeLearning(rootOf(params.path), request)
 };

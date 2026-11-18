@@ -1,6 +1,6 @@
 // Reads registered projects through the wf core. The dashboard holds no state rules of its own.
-import { existsSync, readFileSync } from 'node:fs';
 import { basename } from 'node:path';
+import { fail } from '@sveltejs/kit';
 import { marked } from 'marked';
 import * as wf from 'wf';
 
@@ -88,8 +88,52 @@ export function renderState(root: string, file: string): string {
 	return marked.parse(wf.getState(root, file), { async: false });
 }
 
-/** The global learnings, rendered. */
-export function renderGlobalLearnings(): string {
-	const path = wf.globalLearningsPath();
-	return existsSync(path) ? marked.parse(readFileSync(path, 'utf8'), { async: false }) : '';
+/** Learnings to edit, with how much of the session-context budget the fullest project uses. */
+export interface LearningsView {
+	lessons: string[];
+	context: number;
+	budget: number;
+}
+
+/** A project's learnings (root) or the global ones; global learnings reach every registered project. */
+export function viewLearnings(root: string | undefined): LearningsView {
+	const roots = root ? [root] : registeredRoots();
+	const sizes = roots.flatMap((r) => {
+		try {
+			return [wf.sessionContext(r).length];
+		} catch {
+			return [];
+		}
+	});
+	return {
+		lessons: wf.readLearnings(root, !root),
+		context: Math.max(0, ...sizes),
+		budget: wf.CONTEXT_BUDGET
+	};
+}
+
+/**
+ * One learnings change from a dashboard form: add, edit or remove, through the same core functions
+ * as `wf learn`. A refusal comes back as a form error for the row it concerns.
+ */
+export async function changeLearning(root: string | undefined, request: Request) {
+	const form = await request.formData();
+	const op = String(form.get('op') ?? '');
+	const n = Number(form.get('n'));
+	const text = String(form.get('text') ?? '');
+	const global = !root;
+	const apply = () => {
+		if (op === 'add') wf.addLearning(root, text, global);
+		else if (op === 'edit') wf.editLearning(root, n, text, global);
+		else if (op === 'remove') wf.removeLearning(root, n, global);
+		else throw new wf.WfError(`unknown learnings change: ${op}`);
+	};
+	try {
+		if (root) wf.withLock(root, apply);
+		else apply();
+	} catch (e) {
+		if (e instanceof wf.WfError)
+			return fail(400, { error: e.message, item: op === 'add' ? 'learning-new' : `learning-${n}` });
+		throw e;
+	}
 }

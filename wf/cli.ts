@@ -12,6 +12,8 @@ import { install } from './install.ts';
 const OPTIONS = {
 	help: { type: 'boolean', short: 'h' },
 	global: { type: 'boolean' },
+	edit: { type: 'string' },
+	remove: { type: 'string' },
 	why: { type: 'string' },
 	affects: { type: 'string' },
 	changed: { type: 'string' },
@@ -200,8 +202,21 @@ function main(argv: string[]): void {
 			return;
 		case 'learn': {
 			const root = wf.tryFindRoot(process.cwd());
+			const global = values.global ?? false;
+			if (values.edit !== undefined && values.remove !== undefined)
+				throw new UsageError('use --edit or --remove, not both', command);
+			const number = (value: string): number => {
+				if (!/^\d+$/.test(value))
+					throw new UsageError(`a learning number is a positive integer, not ${value}`, command);
+				return Number(value);
+			};
 			const write = () => {
-				const { before, after } = wf.addLearning(root, arg(0, 'learning'), values.global ?? false);
+				const { before, after } =
+					values.remove !== undefined
+						? wf.removeLearning(root, number(values.remove), global)
+						: values.edit !== undefined
+							? wf.editLearning(root, number(values.edit), arg(0, 'learning'), global)
+							: wf.addLearning(root, arg(0, 'learning'), global);
 				printChanges(before, after);
 			};
 			return root ? wf.withLock(root, write) : write();

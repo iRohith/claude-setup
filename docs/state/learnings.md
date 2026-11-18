@@ -10,3 +10,4 @@
 8. Proved the dashboard with screenshots of a test fixture → proof screenshots show the real app with the owner's real data.
 9. Moved work "to 5.1, 5.2" where no item held it, and never checked the spec against the todo → confirm the target item names the work; after planning, every spec feature maps to an item.
 10. Started 2.2 without `wf start` again, despite learning 7 → before writing any code, run `wf start`; wf's impl check is the backstop, not the habit.
+11. Screenshot cleanup in a finally block never ran when Playwright timed the test out, leaving 28 fillers in demo → restore data in afterEach and check hashes after every run

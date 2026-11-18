@@ -225,6 +225,44 @@ test('learn numbers lessons, needs the arrow, and keeps the session context unde
 	assert.equal(readFileSync(file, 'utf8'), kept);
 });
 
+test('learn --edit rewrites in place, --remove renumbers, and both keep the rules', () => {
+	const file = join(project, 'docs', 'state', 'learnings.md');
+	const lessons = () =>
+		readFileSync(file, 'utf8')
+			.split('\n')
+			.filter((l) => /^\d+\. /.test(l));
+	const before = lessons();
+
+	const edited = wf('learn', '--edit', '1', 'state after push → state first, then commit');
+	assert.equal(edited.code, 0, edited.err);
+	assert.match(edited.out, /^\+ 1\. state after push → state first, then commit$/m);
+	assert.equal(lessons().length, before.length);
+
+	const removed = wf('learn', '--remove', '2');
+	assert.equal(removed.code, 0, removed.err);
+	const after = lessons();
+	assert.equal(after.length, before.length - 1);
+	assert.equal(after[1], before[2].replace(/^3\./, '2.'));
+	assert.deepEqual(
+		after.map((l) => Number(l.split('.')[0])),
+		after.map((_, i) => i + 1)
+	);
+
+	assert.match(wf('learn', '--remove', '999').err, /no learning 999; there are \d+/);
+	assert.match(wf('learn', '--edit', 'x', 'a → b').err, /a learning number is a positive integer/);
+	assert.match(wf('learn', '--edit', '1', 'no arrow').err, /what went wrong → what to do instead/);
+	assert.equal(wf('learn', '--edit', '1', '--remove', '2').code, 2);
+
+	// Fill to the budget with short lessons; then growing one by an edit is refused, unchanged.
+	for (let i = 0; i < 400 && wf('learn', `s${i} → t`).code === 0; i++);
+	const full = readFileSync(file, 'utf8');
+	const grown = wf('learn', '--edit', '1', `${'z'.repeat(190)} → y`);
+	assert.match(grown.err, /over the 9000 budget; merge or prune/);
+	assert.equal(readFileSync(file, 'utf8'), full);
+	// Removing is how a prune is done, so it works even at the budget.
+	assert.equal(wf('learn', '--remove', '1').code, 0);
+});
+
 test('steers and assumptions are recorded as summaries and listed by wf show', () => {
 	const r = wf(
 		'steer',

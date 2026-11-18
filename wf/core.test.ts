@@ -9,10 +9,12 @@ import {
 	addMinor,
 	done,
 	formatHandoff,
+	formatLearnings,
 	formatTodo,
 	impl,
 	nextItem,
 	parseHandoff,
+	parseLearnings,
 	parseTodo,
 	reopen,
 	start
@@ -61,6 +63,20 @@ test('parse errors name the line', () => {
 		() => parseTodo('# Todo\n\n## [ ] 0 · A\nDeliverable: d\n\n- [ ] 1.1 x\n  Proof: p\n'),
 		/not under major 0/
 	);
+});
+
+test('learnings round-trip, numbered 1..n, and a broken file names its line', () => {
+	for (const file of ['../docs/state/learnings.md', '../global/learnings.md']) {
+		const text = readFileSync(new URL(file, import.meta.url), 'utf8');
+		assert.equal(formatLearnings(parseLearnings(text, file)), text);
+	}
+	assert.equal(formatLearnings([]), '# Learnings\n');
+	assert.deepEqual(parseLearnings('# Learnings\n', 'l.md'), []);
+	assert.throws(
+		() => parseLearnings('# Learnings\n\n1. a → b\n3. c → d\n', 'l.md'),
+		/l\.md:4: expected "2\. <learning>"/
+	);
+	assert.throws(() => parseLearnings('# Notes\n', 'l.md'), /l\.md:1: expected "# Learnings"/);
 });
 
 test('a minor waiting on the owner does not block starting the next one, in any major', () => {

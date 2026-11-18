@@ -108,7 +108,8 @@ When every minor of a major is done and its deliverable is verified, `wf done <m
 ## Learnings
 - Record a lesson the moment it is learned: `wf learn "<what went wrong> → <what to do instead>"`, one
   line. Learnings are injected into every session, so wf keeps them within a size budget; when it
-  refuses, merge or prune before adding.
+  refuses, merge or prune before adding: `wf learn --edit <n> "…"` rewrites one (to cover two, say) and
+  `wf learn --remove <n>` drops one, renumbering the rest.
 - A lesson that holds for every project: `wf learn --global "…"`. That is the only way to write the
   global learnings; never edit them directly.
 

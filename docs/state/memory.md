@@ -28,6 +28,7 @@
   to a file and shows Claude a 2,000-character preview, so the injection is effectively lost. The spec's
   "60 lines × 200 chars per learnings file" could exceed that. Cause: found in the hooks docs while
   building 1.3. The budget is fixed in 3.1, where learnings writes land.
+- 2026-11-19: The pre-commit hook restages every staged file whole after formatting, so a partly staged file (git apply --cached) is committed in full. Cause: found splitting 4.3 fixes from 4.4. Commit item by item with whole files, or carry small fixes in the next item's commit and record them under their own item.
 
 ## Anti-patterns
 

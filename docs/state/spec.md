@@ -122,10 +122,12 @@ Deliverable: <what the owner can inspect>
 ```
 
 - **Size:** one line each, at most 200 characters.
-- **Order:** numbered and cited by number.
-- **Budget:** `wf learn` refuses a learning that would bring any affected project's session-start context
-  over 9,000 characters (Claude Code caps hook context at 10,000), and asks for a merge or a prune instead.
-  A global learning affects every registered project.
+- **Order:** numbered 1..n and cited by number. Removing one renumbers the rest, so the list never has gaps.
+- **Rules:** adding and editing apply the same checks: one line, the arrow, at most 200 characters.
+- **Budget:** adding or editing is refused when it would bring any affected project's session-start
+  context over 9,000 characters (Claude Code caps hook context at 10,000), and asks for a merge or a prune
+  instead. A global learning affects every registered project. Removing is always allowed.
+- **Writers:** `wf learn` and the dashboard, through the same core functions.
 
 ### 3.4 `steers.md`
 
@@ -207,7 +209,10 @@ position follows the id and nothing reorders items.
 - `wf steer "<owner words>" --why "<reason>" --log true|false --changed "<text>"`: with `--log false` the
   plan is updated but no entry is written.
 - `wf assume "<assumption>" --why "<reason>" --changed "<text>"`
-- `wf learn "<line>"` (project) or `wf learn --global "<line>"`
+- `wf learn "<line>"` (project) or `wf learn --global "<line>"`: add one.
+  - `wf learn --edit <n> "<line>" [--global]`: rewrite learning n in place.
+  - `wf learn --remove <n> [--global]`: remove learning n and renumber the rest; this is how a merge or a
+    prune is done.
 - `wf memory <section> "<entry>"`
 - `wf doc <name> [--section "<heading>"] --from <file>`: write overview, intent, references,
   implementation or spec.

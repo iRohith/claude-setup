@@ -102,6 +102,8 @@
 	body {
 		@apply bg-background font-sans text-foreground antialiased;
 		caret-color: var(--primary);
+		/* Long paths, hashes and ids wrap instead of widening the page on a phone. */
+		overflow-wrap: anywhere;
 	}
 	::selection {
 		background: color-mix(in oklch, var(--primary) 38%, transparent);

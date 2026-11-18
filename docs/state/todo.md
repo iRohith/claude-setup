@@ -178,8 +178,17 @@ Deliverable: the owner manages todos and learnings across all projects without t
   - project page: shadcn Select state switch, admin Alert, link view tabs; majors as card sections with fold, status, track, actions and inline edit; minors with a done checkbox (check or reopen), id column, proof, folding details, inline edit; a form's item field places its error
   - home: one bordered list of project rows with state, active, next and track; dashed empty states that teach, on every list; favicon drawn as a three-segment track
   - e2e locators moved to regions, checkboxes and the shadcn select, the sidebar opened on mobile; screenshots add the mobile sidebar once its animation settles; eslint lets shadcn primitives take already-resolved hrefs
-- [ ] 4.4 edit project and global learnings in the dashboard, through the same core rules and size budget
-  Proof: screenshots of a learning added and an over-budget one rejected, from the real dashboard at desktop and mobile
+  - fixes found while proving 4.4: body overflow-wrap anywhere so long unbroken text wraps instead of widening the phone layout; the done-checkbox form refs are $state so the bind is reactive; view tabs transition text colour only, so the old tab's underline doesn't linger
+- [x] 4.4 edit project and global learnings in the dashboard, through the same core rules and size budget
+  Proof: wf learn --edit and --remove keep the rules and renumber; screenshots from the real dashboard at desktop and mobile of a learning added, edited and removed, and an over-budget one rejected
+  - core: parseLearnings (strict, numbered 1..n, names the bad line) and formatLearnings; addLearning, editLearning and removeLearning share one changeLearnings writer; add and edit check the arrow, 200 characters and the budget with rollback; remove renumbers and is always allowed
+  - cli: wf learn --edit \<n> and --remove \<n> (with --global), refusing both together or a non-integer n; help says how to merge and prune; global/CLAUDE.md names both for over-budget refusals
+  - dashboard: Learnings.svelte on the project Learnings view and the Global page: a budget meter (shadcn Progress) for the fullest affected project, the list as wrong → instead, inline edit with Save, Cancel, Remove, an add form with a live count and arrow hint; one learning action through changeLearning, its form action keeping ?view=learnings
+  - tests: wf 69 (parser round-trips both real files; edit, remove, renumbering and the budget through the CLI); dashboard e2e 24 (project and global learnings); screenshots change only the throwaway project under scratch/temp, fill it to the budget through the core, and restore it in afterEach with a byte check
+- [ ] 4.5 the dashboard refreshes while open, re-reading state every two seconds
+  Proof: a wf command run in a terminal shows up on the open dashboard within two seconds, in a Playwright test against the fixture
+- [ ] 4.6 steers, risks, memory and the plan docs editable section by section in the dashboard, through wf's own writers
+  Proof: screenshots from the real dashboard at desktop and mobile of a section edited and a malformed edit rejected; the file changes only by that section
 
 ## [~] 5 · Guidance and skills
 Deliverable: `global/CLAUDE.md` under about 80 lines, with the four skills installed as spec'd.

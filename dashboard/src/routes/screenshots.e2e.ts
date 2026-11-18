@@ -1,9 +1,14 @@
 // Proof screenshots of the real dashboard: every page, at every size, named <id>-<page>-<size>.png.
 // Run: SCREENSHOTS=1 ITEM=<todo id> pnpm test
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as wf from 'wf';
 
 const images = fileURLToPath(new URL('../../../scratch/images/', import.meta.url));
+/** Throwaway projects live here; only they are ever changed by a screenshot run. */
+const throwaway = fileURLToPath(new URL('../../../scratch/temp/', import.meta.url));
 
 async function save(page: Page, info: TestInfo, name: string, fullPage = true): Promise<void> {
 	await page.screenshot({
@@ -12,9 +17,22 @@ async function save(page: Page, info: TestInfo, name: string, fullPage = true): 
 	});
 }
 
-test('real dashboard pages', async ({ page }, info) => {
+/**
+ * Puts a throwaway project's learnings back. afterEach runs even when a test times out, which a
+ * finally block inside the test does not.
+ */
+let restore: (() => void) | undefined;
+test.afterEach(() => {
+	restore?.();
+	restore = undefined;
+});
+
+test.beforeEach(() => {
 	if (!process.env.ITEM)
 		throw new Error('set ITEM=<todo id> so the screenshots name the item they prove');
+});
+
+test('real dashboard pages', async ({ page }, info) => {
 	const home = await page.goto('/');
 	expect(home?.ok()).toBe(true);
 	const base = page.url();
@@ -48,13 +66,74 @@ test('real dashboard pages', async ({ page }, info) => {
 		await page.getByRole('button', { name: 'Add major' }).click();
 		await expect(page.getByRole('alert')).toHaveText('title is required');
 		await save(page, info, `project-${name}-rejected-edit`);
-		await page
-			.getByRole('navigation', { name: 'Views' })
-			.getByRole('link', { name: 'memory' })
-			.click();
+		const views = page.getByRole('navigation', { name: 'Views' });
+		await views.getByRole('link', { name: 'memory' }).click();
 		await expect(page.getByRole('heading', { name: 'Memory', level: 1 })).toBeVisible();
 		await save(page, info, `project-${name}-memory`);
+		await views.getByRole('link', { name: 'learnings' }).click();
+		await expect(page.getByRole('progressbar', { name: 'Session context used' })).toBeVisible();
+		await save(page, info, `project-${name}-learnings`);
 	}
 	expect((await page.goto(new URL('global', base).href))?.ok()).toBe(true);
 	await save(page, info, 'global');
+});
+
+test('learnings added, edited, removed and refused over budget, on a throwaway project', async ({
+	page
+}, info) => {
+	const root = Object.keys(wf.readRegistry()).find((r) => `${r}/`.startsWith(throwaway));
+	if (!root) throw new Error(`register a throwaway project under ${throwaway} with wf init first`);
+	const name = root.split('/').at(-1);
+	const file = join(root, 'docs', 'state', 'learnings.md');
+	const original = readFileSync(file, 'utf8');
+	const count = wf.readLearnings(root, false).length;
+	restore = () => {
+		while (wf.readLearnings(root, false).length > count)
+			wf.removeLearning(root, wf.readLearnings(root, false).length, false);
+		expect(readFileSync(file, 'utf8')).toBe(original);
+	};
+	// Filling to the budget takes a while on the phone emulation.
+	test.setTimeout(120_000);
+	await page.goto(`/projects${root}?view=learnings`);
+	await page.waitForLoadState('networkidle');
+	const list = page.getByRole('main').getByRole('list');
+
+	await page
+		.getByLabel('New learning')
+		.fill('screenshot run added this → it is removed right after');
+	await page.getByRole('button', { name: 'Add learning' }).click();
+	await expect(list).toContainText('screenshot run added this');
+	await save(page, info, `project-${name}-learning-added`);
+
+	const n = count + 1;
+	await page.getByRole('button', { name: `Edit learning ${n}` }).click();
+	await page
+		.getByLabel(`Learning ${n}`)
+		.fill('screenshot run edited this → it is removed right after');
+	await save(page, info, `project-${name}-learning-editing`);
+	await page.getByRole('button', { name: 'Save' }).click();
+	await expect(list).toContainText('screenshot run edited this');
+	await page.getByRole('button', { name: `Edit learning ${n}` }).click();
+	await page.getByRole('button', { name: 'Remove' }).click();
+	await expect(page.getByText('screenshot run edited this')).toHaveCount(0);
+	await save(page, info, `project-${name}-learning-removed`);
+
+	// Fill to the budget through the core; one more from the dashboard is refused.
+	// Each filler is under the 200-character cap, so only the budget can stop the loop.
+	const filler = (i: number) => `budget filler ${i} ${'z'.repeat(150)} → removed right after`;
+	for (let i = 0; ; i++) {
+		try {
+			wf.addLearning(root, filler(i), false);
+		} catch (e) {
+			if (e instanceof Error && e.message.includes('budget')) break;
+			throw e;
+		}
+	}
+	await page.reload();
+	await page.waitForLoadState('networkidle');
+	await page.getByLabel('New learning').fill(filler(999));
+	await page.getByRole('button', { name: 'Add learning' }).click();
+	await expect(page.getByRole('alert')).toContainText('over the 9000 budget; merge or prune');
+	await page.getByRole('alert').scrollIntoViewIfNeeded();
+	await save(page, info, `project-${name}-learning-over-budget`, false);
 });

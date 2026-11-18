@@ -60,8 +60,10 @@ This is how claude-setup gets built, start to finish. The exact formats and comm
 - **Projects:** lists the projects from `local/projects.json`, one tab each, plus a Global tab for global
   learnings.
 - **Per project:**
-  - **Todo:** add, edit, reorder, check and uncheck items, with live validation errors from the core.
-  - **Learnings:** edit them.
+  - **Todo:** add, edit, check and uncheck items, with live validation errors from the core; items sit in
+    id order, so nothing reorders.
+  - **Learnings:** add, edit and remove them, project and global, through the same core functions as
+    `wf learn` (the arrow, 200 characters, the context budget); a refusal shows next to the learning.
   - **Other files:** steers, risks, memory and docs are readable, and editable section by section.
   - **Controls:** a state switcher and the admin toggle.
 - **Freshness:** it re-reads the files on every request and polls every two seconds while open. There is

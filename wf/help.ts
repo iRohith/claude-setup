@@ -195,12 +195,18 @@ export const HELP: Record<string, Help> = {
 		]
 	},
 	learn: {
-		usage: ['wf learn "<what went wrong> → <what to do instead>" [--global]'],
+		usage: [
+			'wf learn "<what went wrong> → <what to do instead>" [--global]',
+			'wf learn --edit <n> "<what went wrong> → <what to do instead>" [--global]',
+			'wf learn --remove <n> [--global]'
+		],
 		summary: 'record a lesson: this project, or with --global every project',
 		details: [
 			'One line, at most 200 characters, with the arrow. Numbered automatically.',
-			'Learnings are injected into every session; a learning that would push any affected',
-			"project's session context over 9,000 characters is rejected: merge or prune first.",
+			'Learnings are injected into every session; adding or editing one so that any affected',
+			"project's session context passes 9,000 characters is rejected: merge or prune first.",
+			'--edit rewrites learning n under the same rules. --remove drops it and renumbers the rest.',
+			'To merge two, edit one to cover both and remove the other.',
 			"Record a lesson the moment it is learned. A summary, never the owner's words verbatim."
 		]
 	},
