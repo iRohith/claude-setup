@@ -92,9 +92,10 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   - core `editItem` (proofs on minors, deliverables on majors) and `writeDoc` (whole document from "# \<Title>", or one "## \<section>" replaced in place or appended; no #/## inside a section body)
   - the deny list is now a map from file to its command: todo.md, handoff.md and the five plan documents; a denial names the exact command (e.g. `wf doc spec`); 39 of 39 wf tests pass
   - used on this repo: `wf edit` moved edit/batch/doc out of 3.4 and fixed 1.4's stale install.sh title; `wf doc spec --section` rewrote spec section 4 to match what's built
-- [~] 1.10 state text is markdown-safe: `<` outside code spans is written as `\<` in todo.md and handoff.md and read back as `<`; `wf doc` rejects a bare `<tag>` outside code
+- [x] 1.10 state text is markdown-safe: `<` outside code spans is written as `\<` in todo.md and handoff.md and read back as `<`; `wf doc` rejects a bare `<tag>` outside code
   Proof: todo.md renders to the last item in a markdown renderer; a detail containing a bare \<Title> round-trips; wf doc names the line of a bare tag
   - core `escapeMd`/`unescapeMd`: `<` outside code spans is `\<` on disk and `<` in memory, for every todo and handoff field; `writeDoc` rejects a bare tag outside inline code and fenced blocks, naming its line
+  - verified by the owner: the todo.md preview renders to 6.1 after the `<Title>` on the 1.9 line was escaped
 - [x] 1.11 the CLI keeps todo.md in id order: majors by number, minors by number within their major; position follows the id, so there is no `wf move`
   Proof: a todo with items out of order is written back sorted; this repo's todo.md reads 0.1 to 0.6 and 1.1 to 1.11 in order
   - `parseTodo` sorts majors by number and minors by number within their major, so every write puts items in id order; ids already come from max + 1, so nothing else decides position
