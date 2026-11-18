@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import Inline from '#lib/Inline.svelte';
 	import type { PageProps } from './$types';
@@ -23,9 +24,25 @@
 <main class="mx-auto max-w-4xl p-4 sm:p-8">
 	<a class="text-sm text-neutral-500 hover:underline" href={resolve('/')}>← projects</a>
 	<h1 class="mt-2 text-2xl font-semibold">{data.summary.name}</h1>
-	<p class="mb-6 text-sm text-neutral-500">
+	<p class="text-sm text-neutral-500">
 		<span class="break-all">{data.summary.root}</span> · {data.summary.state ?? '?'}
 	</p>
+
+	<form method="POST" action="?/admin" use:enhance class="mt-3 mb-6">
+		<input type="hidden" name="on" value={String(!data.summary.admin)} />
+		{#if data.summary.admin}
+			<div
+				class="flex flex-wrap items-center gap-3 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900"
+			>
+				<span><strong>Admin mode is on.</strong> No wf restriction applies to this project.</span>
+				<button class="rounded bg-red-700 px-3 py-1 text-white hover:bg-red-800">Turn off</button>
+			</div>
+		{:else}
+			<button class="rounded border border-neutral-300 px-3 py-1 text-sm hover:bg-neutral-50">
+				Turn admin mode on
+			</button>
+		{/if}
+	</form>
 
 	{#if data.summary.error}
 		<p class="text-red-700">{data.summary.error}</p>

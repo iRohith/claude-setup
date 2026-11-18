@@ -595,6 +595,34 @@ const registryPath = () => join(wfHome(), 'local', 'projects.json');
 export interface ProjectEntry {
 	/** The owner wrote "setup done" while the project was in setup; pushing is allowed from then on. */
 	setupDone?: boolean;
+	/** Owner-only: while on, no wf restriction applies to this project. */
+	admin?: boolean;
+}
+
+export const isAdmin = (root: string) => readRegistry()[root]?.admin === true;
+
+/** Only the owner calls this: the CLI refuses inside Claude Code and the hooks guard the store. */
+export function setAdmin(root: string, on: boolean): void {
+	if (!(root in readRegistry())) throw new WfError(`${root} isn't a registered project`);
+	updateRegistry(root, (entry) => (entry.admin = on));
+}
+
+/**
+ * Denies any agent attempt to touch admin mode: the registry file, `wf admin`, or the dashboard's
+ * admin action. Pattern checks can't catch every variant; the guidance forbids trying.
+ */
+export function adminDenial(
+	file: string | undefined,
+	command: string | undefined
+): string | undefined {
+	const touchesStore =
+		(file !== undefined && resolve(file) === registryPath()) ||
+		(command !== undefined &&
+			(command.includes('projects.json') ||
+				/\b(wf|cli\.ts)\s+admin\b/.test(command) ||
+				command.includes('?/admin')));
+	if (!touchesStore) return undefined;
+	return 'Admin mode belongs to the owner alone; the model never enters, leaves or touches it (a fixed rule; retrying will be denied again).';
 }
 
 export function readRegistry(): Record<string, ProjectEntry> {

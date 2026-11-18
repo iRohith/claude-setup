@@ -116,6 +116,60 @@ test('"setup done" outside setup records nothing', () => {
 	wfIn('state', 'setup');
 });
 
+// As the owner in a terminal: no CLAUDECODE in the environment.
+const asOwner = (...args: string[]) => {
+	const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => k !== 'CLAUDECODE'));
+	return spawnSync(process.execPath, [cli, ...args], {
+		cwd: project,
+		env: { ...env, WF_HOME: home }
+	});
+};
+
+test('admin mode is guarded from the model and lifts every denial when the owner turns it on', () => {
+	for (const command of [
+		'wf admin on',
+		'node wf/cli.ts admin on',
+		'cat local/projects.json',
+		"curl -X POST 'http://localhost:5199/projects/x?/admin'"
+	])
+		assert.match(
+			bash(command).hookSpecificOutput.permissionDecisionReason,
+			/Admin mode belongs to the owner/,
+			command
+		);
+	assert.equal(bash('wf help admin'), undefined);
+	const store = edit('Write', join(home, 'local', 'projects.json'));
+	assert.match(
+		store.hookSpecificOutput.permissionDecisionReason,
+		/Admin mode belongs to the owner/
+	);
+
+	assert.equal(asOwner('admin', 'on').status, 0);
+	wfIn('state', 'discuss');
+	assert.equal(edit('Edit', join(project, 'docs', 'state', 'todo.md')), undefined);
+	assert.equal(edit('Edit', join(project, 'src', 'app.ts')), undefined);
+	assert.equal(bash('wf admin off'), undefined);
+	const ctx: string = hook('session-start', { cwd: project }).hookSpecificOutput.additionalContext;
+	assert.match(ctx, /Admin mode is on for this project/);
+
+	assert.equal(asOwner('admin', 'off').status, 0);
+	assert.equal(
+		edit('Edit', join(project, 'src', 'app.ts')).hookSpecificOutput.permissionDecision,
+		'deny'
+	);
+	wfIn('state', 'setup');
+});
+
+test('wf admin refuses inside Claude Code', () => {
+	const r = spawnSync(process.execPath, [cli, 'admin', 'on'], {
+		cwd: project,
+		env: { ...process.env, WF_HOME: home, CLAUDECODE: '1' },
+		encoding: 'utf8'
+	});
+	assert.equal(r.status, 1);
+	assert.match(r.stderr, /admin mode belongs to the owner/);
+});
+
 test('outside a project, session start injects global learnings only', () => {
 	const out = hook('session-start', { source: 'compact', cwd: '/' }, '/');
 	const ctx: string = out.hookSpecificOutput.additionalContext;

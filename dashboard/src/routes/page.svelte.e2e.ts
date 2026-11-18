@@ -39,6 +39,18 @@ test('details stay open for work in progress and fold for finished work', async 
 	await expect(done.getByText('scaffolded')).toBeVisible();
 });
 
+test('the owner turns admin mode on and off from the project page', async ({ page }) => {
+	await page.goto('/');
+	await page.getByRole('link', { name: 'notes' }).click();
+	await page.waitForLoadState('networkidle');
+	await page.getByRole('button', { name: 'Turn admin mode on' }).click();
+	await expect(page.getByText('Admin mode is on.')).toBeVisible();
+	await page.reload();
+	await expect(page.getByText('Admin mode is on.')).toBeVisible();
+	await page.getByRole('button', { name: 'Turn off' }).click();
+	await expect(page.getByRole('button', { name: 'Turn admin mode on' })).toBeVisible();
+});
+
 test('an unregistered path is a 404', async ({ page }) => {
 	const response = await page.goto('/projects/etc');
 	expect(response?.status()).toBe(404);

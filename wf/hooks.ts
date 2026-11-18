@@ -64,6 +64,10 @@ export function sessionContext(cwd: string): string {
 	const root = projectRoot(cwd);
 	if (root) {
 		const state = wf.readHandoff(root).state;
+		if (wf.isAdmin(root))
+			parts.push(
+				'Admin mode is on for this project (set by the owner): no wf restriction applies until the owner turns it off.'
+			);
 		parts.push(
 			`Instructions for the ${state} state (from wf):\n${wf.stateInstructions(state)}`,
 			section(`Project learnings for ${root} (from wf)`, wf.projectLearningsPath(root)),
@@ -81,16 +85,21 @@ function section(title: string, path: string): string {
 	return body ? `${title}:\n${body}` : '';
 }
 
+/** In admin mode nothing is denied. Otherwise: the admin store, wf-owned files, then state rules. */
 function denyReason(input: HookInput, cwd: string): string | undefined {
 	const root = projectRoot(cwd);
+	if (root && wf.isAdmin(root)) return undefined;
 	if (input.tool_name === 'Bash') {
 		const command = input.tool_input?.command;
-		return root && typeof command === 'string' ? wf.pushDenial(root, command) : undefined;
+		if (typeof command !== 'string') return undefined;
+		return wf.adminDenial(undefined, command) ?? (root ? wf.pushDenial(root, command) : undefined);
 	}
 	if (!EDIT_TOOLS.includes(input.tool_name ?? '')) return undefined;
 	const target = input.tool_input?.file_path ?? input.tool_input?.notebook_path;
 	if (typeof target !== 'string') return undefined;
 	const file = resolve(cwd, target);
+	const admin = wf.adminDenial(file, undefined);
+	if (admin) return admin;
 	const alternative = wf.wfAlternative(file);
 	if (alternative)
 		return `${basename(target)} is written only through wf. This is a fixed rule, so retrying the edit will be denied again. Use ${alternative} instead (wf help <command> for usage).`;

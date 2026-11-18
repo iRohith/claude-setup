@@ -9,6 +9,8 @@ const port = 5198;
 const env = process.env as Record<string, string>;
 
 export default defineConfig({
+	// One worker: desktop and mobile share the fixture registry, and the admin test changes it.
+	workers: 1,
 	...(screenshots
 		? { testMatch: '**/screenshots.e2e.ts' }
 		: {

@@ -118,6 +118,17 @@ function main(argv: string[]): void {
 		case 'hook':
 			process.stdout.write(runHook(arg(0, 'event'), readFileSync(0, 'utf8')));
 			return;
+		case 'admin': {
+			if (process.env.CLAUDECODE)
+				throw new wf.WfError('admin mode belongs to the owner; run wf admin in a terminal');
+			const value = arg(0, 'on|off');
+			if (value !== 'on' && value !== 'off')
+				throw new UsageError(`admin takes on or off, got ${value}`, 'admin');
+			const root = wf.findRoot(process.cwd());
+			wf.setAdmin(root, value === 'on');
+			console.log(`admin mode ${value} for ${root}`);
+			return;
+		}
 		case 'install': {
 			if (process.env.CLAUDECODE)
 				throw new wf.WfError('install writes outside the project; the owner runs it in a terminal');

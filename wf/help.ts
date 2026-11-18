@@ -122,6 +122,14 @@ export const HELP: Record<string, Help> = {
 			'leave discuss only when the owner says so.'
 		]
 	},
+	admin: {
+		usage: ['wf admin on|off'],
+		summary: "the owner's switch: while on, no wf restriction applies to this project",
+		details: [
+			'Run by the owner in a terminal, or from the dashboard. Refuses inside Claude Code.',
+			'The model never enters, leaves or touches admin mode in any way.'
+		]
+	},
 	hook: {
 		usage: ['wf hook session-start|pre-tool-use|user-prompt-submit'],
 		summary: 'Claude Code hook entry points (hook JSON on stdin)',

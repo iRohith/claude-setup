@@ -8,6 +8,7 @@ export interface ProjectSummary {
 	state?: wf.State;
 	active: string[];
 	next?: string;
+	admin: boolean;
 	error?: string;
 }
 
@@ -19,7 +20,7 @@ export interface ProjectView {
 export const registeredRoots = (): string[] => Object.keys(wf.readRegistry()).sort();
 
 export function summarize(root: string): ProjectSummary {
-	const base = { root, name: basename(root), active: [] };
+	const base = { root, name: basename(root), active: [], admin: wf.isAdmin(root) };
 	try {
 		const todo = wf.readTodo(root);
 		const next = wf.nextItem(todo);

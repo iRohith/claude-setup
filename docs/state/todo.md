@@ -123,8 +123,10 @@ Deliverable: setup/discuss/build behave as spec section 2 in a real session, and
   Proof: transcript showing a denied Edit in discuss and a denied push in setup, then the push allowed after "setup done"
   - core `discussDenial` (in discuss only docs/state/ and scratch/temp/ are writable), `pushDenial` (no git push in setup until setupDone), `recordSetupDone` (owner prompt containing "setup done" while in setup); registry entries typed as `ProjectEntry`
   - hooks: PreToolUse now also sees Bash; new `user-prompt-submit` hook; `wf install` registers it and updates the matcher of a hook it already owns
-- [ ] 2.3 admin mode: dashboard toggle, `wf admin` refused inside Claude Code, hooks pass when on
+- [~] 2.3 admin mode: dashboard toggle, `wf admin` refused inside Claude Code, hooks pass when on
   Proof: transcript of the agent failing to turn it on; the owner turns it on and the state file edit goes through
+  - registry flag `admin`; core `setAdmin`, `isAdmin`, `adminDenial` (registry file, `wf admin`/`cli.ts admin`, `projects.json`, the dashboard `?/admin` action); in admin mode the pre-tool-use hook denies nothing and session start says admin is on
+  - `wf admin on|off` refuses inside Claude Code; dashboard project page has the toggle (a form action) with an e2e test at both sizes; e2e runs on one worker since the fixture registry is shared; real-dashboard screenshots `scratch/images/2.3-*`
 - [ ] 2.4 the remaining hook denials from spec section 5: Edit/Write on `scratch/links/**`, and Bash running `claude -p` or `--print`
   Proof: hook tests and a real session show each one denied with its alternative
 
