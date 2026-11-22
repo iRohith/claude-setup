@@ -1,7 +1,7 @@
 # Learnings
 
 1. Built mechanisms the owner never asked for (MCP server, ledger, conductors) → propose each one, build only what's approved.
-2. Grew the setup with each redesign → if the owner can't read it in one sitting, cut it.
+2. Grew the setup with each redesign, again in 5.6 (+40 rule lines) while it was already the bottleneck → fix problems by cutting; if the owner can't read it in one sitting, cut it
 3. Asked the owner things already said (e.g. `docs/state/`) → check the conversation and refs before asking.
 4. Shrank a long requirement list into a todo tool → restate every requirement before proposing a shape.
 5. Started 1.3 without `wf start`, and hand-edited todo.md for lack of `wf edit` → start before working; plan every spec'd command into an item.

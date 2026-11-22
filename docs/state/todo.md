@@ -237,3 +237,14 @@ Deliverable: one real project taken from setup through its first major task with
 
 - [ ] 6.1 run setup, discuss, build on a fresh project the owner picks
   Proof: that project's `docs/state/` and its commit history
+
+## [~] 7 · cut the setup to what pays for its context
+Deliverable: every session's standing context (CLAUDE.md, rules, injected state) under 12,000 characters, down from about 33,000, with the hard limits and the owner's recurring corrections kept
+
+- [x] 7.1 global/CLAUDE.md cut to the hard limits and the recurring corrections, with ponytail and karpathy folded into a few lines
+  Proof: wc -c global/CLAUDE.md under 6,000; a list in scratch/temp mapping every removed rule to why it can go (inferable, enforced by wf, or duplicate)
+  - global/CLAUDE.md rewritten from 19,010 to 5,200 bytes: hard limits, the owner's recurring corrections (intent, literal steers, answer-only, sourced reports, never idle, fair measurements) and one line each of ponytail and karpathy; what left and why is in scratch/temp/7.1-removed.md
+- [~] 7.2 injected context cut: state instructions and global learnings pruned of what CLAUDE.md already says
+  Proof: wf sessionContext for cuda-kernels under 5,000 characters, printed per part; wf test passes
+- [ ] 7.3 wf cut to the commands that pay for themselves, and state files capped so they stay small (owner picks the list)
+  Proof: the owner's approved list of kept commands; removed commands gone from cli, help and tests; wf test passes

@@ -1,260 +1,71 @@
 # How to work for the owner
 
-These rules hold in every project. Each session also starts with injected context: the instructions for
-the project's current state, global and project learnings, and the project's handoff. Follow both. When
-the owner says something different in a session, the owner wins.
+These rules hold in every project; the owner's word in a session wins over them.
 
-## The setup in one paragraph
-Every project keeps its state as markdown in `docs/state/`, and `wf` (a CLI on PATH) is the only thing
-that writes it. Read the state freely; change it only through `wf`. Hooks inject the context at session
-start and deny direct edits of the files `wf` owns. The owner reads and edits the same state in a local
-dashboard, so re-read it (`wf status`) instead of assuming it hasn't changed.
+## State and wf
+- Each project's state is markdown in `docs/state/` (todo, handoff, steers, learnings, plan docs),
+  changed only through `wf`. Run `wf status` at session start and after a compaction; `wf help <cmd>`
+  before using a command. A hook denial is final: never retry or route around it.
+- States: setup, discuss (planning only), build. Only the owner changes state or admin mode.
+- Run wf only in the main checkout, never inside a worktree.
 
-## docs/state/
-| File | Holds | How to change it |
-|---|---|---|
-| `overview.md` | what the project is, its scope, what is out of scope; no implementation detail | `wf doc overview` |
-| `intent.md` | why it exists: the pain, who uses it, what a beginner and an expert would say, where it shines, the owner's principles for it | `wf doc intent` |
-| `references.md` | per reference: what it teaches, what went wrong in it | `wf doc references` |
-| `implementation.md` | how it is built, start to finish, in plain English precise enough for a cheaper model to follow | `wf doc implementation` |
-| `spec.md` | what the implementation leaves out: schemas, formats, commands, contracts | `wf doc spec` |
-| `todo.md` | majors and minors with their proofs and implementation details | `wf add`, `batch`, `edit`, `start`, `done`, `impl` |
-| `handoff.md` | state, active items, next, how to verify, what not to do, questions for the owner | `wf handoff` |
-| `memory.md` | invariants, contracts, pitfalls (dated, with cause), anti-patterns, deferred items | `wf memory`, `wf defer` |
-| `learnings.md` | short numbered lessons: what went wrong → what to do instead | `wf learn` |
-| `steers.md` | the owner's steers, summarised, with why they count | `wf steer`, `wf assume` |
-| `risks.md` | high-risk actions, logged before they run | `wf risk` |
-
-Write `wf doc` text in `scratch/temp/` first, then `wf doc <name> --from <file>` (whole document, starting
-with `# <Title>`) or `--section "<heading>"` (one `##` section). Keep `<` inside backticks in documents.
-
-## wf
-- Queries: `wf status` (state, active, next), `wf next`, `wf show <id>` (an item with its steers),
-  `wf find "<text>"` (search all state: how was X done, what is related to Y), `wf get <file> [section]`.
-  Run `wf status` first in a session and again after every compaction.
-- Run wf only in the project's main checkout, never inside a worktree (`.claude/worktrees/…`): a
-  worktree has its own copy of `docs/state/` that the owner never sees.
-- `wf help` lists every command; `wf help <command>` gives its usage and the rules it enforces. Read it
-  before using a command for the first time.
-- A hook denial is final. Never retry the denied action and never route around it (for example through
-  Bash). Use the command the denial names.
-- `wf install` is the owner's, run once per machine. Never run it.
-
-## States
-- Every project is in exactly one state: **setup** (a deployable bare app and the project's checks),
-  **discuss** (planning only) or **build** (implementing the todo). A new project starts in setup.
-- The owner switches states, or tells you to with `wf state <name>`. Never decide on your own that a
-  state is over; in particular, leave discuss only when the owner says so.
-- **Admin mode** belongs to the owner alone: in it no wf restriction applies. Never try to enter or exit it,
-  and never touch anything that controls it.
-
-## The todo
-- **Major** `x`: checkable, with a deliverable the owner can inspect. The first major is always a crude
-  end-to-end version of what the owner actually asked for, not the infrastructure around it.
-- **Minor** `x.x`: checkable, with a proof: something tangible and verifiable.
-- **Implementation details**: under a minor, a plain list of how it was actually built. No status,
-  branch names, progress notes or measurement logs: status goes in the handoff, readings in the
-  project's own results files.
-- **Micro** `x.x.x`: a commit boundary inside a minor; exists only in commit messages. Always three
-  levels, under a real minor.
-- Keep few items in progress: the ones being worked now, plus those waiting on the owner, each with an
-  `--open` line in the handoff saying what it waits on. Start an item only to carry it to done.
-- Ids are integers, assigned by wf, never reused; `todo.md` is always in id order.
-- Arrange majors and minors so independent work can proceed in parallel, across agents and across linked
-  projects. While a dependency is not ready, build against a known intermediate and convert later.
-- New work found along the way becomes a todo item now. No TODO comments, no "later". Something left
-  open on purpose is recorded with `wf defer "<what>" --resolves <id>`, naming the item that closes it.
-
-## Working an item
-1. Choose it: the item the owner steers to, else the owner's latest stated order, else `wf next`.
-   Re-read `intent.md` and the newest steers first, and check the item serves the intent; work that only
-   serves an example (a demo model, a sample input) stays thin.
-2. `wf start <id>` before touching it. Never record work after the fact. Finish a major before moving to
-   the next, except when its remaining items wait on the owner.
-3. Build it, with tests that check real behaviour.
-4. Verify the proof the way the owner would: a real end-to-end run, screenshots, a benchmark. Never fake,
-   weaken or skip a test.
-5. Run the pre-commit checks.
-6. `wf impl <id> "<how it was built>"` for each detail, then `wf done <id>`, then `wf handoff`.
-7. Commit, then push.
-
-Never mark an item done because a commit is coming, and never record in a commit what happens after it.
-When every minor of a major is done and its deliverable is verified, `wf done <major>`.
-
-## Commits and branches
-- Subject: `<id> <keywords>`, for example `3.2.1 fix tab state`. Brief keywords, one line (three at
-  most), one todo item per commit. No co-author or any attribution.
-- `x.x.x` micro commits mark change boundaries inside a minor, numbered .1, .2, … They stay on `work`.
-- `x.x` closes a minor: after its proof, the checks and `wf done`. Push right after it.
-- `x` closes a major.
-- Branches: `work` holds everything and is pushed after every minor, so any machine can continue. `main`
-  is the clean product: it gets squashed minor and major commits only, and only when the owner says so.
-  Micro commits never reach `main`.
-- Setup ends with a single `init` commit on both branches.
-- Never amend or force-push, except `init` during setup or when the owner says so. Never rewrite history.
-  Never skip hooks (`--no-verify`).
-- The pre-commit hook runs the project's checks; fix failures, never bypass them. Keep them fast
-  (format, lint, type check, quick unit tests) so a commit takes seconds. Slow suites, other-target
-  builds, hardware and GPU tests and benchmarks stay out of the hook: run them as part of the proof,
-  before `wf done`, and before every push. An optional pre-push
-  hook runs the owner's commands (a deploy, say) only when a major is pushed. Both are written with
-  `wf checks set` and `wf push set`; never edit them by hand.
+## Working
+- Todo: majors with a deliverable, minors with a tangible proof. The first major is a crude end-to-end
+  version of what was asked. New work becomes an item now; no TODOs or "later".
+- Per item: `wf start` first, build with tests of real behaviour, verify the proof as the owner would
+  (real run, screenshots, benchmark), checks pass, `wf done`, `wf handoff`, commit, push. Never fake or
+  weaken a test; never mark done before it is verified.
+- Choose work by the owner's latest stated priority, then `wf next`. Check it serves `intent.md`.
+- Never idle: when an item waits on the owner, put what they must do in the handoff (`--open`) and
+  start the next. While your own build, test or agent runs, do other work; wait on completion notices,
+  never on open-ended polling loops.
+- Something missing (tool, package, permission, answer): ask for exactly it; never work around it.
 
 ## The owner's messages
-- The owner's message comes first. A steer about the code, the project, the architecture, the state or the
-  flow of work changes the plan first (todo, plan documents), then is recorded with `wf steer` as a
-  short summary with why it counts. Questions, chatter and small one-off requests are not logged.
-- Take a steer literally. Never invent consumers, targets, contracts or scope the owner didn't name.
-- A change of direction rewrites `intent.md` and `overview.md` first (and `implementation.md` when the
-  build changes shape), then the todo. A theme the owner raises twice becomes a principle in
-  `intent.md`.
-- A question, "tell me first", "preview" or "don't run" asks for an answer only: take no action until
-  the owner says go.
-- Answer the question asked, in the first line. Reports give the latest values only, each with its
-  source (the run, date, commit or working tree) and the change since the last report; superseded
-  numbers are dropped. Comparisons go in a copyable markdown table with the better value in bold.
-- Every record (steers, learnings, todo, handoff, plan documents, commits) is your own short summary.
-  Never paste the owner's messages verbatim: repos can be public, and their wording is not for the
-  record.
-- When the owner says something is a guideline, it goes into the global guidelines (claude-setup's
-  `global/CLAUDE.md`, or `global/states.md` for a state's procedure), not only into a learning. In
-  claude-setup, edit them. In any other project you can't: record it with `wf learn --global` and tell
-  the owner it needs adding to the guidelines.
-- Architectural changes need the owner's permission. When the owner is away, take the most reversible
-  choice, do it, and record it with `wf assume` for review.
-- Propose a mechanism and ask before building it. Never choose mechanisms on the owner's behalf.
-- Report what was and was not tested. Admit mistakes plainly, with no excuses, and never defend a choice by
-  quoting the owner's goals back.
+- A steer changes the plan first (todo, and intent/overview when the direction changes), then is
+  recorded with `wf steer` as your own short summary. Never paste the owner's words into any record.
+- Take steers literally; never invent consumers, scope or contracts. Questions, "preview", "tell me
+  first" or "don't run" mean answer only, no action.
+- Answer the question in the first line. Numbers are the latest, with their source; comparisons in a
+  copyable markdown table. Say what was and wasn't tested.
+- Propose mechanisms and architectural changes; build them only when approved. When the owner is away,
+  take the most reversible choice and record it with `wf assume`; ask nothing.
+- Admit mistakes plainly. Record each with `wf learn "<what went wrong> → <what to do instead>"`
+  (`--global` when it holds everywhere). A rule the owner calls a guideline goes into claude-setup's
+  `global/CLAUDE.md`; elsewhere record it with `wf learn --global` and tell the owner.
 
-## Learnings
-- Record a lesson the moment it is learned: `wf learn "<what went wrong> → <what to do instead>"`, one
-  line. Learnings are injected into every session, so wf keeps them within a size budget; when it
-  refuses, merge or prune before adding: `wf learn --edit <n> "…"` rewrites one (to cover two, say) and
-  `wf learn --remove <n>` drops one, renumbering the rest.
-- A lesson that holds for every project: `wf learn --global "…"`. That is the only way to write the
-  global learnings; never edit them directly.
-
-## Friction and autonomy
-- When a tool, permission, package or answer is missing, tell the owner exactly what is needed and get it.
-  Never work around it, substitute something silently or fall back. Meanwhile, carry on with whatever does
-  not depend on it.
-- **Never wait idle on the owner.** When an item needs the owner (a review, a check, a session only they
-  can run, an answer), put exactly what they must do in the handoff as `--open`, leave the item in
-  progress, and start the next todo item right away, in any major. Fix whatever their check turns up
-  when they report it. Stopping while open items remain wastes the owner's time.
-- Long-running by default: when an item is done, start the next. Stop only when every remaining item is
-  blocked on the owner. When the owner is away, do only work that won't need their input.
-- When the owner is away or says not to ask, ask nothing: take the most reversible choice, record it
-  with `wf assume`, and carry on.
-- **Never wait idle on your own jobs either.** While a build, test, agent or remote run is going, do
-  work that doesn't depend on it. Wait on the tool's completion notice, or poll at a set interval with a
-  deadline; never an open-ended `until`/`while` or `pgrep -f` loop. Always know what you have running;
-  the owner should never have to ask.
-- Before a job longer than a few minutes, say whether it's needed, how long it should take and what it
-  costs. Fit unattended runs to the window the owner gave. Stop anything stale.
-
-## Subagents
-- Delegate only independent work; iterative tuning and measurement stay in the main session.
-- `wf start` the item before handing it over. Agents never run wf commands that write: the main
-  session records their results, in the main checkout.
-- One owner per shared file (a harness, a benchmark binary): other agents ask that agent for changes.
-- `.claude/worktrees/` is gitignored; check `git status` before every commit. Address worktree files by
-  absolute path. List leftover agent branches in the handoff for the owner.
-- Run only as many agents at once as memory allows.
-
-## High-risk actions
-- Deleting files, branches or repos, schema migrations, force-pushes and anything hard to undo happen only
-  when the owner explicitly asks.
-- Log each with `wf risk` before running it: the todo item, the exact action, why, risk level (low,
-  medium, high), what it touches, and how to recover or roll back. wf rejects a log missing any of them;
-  run the action only after wf accepts it. Its why names when the owner asked; a rule is not an ask.
-- Before deleting anything (a venv, a cache, a script), check what still uses it: grep the scripts and
-  configs for its path.
-- Docker images are the one thing you may delete freely.
+## Commits
+- Subject `<id> <keywords>`, one item per commit, no attribution. Micro commits `x.x.x` inside a minor.
+- `work` gets everything and is pushed after each minor; `main` only gets squashed commits when the
+  owner says so. Never amend, force-push, rewrite history or skip hooks.
+- Pre-commit checks (set with `wf checks set`) stay fast; slow, hardware and benchmark runs belong to
+  the proof and run before a push.
 
 ## Code
-- Security and performance first, then simplicity. Clean, simple, readable code over anything clever.
-- No overengineering: no layers, options, fallbacks or "for later" code nobody asked for.
-- A change means replacement: the old way goes completely, with no shims, aliases or flags. First versions
-  still get clean schemas and formats.
-- Reuse existing code and packages before writing; reinvent only for a real unmet need, and say why.
-- Few files, simple structure, clear separation of concerns.
-- Warnings are errors; if one truly can't be fixed, ask. No TODOs or stubs. Remove dead code at every
-  micro commit; only code that is used now stays.
-- Nothing hardcoded: configurable values live in env.
-- Type-safe code only, unless the owner allows otherwise. "Type-safe" is about how the code is written,
-  not a list of languages: Python is allowed when every function, argument, return and attribute is
-  typed and a strict type checker runs in the project's checks with zero errors. Untyped or partly typed
-  code is not allowed in any language. TypeScript over JavaScript, configs included.
-- pnpm for everything Node.
-- Python runs on the system Python, and its packages come from pacman. Never install a Python package
-  with uv or pip. When a package isn't installed, ask the owner to install it from pacman (no sudo).
-- Only when a package isn't in pacman, or the pacman version doesn't work: `uv venv
-  --system-site-packages` on the system Python, then install into it just the packages that override or
-  are missing. Never reinstall a big package the system already has (pytorch and the like). No uv
-  projects, no uv-downloaded Pythons. One venv and one `requirements.txt` per project, never a second;
-  everything used is listed there.
-- Latest stable versions when adding a package. Never upgrade existing ones without asking; report
-  outdated ones. Scaffold with the stack's own tool (`pnpm dlx sv create`, `cargo init`, `zig init`).
-- Preferred web stack: SvelteKit with pure runes, shadcn-svelte, Cloudflare Workers; Modal for extra CPU,
-  GPU or storage.
-- **Before any UI work, load the UI skill (impeccable) and follow it**: design, layout, typography,
-  colour, states and its review checklist. UI built without it is not done.
-- UI is built with shadcn components: shadcn-svelte in Svelte, shadcn/ui in React. Don't hand-roll what
-  shadcn provides; extend it instead.
-- UI is never generic: design it from how it is actually used. Mobile-friendly from the start when it is
-  used on mobile. Landing pages may be showy but stay fast.
-- UI work always has Playwright tests, and screenshots at desktop and mobile sizes committed as
-  `scratch/images/<id>-<page>-<size>.png`, taken from the real app with real data, never a test fixture.
-  Check phone, landscape phone, tablet, short laptop, 1080p and 1440p, with a test that nothing spills
-  out of the viewport.
-- Verify in a real dev environment: a headless browser for UI, Modal when a GPU is needed.
-
-## Measurements
-- A performance claim compares against the strongest equivalent baseline: what a real user would run,
-  at its best settings, on the same inputs, timing method, machine and machine state. Alternate the
-  sides across runs, keep runs short, and record clocks and throttling where hardware is involved.
-  Label every difference that remains. Never headline a win on a weak baseline or an unusual input.
-- Before trusting a speedup, check that every output was computed and is correct.
-- Performance work profiles first: log the readings in a committed file and compare every change
-  against them. Never build a fix on a guessed cause. After a build-flag change, compare before and
-  after.
-- Benchmarks run on an otherwise idle machine: nothing else heavy runs meanwhile.
+- Smallest complete change: reuse what exists, no speculative features, options, layers or fallbacks.
+  A change replaces the old way fully (no shims). Remove dead code. Warnings are errors.
+- Type-safe only: TypeScript over JavaScript; Python only fully typed under a strict checker in the
+  checks. pnpm for Node. Config lives in env, nothing hardcoded. Latest stable versions when adding;
+  never upgrade without asking.
+- Python: system Python with pacman packages; never uv/pip install. Missing package: ask the owner.
+  Only if pacman lacks it or it's broken: one `uv venv --system-site-packages` per project with just the
+  overrides, listed in `requirements.txt`; never reinstall big system packages (pytorch).
+- Web: SvelteKit (runes), shadcn-svelte, Cloudflare Workers; Modal for GPU or extra compute.
+- UI: load the impeccable skill first; build with shadcn; Playwright tests; screenshots of the real app
+  with real data at desktop and mobile in `scratch/images/<id>-<page>-<size>.png`.
+- Performance: profile first and log readings; compare against the strongest equivalent baseline under
+  the same inputs and machine state; check outputs are complete and correct before claiming a speedup.
 
 ## Safety
-- Never write outside this project, not even `/tmp`. Temporary files go in `scratch/temp/`. This covers
-  what your code and scripts create (temp files, outputs, logs); tools' own caches may stay where the
-  tools keep them.
-- Heavy jobs run under a memory cap (`systemd-run --user --scope -p MemoryMax=…`), so an overrun kills
-  only that job, never the owner's session.
-- To stop a process, kill the exact PIDs you started (the profiled app, not only its wrapper), then
-  confirm nothing is left.
-- Paid cloud runs: check the exact product's rate, estimate the cost and say it per hour before
-  starting, and take the cheapest option within budget. Size the machine to measured use and check
-  utilisation in the first minutes. Keep caches in persistent volumes. After any stop, confirm nothing
-  is still running (`modal app list`).
-- Never read, print or log `.env`. Write keys with `wf env set <KEY> <value>`, list them with
-  `wf env keys`. `.env.example` and `.env.local` are free to use; tools that load `.env` themselves may
-  run.
-- No secrets and no PII in any file, history included. Never write the owner's names, usernames or email;
-  identity comes from git config.
-- Never start Claude sessions (`claude -p`) or any hidden background process that could spend credits.
-- No sudo. Ask the owner to install system packages.
-- Third-party code you need to run runs in Docker: the project mounted read-only plus one read-write bridge
-  folder, nothing else from the host. Learn from third-party code; don't copy it.
-- Repos are private and named after the project folder. You may create one in setup; never delete,
-  rename, fork, archive it or change its visibility.
-
-## Shell
-- One command per call. No `;`, `&&` or `||` chains; use the tool's own flags (`git -C`, `pnpm --dir`).
-  A chain wrapped in `bash -c` or `sh -c` is still a chain.
-- Edit files with the Edit tool, not with scripts or heredocs.
-- Long output goes to a file in `scratch/temp/` that you then read; never cut it with `head` or `tail`.
-
-## Scratch and other projects
-- `scratch/scripts/` (project scripts) and `scratch/images/` (screenshots) are committed.
-- `scratch/temp/` (temporary files), `scratch/refs/` (the owner's earlier projects, references to learn
-  the idea and its lessons from), `scratch/links/` (collaborating projects) and `scratch/thirdparty/`
-  (other cloned repos) are gitignored.
-- Linked projects in `scratch/links/` are read-only: see what they offer and plan around it. Never write
-  into another project; anything one project needs from another goes to the owner as a global learning.
+- Never write outside the project (not even `/tmp`); temp files in `scratch/temp/`. Tool caches are fine.
+- Never read or print `.env`; use `wf env set` / `wf env keys`. No secrets or PII in files or history.
+- Never start Claude sessions (`claude -p`) or hidden background processes. No sudo.
+- Deletes, force-pushes, migrations and anything hard to undo: only when the owner asks, logged first
+  with `wf risk`. Docker images may be deleted freely.
+- Paid cloud runs: price them and say the cost before starting; confirm nothing runs after a stop.
+- Heavy jobs run under a memory cap; kill only the PIDs you started, then check none are left.
+- Third-party code runs in Docker; learn from it, don't copy it. Repos stay private; never delete, rename or change their visibility.
+- One shell command per call (no chains, even inside `bash -c`); long output to a file in
+  `scratch/temp/`, never cut with head or tail.
+- `scratch/scripts/` and `scratch/images/` are committed; `scratch/temp/`, `refs/`, `links/`,
+  `thirdparty/` are not. Linked projects in `scratch/links/` are read-only.

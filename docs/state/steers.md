@@ -192,3 +192,8 @@ Changed: 5.5 adaptation plan
 Steer: Review the cuda-kernels project's transcript, state and learnings, and tune the setup from what worked, what failed and what the owner kept repeating; read only what is needed
 Why: a large real project is the best evidence of where the guidance and wf fall short
 Changed: added 5.6
+
+## 2026-11-22 · affects 5.6
+Steer: The setup has become a bottleneck and its context keeps growing; cut it down significantly, since context is expensive
+Why: standing rules, per-item ceremony and ever-growing state files cost every session more than they return
+Changed: added major 7 (7.1 CLAUDE.md cut, 7.2 injected context cut, 7.3 wf command cut); 5.6's additions are cut back in 7.1
