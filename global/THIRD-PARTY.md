@@ -63,7 +63,10 @@ where they conflict. To see an exact change, diff the file against the upstream 
     audit reports are written as plain files that polish reads and closes;
   - motion is captured with Playwright, and the finish reviewer, documenter and motion reviewer are fresh
     general-purpose subagents briefed from the files above;
-  - screenshots go to `scratch/images/<id>-<page>-<size>.png`.
+  - screenshots go to `scratch/images/<id>-<page>-<size>.png`;
+  - cut for small context windows: `SKILL.md`, `new-work`, `new-work-world`, `craft-floor` and the three
+    mode files lose their rule-id comments, rationale, restating examples and comp-pipeline remnants,
+    so a new surface loads under 20 KB instead of about 45 KB.
 
 ## Licences
 

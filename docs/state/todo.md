@@ -250,7 +250,8 @@ Deliverable: a session fits a 100k-token model: always-loaded rules about 1,500 
 - [x] 7.3 routine wf reads bounded: wf status titles five active items, listings cut titles to 80 characters, wf show prints the five newest steers
   Proof: on a copy of cuda-kernels' state, wf status under 1,000 characters (from 7,642) and wf show 12 under 4,000 (from 6,021); wf test passes
   - wf status titles the first five active items (titles cut to 80 characters) and lists the rest by id; wf show on a major cuts minor titles to 80 and prints only the five newest steers with a count of older ones; on a copy of cuda-kernels' state status went 7,642 to 788 characters and show 12 6,021 to 3,509; archiving finished majors dropped: cuda had one done major of 15, so it would not have helped
-- [ ] 7.4 impeccable slimmed for small models: a short core SKILL.md, references loaded only by the step that needs them
+- [x] 7.4 impeccable slimmed for small models: a short core SKILL.md, references loaded only by the step that needs them
   Proof: SKILL.md under 4,000 characters; a new-surface path loads under 20,000 characters in all, down from about 45,000; no reference link left dangling
+  - An agent cut SKILL.md 10,570 to 3,519 and the new-surface path (SKILL, new-work, new-work-world, craft-floor, the largest mode file) 45,375 to 19,573 characters: rule-id comments, rationale, restating examples and comp-pipeline remnants removed; adaptation decisions, contract blocks, craft-floor checks and change notices kept; every linked file checked to exist; THIRD-PARTY.md notes the cut
 - [~] 7.5 ponytail and karpathy rule files removed now that one CLAUDE.md line carries them; install and THIRD-PARTY.md updated
   Proof: global/rules gone from the repo, wf install no longer links rules, THIRD-PARTY.md names only what is still shipped; wf test passes
