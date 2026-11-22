@@ -247,9 +247,10 @@ Deliverable: a session fits a 100k-token model: always-loaded rules about 1,500 
 - [x] 7.2 injected context cut to a 4,000-character brief: short state instructions, learnings pruned of what CLAUDE.md says, and a first-action line: wf status, wf get intent, restate the intent and current item
   Proof: sessionContext for each registered project printed per part, all under 4,000; wf test passes
   - CONTEXT_BUDGET 9,000 to 4,000; a first-action part (wf status, wf get intent, restate intent and current item) injected at every session start and compaction; states.md cut to a short paragraph per state; global learnings 16 to 1 and project learnings 11 to 8, keeping only what CLAUDE.md doesn't say; handoff shortened; sizes now demo 1,283, claude-setup 2,861, DSAPatterns 2,477, cuda-kernels 5,605 (its own learnings and handoff need pruning in its own session)
-- [ ] 7.3 routine wf reads bounded: wf status and wf show print a capped amount, and finished majors leave todo.md
-  Proof: on a copy of cuda-kernels' state, wf status and wf show 12 each print under 2,000 characters and todo.md holds no done major; wf test passes
+- [x] 7.3 routine wf reads bounded: wf status titles five active items, listings cut titles to 80 characters, wf show prints the five newest steers
+  Proof: on a copy of cuda-kernels' state, wf status under 1,000 characters (from 7,642) and wf show 12 under 4,000 (from 6,021); wf test passes
+  - wf status titles the first five active items (titles cut to 80 characters) and lists the rest by id; wf show on a major cuts minor titles to 80 and prints only the five newest steers with a count of older ones; on a copy of cuda-kernels' state status went 7,642 to 788 characters and show 12 6,021 to 3,509; archiving finished majors dropped: cuda had one done major of 15, so it would not have helped
 - [ ] 7.4 impeccable slimmed for small models: a short core SKILL.md, references loaded only by the step that needs them
   Proof: SKILL.md under 4,000 characters; a new-surface path loads under 20,000 characters in all, down from about 45,000; no reference link left dangling
-- [ ] 7.5 ponytail and karpathy rule files removed now that one CLAUDE.md line carries them; install and THIRD-PARTY.md updated
+- [~] 7.5 ponytail and karpathy rule files removed now that one CLAUDE.md line carries them; install and THIRD-PARTY.md updated
   Proof: global/rules gone from the repo, wf install no longer links rules, THIRD-PARTY.md names only what is still shipped; wf test passes

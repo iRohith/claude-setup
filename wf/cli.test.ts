@@ -303,6 +303,13 @@ test('steers and assumptions are recorded as summaries and listed by wf show', (
 	);
 	assert.equal(wf('steer', 'x', '--why', 'y', '--affects', '0').code, 2);
 	assert.match(wf('steer', 'chatter', '--log', 'false').out, /not logged/);
+	// wf show stays bounded: the five newest steers, then a pointer to the rest.
+	for (let i = 1; i <= 5; i++)
+		wf('steer', `later ${i}`, '--why', 'y', '--affects', '0.2', '--changed', 'z', '--log', 'true');
+	const bounded = wf('show', '0.2').out;
+	assert.match(bounded, /steer: later 5/);
+	assert.doesNotMatch(bounded, /export must not need the network/);
+	assert.match(bounded, /\(2 older: wf find/);
 });
 
 test('risk needs every field, names the missing ones, and logs the entry', () => {

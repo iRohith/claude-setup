@@ -289,15 +289,22 @@ function handoff(next: string, verify: string, dont: string, open: string[]): vo
 	});
 }
 
+/** How many active items status titles, and how many steers show prints. */
+const SHOWN = 5;
+/** Titles in listings are cut to this; wf show <minor> prints one in full. */
+const short = (title: string): string => (title.length > 80 ? `${title.slice(0, 79)}…` : title);
+
 function status(): void {
 	const root = wf.findRoot(process.cwd());
 	const todo = wf.readTodo(root);
 	const active = wf.activeMinors(todo);
 	const next = wf.nextItem(todo);
 	console.log(`state: ${wf.readHandoff(root).state}`);
-	console.log(
-		`active: ${active.length ? active.map((n) => `${n.id} ${n.title}`).join('; ') : '—'}`
-	);
+	// Titles for the first few only, so the output stays small however much is in progress.
+	const titled = active.slice(0, SHOWN).map((n) => `${n.id} ${short(n.title)}`);
+	const more = active.slice(SHOWN).map((n) => n.id);
+	if (more.length) titled.push(`also ${more.join(', ')}`);
+	console.log(`active: ${titled.length ? titled.join('; ') : '—'}`);
 	console.log(`next: ${next ? describeNext(next) : '—'}`);
 	console.log(
 		`learnings: ${wf.countLearnings(wf.projectLearningsPath(root))} project, ${wf.countLearnings(wf.globalLearningsPath())} global`
@@ -320,12 +327,15 @@ function show(id: string): void {
 	} else {
 		const major = wf.findMajor(todo, id);
 		console.log(`[${major.mark}] ${major.id} · ${major.title}\nDeliverable: ${major.deliverable}`);
-		for (const minor of major.minors) console.log(`[${minor.mark}] ${minor.id} ${minor.title}`);
+		for (const minor of major.minors)
+			console.log(`[${minor.mark}] ${minor.id} ${short(minor.title)}`);
 	}
 	const steers = wf.steersFor(root, id);
 	if (steers.length) console.log('\nSteers:');
-	for (const s of steers)
+	for (const s of steers.slice(-SHOWN))
 		console.log(`- ${s.date} ${s.kind.toLowerCase()}: ${wf.unescapeMd(s.summary)}`);
+	if (steers.length > SHOWN)
+		console.log(`(${steers.length - SHOWN} older: wf find "<text>" or wf get steers)`);
 	const deferred = wf.deferredFor(root, id);
 	if (deferred.length) console.log('\nDeferred to it:');
 	for (const d of deferred)
