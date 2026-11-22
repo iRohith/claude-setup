@@ -238,8 +238,8 @@ Deliverable: one real project taken from setup through its first major task with
 - [ ] 6.1 run setup, discuss, build on a fresh project the owner picks
   Proof: that project's `docs/state/` and its commit history
 
-## [~] 7 · cut the setup to what pays for its context
-Deliverable: a session fits a 100k-token model: always-loaded rules about 1,500 tokens, the context re-injected after each compaction under 4,000 characters with the intent and current item in it, and no routine wf read growing with the project
+## [x] 7 · cut the setup to what pays for its context
+Deliverable: a session fits a 100k-token model: always-loaded rules (CLAUDE.md, ponytail, karpathy) about 2,700 tokens, the context re-injected after each compaction under 4,000 characters with the intent and current item in it, and no routine wf read growing with the project
 
 - [x] 7.1 global/CLAUDE.md cut to the hard limits and the recurring corrections, with ponytail and karpathy folded into a few lines
   Proof: wc -c global/CLAUDE.md under 6,000; a list in scratch/temp mapping every removed rule to why it can go (inferable, enforced by wf, or duplicate)
@@ -253,5 +253,6 @@ Deliverable: a session fits a 100k-token model: always-loaded rules about 1,500 
 - [x] 7.4 impeccable slimmed for small models: a short core SKILL.md, references loaded only by the step that needs them
   Proof: SKILL.md under 4,000 characters; a new-surface path loads under 20,000 characters in all, down from about 45,000; no reference link left dangling
   - An agent cut SKILL.md 10,570 to 3,519 and the new-surface path (SKILL, new-work, new-work-world, craft-floor, the largest mode file) 45,375 to 19,573 characters: rule-id comments, rationale, restating examples and comp-pipeline remnants removed; adaptation decisions, contract blocks, craft-floor checks and change notices kept; every linked file checked to exist; THIRD-PARTY.md notes the cut
-- [~] 7.5 ponytail and karpathy rule files removed now that one CLAUDE.md line carries them; install and THIRD-PARTY.md updated
-  Proof: global/rules gone from the repo, wf install no longer links rules, THIRD-PARTY.md names only what is still shipped; wf test passes
+- [x] 7.5 ponytail and karpathy kept as always-loaded rules: the owner needs them for coding ethics; the removal is withdrawn
+  Proof: global/rules/ponytail.md and karpathy.md unchanged and still linked by wf install; no removal pending in the handoff
+  - Removal withdrawn on the owner's steer: global/rules/ponytail.md and karpathy.md stay and wf install still links them; CLAUDE.md's Code section now points to them instead of repeating ponytail

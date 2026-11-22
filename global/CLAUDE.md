@@ -42,8 +42,8 @@ These rules hold in every project; the owner's word in a session wins over them.
   the proof and run before a push.
 
 ## Code
-- Smallest complete change: reuse what exists, no speculative features, options, layers or fallbacks.
-  A change replaces the old way fully (no shims). Remove dead code. Warnings are errors.
+- Code follows the ponytail and karpathy rules (always loaded alongside this file). A change replaces
+  the old way fully (no shims). Remove dead code. Warnings are errors.
 - Type-safe only: TypeScript over JavaScript; Python only fully typed under a strict checker in the
   checks. pnpm for Node. Config lives in env, nothing hardcoded. Latest stable versions when adding;
   never upgrade without asking.

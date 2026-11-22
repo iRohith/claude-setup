@@ -8,3 +8,4 @@
 6. Added the 2-second refresh without testing a form left open across it; fields fed from page data lost what was typed → bind fields to local drafts and test typing across a refresh
 7. Wrote the claude -p denial as a loose regex; all 15 of its denials in cuda-kernels were false (.claude/ paths, other tools' -p) → test each deny pattern against lookalikes
 8. Earlier setups failed on hand-edited state, loose states, hooks as the main control, rules leaning on unseen context → one checked tool, few states, hooks for hard limits, self-contained rules
+9. Proposed dropping ponytail and karpathy to save context; the owner needs them for coding ethics → cut duplication and procedure, never the principles the owner chose

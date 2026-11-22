@@ -202,3 +202,8 @@ Changed: added major 7 (7.1 CLAUDE.md cut, 7.2 injected context cut, 7.3 wf comm
 Assumption: Owner said to do whatever; major 7 replanned to fit a 100k-token model (brief re-injected after compaction, bounded reads, slim impeccable, rule files removed)
 Why: the owner is tired and away; each change is in git and reversible
 Changed: 7 deliverable, 7.2 and 7.3 rewritten; 7.4 and 7.5 added
+
+## 2026-11-23 · affects 7.5
+Steer: Keep ponytail and karpathy as always-loaded rules; they carry the coding ethics
+Why: the owner relies on them for how code is written, so their context cost is worth paying
+Changed: 7.5 now keeps both files instead of removing them; major 7's deliverable counts them in the always-loaded budget
