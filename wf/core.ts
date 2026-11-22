@@ -1030,8 +1030,11 @@ export function getState(root: string, name: string, section?: string): string {
 
 // ---------- session context and learnings ----------
 
-/** Claude Code caps hook context at 10,000 characters; keep headroom below it. */
-export const CONTEXT_BUDGET = 9000;
+/** Re-injected after every compaction, so it stays small enough for a 100k-token model. */
+export const CONTEXT_BUDGET = 4000;
+
+const FIRST_ACTION =
+	'Before anything else, now and after every compaction: run `wf status` and `wf get intent`, then restate in one line the intent and the item you are on.';
 const LEARNING_MAX = 200;
 
 /**
@@ -1057,6 +1060,7 @@ function contextParts(root: string | undefined): { name: string; text: string }[
 				text: 'Admin mode is on for this project (set by the owner): no wf restriction applies until the owner turns it off.'
 			});
 		parts.push(
+			{ name: 'first action', text: FIRST_ACTION },
 			{
 				name: `${state} instructions`,
 				text: `Instructions for the ${state} state (from wf):\n${stateInstructions(state)}`

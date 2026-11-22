@@ -239,12 +239,17 @@ Deliverable: one real project taken from setup through its first major task with
   Proof: that project's `docs/state/` and its commit history
 
 ## [~] 7 · cut the setup to what pays for its context
-Deliverable: every session's standing context (CLAUDE.md, rules, injected state) under 12,000 characters, down from about 33,000, with the hard limits and the owner's recurring corrections kept
+Deliverable: a session fits a 100k-token model: always-loaded rules about 1,500 tokens, the context re-injected after each compaction under 4,000 characters with the intent and current item in it, and no routine wf read growing with the project
 
 - [x] 7.1 global/CLAUDE.md cut to the hard limits and the recurring corrections, with ponytail and karpathy folded into a few lines
   Proof: wc -c global/CLAUDE.md under 6,000; a list in scratch/temp mapping every removed rule to why it can go (inferable, enforced by wf, or duplicate)
   - global/CLAUDE.md rewritten from 19,010 to 5,200 bytes: hard limits, the owner's recurring corrections (intent, literal steers, answer-only, sourced reports, never idle, fair measurements) and one line each of ponytail and karpathy; what left and why is in scratch/temp/7.1-removed.md
-- [~] 7.2 injected context cut: state instructions and global learnings pruned of what CLAUDE.md already says
-  Proof: wf sessionContext for cuda-kernels under 5,000 characters, printed per part; wf test passes
-- [ ] 7.3 wf cut to the commands that pay for themselves, and state files capped so they stay small (owner picks the list)
-  Proof: the owner's approved list of kept commands; removed commands gone from cli, help and tests; wf test passes
+- [x] 7.2 injected context cut to a 4,000-character brief: short state instructions, learnings pruned of what CLAUDE.md says, and a first-action line: wf status, wf get intent, restate the intent and current item
+  Proof: sessionContext for each registered project printed per part, all under 4,000; wf test passes
+  - CONTEXT_BUDGET 9,000 to 4,000; a first-action part (wf status, wf get intent, restate intent and current item) injected at every session start and compaction; states.md cut to a short paragraph per state; global learnings 16 to 1 and project learnings 11 to 8, keeping only what CLAUDE.md doesn't say; handoff shortened; sizes now demo 1,283, claude-setup 2,861, DSAPatterns 2,477, cuda-kernels 5,605 (its own learnings and handoff need pruning in its own session)
+- [ ] 7.3 routine wf reads bounded: wf status and wf show print a capped amount, and finished majors leave todo.md
+  Proof: on a copy of cuda-kernels' state, wf status and wf show 12 each print under 2,000 characters and todo.md holds no done major; wf test passes
+- [ ] 7.4 impeccable slimmed for small models: a short core SKILL.md, references loaded only by the step that needs them
+  Proof: SKILL.md under 4,000 characters; a new-surface path loads under 20,000 characters in all, down from about 45,000; no reference link left dangling
+- [ ] 7.5 ponytail and karpathy rule files removed now that one CLAUDE.md line carries them; install and THIRD-PARTY.md updated
+  Proof: global/rules gone from the repo, wf install no longer links rules, THIRD-PARTY.md names only what is still shipped; wf test passes

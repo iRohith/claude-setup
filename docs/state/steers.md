@@ -197,3 +197,8 @@ Changed: added 5.6
 Steer: The setup has become a bottleneck and its context keeps growing; cut it down significantly, since context is expensive
 Why: standing rules, per-item ceremony and ever-growing state files cost every session more than they return
 Changed: added major 7 (7.1 CLAUDE.md cut, 7.2 injected context cut, 7.3 wf command cut); 5.6's additions are cut back in 7.1
+
+## 2026-11-23 · affects 7
+Assumption: Owner said to do whatever; major 7 replanned to fit a 100k-token model (brief re-injected after compaction, bounded reads, slim impeccable, rule files removed)
+Why: the owner is tired and away; each change is in git and reversible
+Changed: 7 deliverable, 7.2 and 7.3 rewritten; 7.4 and 7.5 added

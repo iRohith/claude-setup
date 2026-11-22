@@ -207,7 +207,7 @@ export const HELP: Record<string, Help> = {
 		details: [
 			'One line, at most 200 characters, with the arrow. Numbered automatically.',
 			'Learnings are injected into every session; adding or editing one so that any affected',
-			"project's session context passes 9,000 characters is rejected: merge or prune first.",
+			"project's session context passes 4,000 characters is rejected: merge or prune first.",
 			'The context also holds the state instructions and the handoff; the refusal names each size.',
 			'--edit rewrites learning n under the same rules. --remove drops it and renumbers the rest.',
 			'To merge two, edit one to cover both and remove the other.',

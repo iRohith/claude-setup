@@ -58,6 +58,7 @@ test('session start injects global learnings, project learnings and the handoff'
 	assert.match(ctx, /Project handoff \(from wf\):\nState: setup/);
 	assert.match(ctx, /Instructions for the setup state \(from wf\):\nThe project is in setup/);
 	assert.doesNotMatch(ctx, /The project is in build/);
+	assert.match(ctx, /after every compaction: run `wf status` and `wf get intent`/);
 });
 
 test('after wf state, the next session starts with the new state instructions', () => {

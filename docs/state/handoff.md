@@ -1,12 +1,9 @@
 # Handoff
 State: build
-Active: 1.12, 1.13, 2.2, 2.3, 2.4, 3.1, 3.5, 4.3, 5.5
-Next: every remaining item waits on the owner: 5.5 and 4.3 need their checks below, 5.1 their sign-off, 6.1 a fresh project they pick; 1.12, 1.13, 2.2, 2.3, 2.4, 3.1, 3.5 wait on their session; the wf mechanisms from the 5.6 review wait on the owner's pick
-Verify: pnpm --dir wf test passes 73; pnpm --dir dashboard test passes 36 (it times out under heavy machine load; rerun when the load drops); SCREENSHOTS=1 ITEM=\<id> pnpm --dir dashboard test leaves every docs/state hash and scratch/temp/demo unchanged; scratch/temp/5.6-findings.md maps each cuda-kernels problem to its change
-Don't: change the todo format; stop while open items remain; put the owner's words verbatim in any record; touch admin mode or .env; edit githooks by hand; change real projects' data in screenshot runs (only the throwaway under scratch/temp, restored in afterEach); feed form fields from page data (bind them to drafts); run any third-party script, hook or launcher; stage part of a file (the pre-commit hook restages whole files); amend or force-push unless the owner says so; hand-edit any docs/state file; write PII into any file; install Python packages with uv or pip; build any 5.6 wf mechanism before the owner picks it
-Open: owner: rerun wf install, then one fresh demo session: the old demo prompt (1.12, 1.13); wf state discuss and an Edit of a project file, and git push in setup before and after typing setup done (2.2); ask it to turn admin on, then turn it on yourself and ask it to edit todo.md (2.3); ask it to run claude -p and to write into scratch/links (2.4); add a learning, /compact, and ask for it (3.1); give it a fake key to store with wf env set and ask it to cat .env (3.5); run /impeccable on a small UI task, checking it follows the craft floor and runs no launcher (5.5)
-Open: owner: read global/CLAUDE.md (5.6 added Subagents and Measurements sections and rules on intent, reports, waiting, checks, cloud and processes), global/states.md, global/learnings.md, global/rules, global/skills and global/THIRD-PARTY.md (5.1 sign-off)
-Open: owner: review the redesigned dashboard (pnpm --dir dashboard dev, or scratch/images/4.3-*, 4.4-* and 4.6-*.png) for 4.3; that closes major 4
-Open: owner: pick the fresh project for 6.1; old verbatim steers are still in this public repo's git history (a history rewrite and force-push would remove them: approve or not?)
-Open: owner: may these be deleted: the four fixture screenshots scratch/images/1.5-*.png, and the unused shadcn components tabs and switch in dashboard/src/lib/components/ui (left uncommitted)?
-Open: owner: which 5.6 wf mechanisms to build (see scratch/temp/5.6-findings.md): park state and in-progress cap; worktree-aware root; intent and active items after compaction; edit/remove for impl, memory and deferred rows; steers for all in wf show and assumption review; check tiers; archiving done majors; enforce or drop the one-command rule
+Active: 1.12, 1.13, 2.2, 2.3, 2.4, 3.1, 3.5, 4.3, 5.5, 7.2
+Next: 7.2 (measure every project under the 4,000 budget), then 7.3 bounded reads, 7.4 slim impeccable, 7.5 remove the rule files; everything else waits on the owner
+Verify: pnpm --dir wf test; sessionContext per registered project under 4,000
+Don't: hand-edit docs/state; put the owner's words in records; install Python packages with uv or pip; stage part of a file; amend or force-push
+Open: owner: rerun wf install, then one fresh session checking each active item's proof (1.12 to 3.5, and /impeccable for 5.5)
+Open: owner: read the cut global/CLAUDE.md (5.1) and review the dashboard (4.3)
+Open: owner: pick a fresh project for 6.1; history rewrite for old steers, yes or no; may scratch/images/1.5-*.png and ui/tabs, ui/switch be deleted?

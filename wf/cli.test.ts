@@ -221,7 +221,7 @@ test('learn numbers lessons, needs the arrow, and keeps the session context unde
 	}
 	assert.match(
 		rejected,
-		/over the 9000 budget \(global learnings \d+, \w+ instructions \d+, project learnings \d+, handoff \d+\); merge or prune/
+		/over the 4000 budget \(global learnings \d+, first action \d+, \w+ instructions \d+, project learnings \d+, handoff \d+\); merge or prune/
 	);
 	const kept = readFileSync(file, 'utf8');
 	wf('learn', `one more ${'z'.repeat(150)} → still over`);
@@ -260,13 +260,13 @@ test('learn --edit rewrites in place, --remove renumbers, and both keep the rule
 	for (let i = 0; i < 400 && wf('learn', `s${i} → t`).code === 0; i++);
 	const full = readFileSync(file, 'utf8');
 	const grown = wf('learn', '--edit', '1', `${'z'.repeat(190)} → y`);
-	assert.match(grown.err, /over the 9000 budget \(.*handoff \d+\); merge or prune/);
+	assert.match(grown.err, /over the 4000 budget \(.*handoff \d+\); merge or prune/);
 	assert.equal(readFileSync(file, 'utf8'), full);
 	// The handoff shares the budget: one that would pass it is refused, unchanged.
 	const handoffFile = join(project, 'docs', 'state', 'handoff.md');
 	const handoff = readFileSync(handoffFile, 'utf8');
 	const long = wf('handoff', '--next', 'n'.repeat(300), '--verify', 'v', '--dont', 'd');
-	assert.match(long.err, /this handoff would bring .* over the 9000 budget .*; shorten it/);
+	assert.match(long.err, /this handoff would bring .* over the 4000 budget .*; shorten it/);
 	assert.equal(readFileSync(handoffFile, 'utf8'), handoff);
 	// Removing is how a prune is done, so it works even at the budget.
 	assert.equal(wf('learn', '--remove', '1').code, 0);

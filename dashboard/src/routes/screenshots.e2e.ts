@@ -133,7 +133,7 @@ test('learnings added, edited, removed and refused over budget, on a throwaway p
 	await page.waitForLoadState('networkidle');
 	await page.getByLabel('New learning').fill(filler(999));
 	await page.getByRole('button', { name: 'Add learning' }).click();
-	await expect(page.getByRole('alert')).toContainText('over the 9000 budget; merge or prune');
+	await expect(page.getByRole('alert')).toContainText('over the 4000 budget');
 	await page.getByRole('alert').scrollIntoViewIfNeeded();
 	await save(page, info, `project-${name}-learning-over-budget`, false);
 });
