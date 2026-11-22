@@ -17,3 +17,9 @@ Action: git rm global/rules/ponytail.md global/rules/karpathy.md
 Why: the owner approved cutting the setup (do whatever, after the proposal to drop these files); one CLAUDE.md line carries their essence and they cost about 1,400 tokens in every session
 Surface: two committed markdown files and the ~/.claude/rules links wf install made to them (left dangling until the owner removes them)
 Recover: git checkout b6efaea -- global/rules, then wf install
+
+## 2026-11-23 · 4.3 · low
+Action: rm -r dashboard/src/lib/components/ui/switch dashboard/src/lib/components/ui/tabs
+Why: the owner asked to delete them; unused shadcn components from the 4.3 redesign, never committed
+Surface: two untracked component folders in the dashboard; nothing imports them
+Recover: pnpm --dir dashboard dlx shadcn-svelte@latest add switch tabs
