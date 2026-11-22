@@ -224,6 +224,13 @@ Deliverable: global/CLAUDE.md complete and readable in one sitting, importing th
   - new-work and new-work-world rewritten code-led: the agent's ranked directions (lead, one alternate, the category standard) and a new surface's structures go to the owner via AskUserQuestion, with wf assume when away; the direction contract is a 'How \<surface> looks' section via wf doc; comp-led steps, seeds and the detector pass removed
   - critique runs one isolated design assessment with screenshots; snapshots and audit reports are plain .impeccable files that routing, polish and the trend line read; animate captures with Playwright; finish reviewer, documenter and motion reviewer are briefs for fresh general-purpose subagents
   - Apache-2.0: LICENSE and NOTICE.md copied unchanged, each of the 34 changed files carries a change notice, THIRD-PARTY.md lists what was taken, left out and changed; a sweep finds no launcher verb, placeholder or dead link left; install.test.ts expects the impeccable skill link
+- [x] 5.6 tune the global guidance and wf from a review of cuda-kernels: what worked, where it failed, what the owner kept repeating
+  Proof: a findings note in scratch/temp mapping each recurring problem to the guidance or wf change made for it; the changes committed; wf test passes
+  - Three read-only agents reviewed cuda-kernels (owner messages, docs/state, tool-level transcript mining); findings mapped to changes in scratch/temp/5.6-findings.md
+  - global/CLAUDE.md: work chosen by the owner's latest order after re-reading intent; steers taken literally; direction changes rewrite intent/overview first; answer-only requests; sourced, latest-only reports; idle on own jobs banned; bounded waits; new Subagents and Measurements sections; fast pre-commit checks; cloud, memory-cap and process-kill rules; one venv; wf only in the main checkout; few items in progress; impl details hold no status
+  - global/states.md: discuss reads the references' core files and summarises the intent back for confirmation; a build steer rewrites the plan documents that no longer hold
+  - wf: claudeDenial matches claude only as a command word with -p/--print before the next separator, and a bare wf call (quoted literals stripped, no shell operators) always passes; the budget refusal names each context part's size; wf handoff keeps the same budget (writeHandoffInBudget); help for learn, handoff and checks updated
+  - Global learnings 18 to 21 removed with wf learn --remove --global: each is now a guideline in global/CLAUDE.md
 
 ## [ ] 6 · Real use
 Deliverable: one real project taken from setup through its first major task with this setup, and the friction recorded as learnings.

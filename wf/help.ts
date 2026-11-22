@@ -119,7 +119,8 @@ export const HELP: Record<string, Help> = {
 		summary: 'rewrite the handoff so any session can pick up where work stopped',
 		details: [
 			'State is kept; Active is filled from the minors in progress.',
-			'--open repeats, once per question waiting for the owner. At most 15 lines in all.',
+			'--open repeats, once per question waiting for the owner. At most 15 lines in all, and within',
+			'the session-context budget it shares with the learnings and the state instructions.',
 			'Rewrite it at the end of each minor and whenever work stops, before the commit.'
 		]
 	},
@@ -147,7 +148,9 @@ export const HELP: Record<string, Help> = {
 		details: [
 			'The owner names the checks in setup. Commands run from the project root; the first failure',
 			'stops the commit. Files a check rewrites (a formatter) are staged again. Sets core.hooksPath.',
-			'Run it again with the full list to change the checks; never edit the hook by hand.'
+			'Run it again with the full list to change the checks; never edit the hook by hand.',
+			'Read the current checks in .githooks/pre-commit. Keep them fast: slow suites, hardware tests and',
+			'benchmarks run as part of the proof and before a push, not on every commit.'
 		]
 	},
 	push: {
@@ -205,6 +208,7 @@ export const HELP: Record<string, Help> = {
 			'One line, at most 200 characters, with the arrow. Numbered automatically.',
 			'Learnings are injected into every session; adding or editing one so that any affected',
 			"project's session context passes 9,000 characters is rejected: merge or prune first.",
+			'The context also holds the state instructions and the handoff; the refusal names each size.',
 			'--edit rewrites learning n under the same rules. --remove drops it and renumbers the rest.',
 			'To merge two, edit one to cover both and remove the other.',
 			"Record a lesson the moment it is learned. A summary, never the owner's words verbatim."

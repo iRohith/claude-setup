@@ -187,3 +187,8 @@ Changed: 5.5 title
 Assumption: impeccable's direction contract goes into the project's implementation.md as a 'How \<surface> looks' section via wf doc, and its finish reviewer, documenter and motion reviewer run as fresh general-purpose subagents briefed from prompt files in the skill, with nothing installed into ~/.claude/agents
 Why: without the launcher its surface-brief files and shipped agents have no home; this reuses wf's records and the Agent tool, and is easy to change
 Changed: 5.5 adaptation plan
+
+## 2026-11-22 · affects 5.6
+Steer: Review the cuda-kernels project's transcript, state and learnings, and tune the setup from what worked, what failed and what the owner kept repeating; read only what is needed
+Why: a large real project is the best evidence of where the guidance and wf fall short
+Changed: added 5.6

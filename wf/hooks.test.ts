@@ -166,13 +166,34 @@ test('linked projects are read-only and claude -p is never run', () => {
 		linked.hookSpecificOutput.permissionDecisionReason,
 		/never write into another project/
 	);
-	for (const command of ['claude -p "summarise"', 'claude --print hi', 'npx claude -p x'])
+	for (const command of [
+		'claude -p "summarise"',
+		'claude --print hi',
+		'npx claude -p x',
+		'/usr/bin/claude --model opus -p x',
+		'cd src; claude -p y',
+		'wf learn "x → y"; claude -p z',
+		'wf learn "$(claude -p z)"',
+		'wf status\nclaude -p z',
+		'wf learn "a; b" && claude -p z'
+	])
 		assert.match(
 			bash(command).hookSpecificOutput.permissionDecisionReason,
 			/never allowed/,
 			command
 		);
-	assert.equal(bash('claude --version'), undefined);
+	for (const command of [
+		'claude --version',
+		'mkdir -p .claude/worktrees',
+		'git -C .claude/worktrees/agent-a log -p',
+		'cargo test -p ck --manifest-path ~/.claude/x/Cargo.toml',
+		'claude --version; mkdir -p x',
+		'wf learn "the claude -p rule fired on paths; all false → test lookalikes"',
+		"wf handoff --dont 'claude -p; ever'",
+		`wf handoff --verify "ITEM=\\<id> runs" --open "the owner's check: ask it to run claude -p"`,
+		`wf learn "Wrote the claude -p denial as a loose regex; all 15 of its denials in cuda-kernels were false (.claude/ paths, other tools' -p) → test each deny pattern against lookalikes"`
+	])
+		assert.equal(bash(command), undefined, command);
 	assert.equal(bash('ls scratch/links/engine'), undefined);
 	const outside = hook(
 		'pre-tool-use',

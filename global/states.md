@@ -30,8 +30,10 @@ checks, before the idea is even discussed. Full write access to the project.
 The project is in discuss: planning only. Nothing in the project changes except the state, through wf
 (and the `docs/state/` files that have no wf command yet).
 1. The owner explains the scope. Read the references in `scratch/refs/` first and infer the idea and the
-   lessons, so the owner doesn't have to re-explain. Ask what matters now, most important first, and
-   suggest your own answers for the owner to correct or approve.
+   lessons, so the owner doesn't have to re-explain: their core files (formats, examples, the parts
+   that carry the idea), not only their READMEs. Summarise the intent back in three lines for the owner
+   to confirm before planning. Ask what matters now, most important first, and suggest your own answers
+   for the owner to correct or approve.
 2. Write the plan documents as the discussion settles, each through `wf doc` (text written in
    `scratch/temp/` first): overview, intent, references, implementation, spec. Their contents are listed
    in CLAUDE.md.
@@ -50,7 +52,9 @@ The project is in build: implement the todo. Full write access to the project.
    item waiting on the owner goes into the handoff as `--open`, and work moves on to the next item.
 2. For each minor, follow "Working an item" in CLAUDE.md: start, build, prove, check, record, commit,
    push. Micro commits for change boundaries along the way.
-3. A steer during build updates the plan first (todo and plan documents, `steers.md`), then the code.
+3. A steer during build updates the plan first, then the code: a change of direction rewrites
+   `intent.md`, `overview.md` and `implementation.md` where they no longer hold, then the todo, then
+   `steers.md`.
 4. When every minor of a major is done and its deliverable is verified, `wf done <major>`. Squash to
    `main` only when the owner says so.
 5. Keep going to the next item without stopping. Stop only when every remaining item is blocked on the

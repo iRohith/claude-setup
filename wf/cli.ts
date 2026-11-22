@@ -284,7 +284,7 @@ function handoff(next: string, verify: string, dont: string, open: string[]): vo
 		const active = wf.activeMinors(wf.readTodo(root)).map((n) => n.id);
 		const h = { state: old.state, active: active.join(', ') || '—', next, verify, dont, open };
 		const after = wf.formatHandoff(h);
-		wf.writeHandoff(root, h);
+		wf.writeHandoffInBudget(root, h);
 		printChanges(wf.formatHandoff(old), after);
 	});
 }

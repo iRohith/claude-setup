@@ -1039,20 +1039,59 @@ const LEARNING_MAX = 200;
  * on, the instructions for its current state, its learnings and its handoff.
  */
 export function sessionContext(root: string | undefined): string {
-	const parts = [section('Global learnings (from wf)', globalLearningsPath())];
+	return contextParts(root)
+		.map((p) => p.text)
+		.filter(Boolean)
+		.join('\n\n');
+}
+
+function contextParts(root: string | undefined): { name: string; text: string }[] {
+	const parts = [
+		{ name: 'global learnings', text: section('Global learnings (from wf)', globalLearningsPath()) }
+	];
 	if (root) {
 		const state = readHandoff(root).state;
 		if (isAdmin(root))
-			parts.push(
-				'Admin mode is on for this project (set by the owner): no wf restriction applies until the owner turns it off.'
-			);
+			parts.push({
+				name: 'admin note',
+				text: 'Admin mode is on for this project (set by the owner): no wf restriction applies until the owner turns it off.'
+			});
 		parts.push(
-			`Instructions for the ${state} state (from wf):\n${stateInstructions(state)}`,
-			section(`Project learnings for ${root} (from wf)`, projectLearningsPath(root)),
-			section('Project handoff (from wf)', statePath(root, 'handoff.md'))
+			{
+				name: `${state} instructions`,
+				text: `Instructions for the ${state} state (from wf):\n${stateInstructions(state)}`
+			},
+			{
+				name: 'project learnings',
+				text: section(`Project learnings for ${root} (from wf)`, projectLearningsPath(root))
+			},
+			{ name: 'handoff', text: section('Project handoff (from wf)', statePath(root, 'handoff.md')) }
 		);
 	}
-	return parts.filter(Boolean).join('\n\n');
+	return parts;
+}
+
+/** Why the project's session context is over budget, naming each part's size; undefined when within. */
+function overBudget(root: string): string | undefined {
+	const size = sessionContext(root).length;
+	if (size <= CONTEXT_BUDGET) return undefined;
+	const sizes = contextParts(root)
+		.filter((p) => p.text)
+		.map((p) => `${p.name} ${p.text.length}`)
+		.join(', ');
+	return `would bring ${root}'s session context to ${size} characters, over the ${CONTEXT_BUDGET} budget (${sizes})`;
+}
+
+/** Writes the handoff, refused when it would bring the session context past the budget. */
+export function writeHandoffInBudget(root: string, h: Handoff): void {
+	const path = statePath(root, 'handoff.md');
+	const before = readFileSync(path, 'utf8');
+	writeHandoff(root, h);
+	const over = overBudget(root);
+	if (over) {
+		writeAtomic(path, before);
+		throw new WfError(`this handoff ${over}; shorten it`);
+	}
 }
 
 function section(title: string, path: string): string {
@@ -1137,12 +1176,12 @@ function changeLearnings(
 		: [root!];
 	const over = roots
 		.filter((r) => existsSync(statePath(r, 'handoff.md')))
-		.map((r) => ({ r, size: sessionContext(r).length }))
-		.find((x) => x.size > CONTEXT_BUDGET);
+		.map(overBudget)
+		.find(Boolean);
 	if (over) {
 		writeAtomic(path, before);
 		throw new WfError(
-			`this learning would bring ${over.r}'s session context to ${over.size} characters, over the ${CONTEXT_BUDGET} budget; merge or prune learnings first`
+			`this learning ${over}; merge or prune learnings first (wf learn --edit, --remove), or shorten the handoff`
 		);
 	}
 	return { path, before, after };
@@ -1254,7 +1293,12 @@ export function linksDenial(root: string, file: string): string | undefined {
 
 /** Headless Claude sessions can bill API credits; they are never started. */
 export function claudeDenial(command: string): string | undefined {
-	if (!/\bclaude\b[^\n]*\s(-p|--print)\b/.test(command)) return undefined;
+	// A bare wf call never starts a session, even when its text mentions one.
+	const literals = command.replace(/'[^']*'|"(?:[^"$`\\]|\\.)*"/g, '""');
+	if (/^wf\s[^;&|`$\n]*$/.test(literals)) return undefined;
+	// claude as a command word (not a .claude path), with -p or --print before the next separator
+	if (!/(?:^|[\s;&|(`'"])(?:\S*\/)?claude(?=\s)[^\n;&|]*\s(?:-p|--print)\b/.test(command))
+		return undefined;
 	return 'Starting Claude sessions (claude -p, --print) is never allowed: they can spend API credits (a fixed rule; retrying will be denied again).';
 }
 
