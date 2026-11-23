@@ -51,6 +51,11 @@ function main(argv: string[]): void {
 	if (!command) return console.log(overview());
 	if (!(command in HELP)) throw new UsageError(`unknown command ${command}`);
 	if (values.help) return console.log(commandHelp(command));
+	const problem = command !== 'hook' && wf.settingsProblem();
+	if (problem)
+		console.error(
+			`wf: warning: the owner's settings file can't be read (${problem}); the defaults apply until the owner saves the dashboard's Settings page`
+		);
 
 	switch (command) {
 		case 'help': {

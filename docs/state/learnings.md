@@ -11,3 +11,4 @@
 9. Proposed dropping ponytail and karpathy to save context; the owner needs them for coding ethics → cut duplication and procedure, never the principles the owner chose
 10. Budget refusals spanned projects and wf let any session write any project, so nanoc rewrote cuda-kernels' learnings → warn, never refuse; a session writes only its own project
 11. Proved the dashboard service with page loads only; every form save was refused (403, origin assumed https) → prove a deployed app with a real write, not just reads
+12. Made the limits configurable in core but left the dashboard counter at a hardcoded 200 and dropped wf's warnings there → when a value becomes a setting, grep every use of the old constant, UI included

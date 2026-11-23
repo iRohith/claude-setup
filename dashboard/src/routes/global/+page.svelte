@@ -16,6 +16,7 @@
 	lessons={data.lessons}
 	context={data.context}
 	budget={data.budget}
+	limit={data.limit}
 	scope="the fullest project"
 	action="?/learning"
 	{form}

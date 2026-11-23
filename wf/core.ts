@@ -1097,19 +1097,25 @@ export function checkSettings(s: Settings): Settings {
 	return s;
 }
 
-/** The owner's settings: the file over the defaults. */
-export function readSettings(): Settings {
+/**
+ * The owner's settings, the file over the defaults, and what is wrong with the file if wf can't
+ * read it. A broken file never stops work: the defaults apply, and every command warns.
+ */
+function loadSettings(): { settings: Settings; problem?: string } {
 	const path = settingsPath();
-	if (!existsSync(path)) return structuredClone(DEFAULT_SETTINGS);
-	const file = JSON.parse(readFileSync(path, 'utf8')) as Partial<Settings>;
+	if (!existsSync(path)) return { settings: structuredClone(DEFAULT_SETTINGS) };
 	try {
-		return checkSettings({ ...structuredClone(DEFAULT_SETTINGS), ...file });
+		const file = JSON.parse(readFileSync(path, 'utf8')) as Partial<Settings>;
+		return { settings: checkSettings({ ...structuredClone(DEFAULT_SETTINGS), ...file }) };
 	} catch (e) {
-		throw new WfError(
-			`${path}: ${(e as Error).message}; the owner fixes it on the dashboard's Settings page`
-		);
+		return { settings: structuredClone(DEFAULT_SETTINGS), problem: (e as Error).message };
 	}
 }
+
+export const readSettings = (): Settings => loadSettings().settings;
+
+/** Why the settings file can't be read, for the warning; undefined when it can. */
+export const settingsProblem = (): string | undefined => loadSettings().problem;
 
 /** Only the dashboard calls this, for the owner. */
 export function writeSettings(s: Settings): void {

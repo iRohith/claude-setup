@@ -341,6 +341,19 @@ test('the owner sets a refuse limit, then a warn limit, and wf follows them', as
 	expect(r.stderr).toContain("over the owner's warn limit of 30");
 	wf('learn', '--remove', '1');
 
+	// The dashboard follows the same limits: its counter shows them, and its save warns.
+	await page.goto(`/projects${e2e}notes?view=learnings`);
+	await page.waitForLoadState('networkidle');
+	await page.getByLabel('New learning').fill(long);
+	const counter = page.locator('#new-learning-count');
+	await expect(counter).toContainText('warn above 30');
+	await expect(counter).toHaveClass(/text-progress/);
+	await page.getByRole('button', { name: 'Add learning' }).click();
+	await expect(page.getByText(/Saved, with a warning: .*warn limit of 30/)).toBeVisible();
+	wf('learn', '--remove', '1');
+	await page.goto('/settings');
+	await page.waitForLoadState('networkidle');
+
 	// A refuse limit at or below its warn limit is refused, with the saved settings kept.
 	await refuse.fill('20');
 	await save.click();

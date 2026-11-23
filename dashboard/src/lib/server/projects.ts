@@ -130,17 +130,13 @@ export interface LearningsView {
 	lessons: string[];
 	context: number;
 	budget: number | undefined;
+	/** The owner's limits on one learning, which the form's counter follows. */
+	limit: wf.Limit;
 }
 
-/** The context limit the meter shows; an unreadable settings file shows the default. */
+/** The context limit the meter shows. */
 function meterLimit(): number | undefined {
-	let limit: wf.Limit;
-	try {
-		limit = wf.readSettings().contextChars;
-	} catch (e) {
-		if (!(e instanceof wf.WfError)) throw e;
-		limit = wf.DEFAULT_SETTINGS.contextChars;
-	}
+	const limit = wf.readSettings().contextChars;
 	const target = limit.warn !== wf.OFF ? limit.warn : limit.refuse;
 	return target === wf.OFF ? undefined : target;
 }
@@ -158,7 +154,8 @@ export function viewLearnings(root: string | undefined): LearningsView {
 	return {
 		lessons: wf.readLearnings(root, !root),
 		context: Math.max(0, ...sizes),
-		budget: meterLimit()
+		budget: meterLimit(),
+		limit: wf.readSettings().learningChars
 	};
 }
 
@@ -172,18 +169,19 @@ export async function changeLearning(root: string | undefined, request: Request)
 	const n = Number(form.get('n'));
 	const text = String(form.get('text') ?? '');
 	const global = !root;
+	const item = op === 'add' ? 'learning-new' : `learning-${n}`;
 	const apply = () => {
-		if (op === 'add') wf.addLearning(root, text, global);
-		else if (op === 'edit') wf.editLearning(root, n, text, global);
-		else if (op === 'remove') wf.removeLearning(root, n, global);
-		else throw new wf.WfError(`unknown learnings change: ${op}`);
+		if (op === 'add') return wf.addLearning(root, text, global);
+		if (op === 'edit') return wf.editLearning(root, n, text, global);
+		if (op === 'remove') return wf.removeLearning(root, n, global);
+		throw new wf.WfError(`unknown learnings change: ${op}`);
 	};
 	try {
-		if (root) wf.withLock(root, apply);
-		else apply();
+		// The owner's limits apply here as in `wf learn`: refused past refuse, warned past warn.
+		const { warnings } = root ? wf.withLock(root, apply) : apply();
+		return { warnings, item };
 	} catch (e) {
-		if (e instanceof wf.WfError)
-			return fail(400, { error: e.message, item: op === 'add' ? 'learning-new' : `learning-${n}` });
+		if (e instanceof wf.WfError) return fail(400, { error: e.message, item });
 		throw e;
 	}
 }
@@ -197,20 +195,11 @@ export function viewSettings(): {
 	defaults: wf.Settings;
 	unreadable?: string;
 } {
-	try {
-		return { settings: wf.readSettings(), defaults: wf.DEFAULT_SETTINGS };
-	} catch (e) {
-		if (!(e instanceof wf.WfError)) throw e;
-		// Just the reason: the page itself says where the file is and how to fix it.
-		const reason = e.message
-			.replace(`${wf.settingsPath()}: `, '')
-			.replace(/; the owner fixes it.*$/, '');
-		return {
-			settings: structuredClone(wf.DEFAULT_SETTINGS),
-			defaults: wf.DEFAULT_SETTINGS,
-			unreadable: reason
-		};
-	}
+	return {
+		settings: wf.readSettings(),
+		defaults: wf.DEFAULT_SETTINGS,
+		unreadable: wf.settingsProblem()
+	};
 }
 
 /** Saves the owner's settings from the form; a bad value is refused with the file kept. */

@@ -3,6 +3,7 @@
 	import { enhance, type SubmitFunction } from '$app/forms';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
 	import Pencil from '@lucide/svelte/icons/pencil';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import * as Alert from '#lib/components/ui/alert/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
@@ -14,6 +15,7 @@
 		lessons,
 		context,
 		budget,
+		limit,
 		scope,
 		action,
 		form
@@ -22,14 +24,30 @@
 		/** Characters the fullest affected project's session context uses now. */
 		context: number;
 		budget: number | undefined;
+		/** The owner's limits on one learning's length; -1 is off. */
+		limit: { warn: number; refuse: number };
 		/** Who the learnings reach, for the meter line; the meter shows only when a limit is set. */
 		scope: string;
 		/** The form action, keeping the page's own query so the result lands on this view. */
 		action: string;
-		form: { error?: string; item?: string } | null | undefined;
+		form: { error?: string; warnings?: string[]; item?: string } | null | undefined;
 	} = $props();
 
-	const MAX = 200;
+	/** Past refuse the save is refused, past warn it warns: the counter says so as the owner types. */
+	const lengthState = (text: string) =>
+		limit.refuse !== -1 && text.length > limit.refuse
+			? 'text-destructive'
+			: limit.warn !== -1 && text.length > limit.warn
+				? 'text-progress'
+				: 'text-muted-foreground';
+	const limitsText = $derived(
+		[
+			limit.warn !== -1 ? `warn above ${limit.warn}` : '',
+			limit.refuse !== -1 ? `refuse above ${limit.refuse}` : ''
+		]
+			.filter(Boolean)
+			.join(' · ')
+	);
 
 	/** The learning whose edit form is open, its text, and the new learning being written. */
 	let editing = $state<number | null>(null);
@@ -60,6 +78,22 @@
 			<Alert.Description>{form.error}</Alert.Description>
 		</Alert.Root>
 	{/if}
+	{#if form?.warnings?.length && form.item === item}
+		<Alert.Root class="mt-2 text-progress">
+			<TriangleAlert />
+			<Alert.Description class="text-progress">
+				Saved, with a warning: {form.warnings.join('; ')}
+			</Alert.Description>
+		</Alert.Root>
+	{/if}
+{/snippet}
+
+{#snippet count(text: string, id: string)}
+	<p {id} class="font-mono text-xs {lengthState(text)}">
+		{text.length}{limitsText ? ` · ${limitsText}` : ''}{text && !text.includes('→')
+			? ' · needs the → arrow'
+			: ''}
+	</p>
 {/snippet}
 
 <div class="mt-6 max-w-3xl">
@@ -98,7 +132,13 @@
 						{#if editing === n}
 							<form method="POST" {action} use:enhance={closeOnSuccess} class="grid gap-2">
 								<input type="hidden" name="n" value={n} />
-								<Input name="text" bind:value={edited} aria-label="Learning {n}" />
+								<Input
+									name="text"
+									bind:value={edited}
+									aria-label="Learning {n}"
+									aria-describedby="learning-{n}-count"
+								/>
+								{@render count(edited, `learning-${n}-count`)}
 								<div class="flex flex-wrap items-center gap-2">
 									<Button type="submit" size="sm" name="op" value="edit">Save</Button>
 									<Button size="sm" variant="ghost" onclick={() => (editing = null)}>Cancel</Button>
@@ -164,12 +204,7 @@
 			/>
 			<Button type="submit" name="op" value="add">Add learning</Button>
 		</div>
-		<p
-			id="new-learning-count"
-			class="font-mono text-xs {draft.length > MAX ? 'text-destructive' : 'text-muted-foreground'}"
-		>
-			{draft.length}/{MAX}{draft && !draft.includes('→') ? ' · needs the → arrow' : ''}
-		</p>
+		{@render count(draft, 'new-learning-count')}
 		{@render problem('learning-new')}
 	</form>
 </div>

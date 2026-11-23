@@ -549,9 +549,19 @@ test("each limit has the owner's warn and refuse thresholds, and -1 turns either
 	assert.match(wf('show', '0').out, /^\[x\] 0\.1 pa…$/m);
 	set({ titleChars: -1, listedItems: -1 });
 	assert.doesNotMatch(wf('status').out, /…|also /);
+	// A file wf can't read never stops work: every command warns and the defaults apply.
 	set({ learningChars: { warn: 50, refuse: 40 } });
-	assert.match(wf('status').err, /learningChars refuse must be above its warn/);
+	const broken = wf('status');
+	assert.equal(broken.code, 0, broken.err);
+	assert.match(
+		broken.err,
+		/warning: the owner's settings file can't be read \(learningChars refuse must be above its warn.*\); the defaults apply/
+	);
 	set({ titleChars: 0 });
 	assert.match(wf('status').err, /titleChars must be a whole number of at least 1, or -1 for off/);
+	writeFileSync(settingsFile, 'not json');
+	const learned = wf('learn', 'learned with a broken settings file → defaults apply');
+	assert.equal(learned.code, 0, learned.err);
+	assert.match(learned.err, /settings file can't be read/);
 	rmSync(settingsFile);
 });
