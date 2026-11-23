@@ -207,3 +207,8 @@ Changed: 7 deliverable, 7.2 and 7.3 rewritten; 7.4 and 7.5 added
 Steer: Keep ponytail and karpathy as always-loaded rules; they carry the coding ethics
 Why: the owner relies on them for how code is written, so their context cost is worth paying
 Changed: 7.5 now keeps both files instead of removing them; major 7's deliverable counts them in the always-loaded budget
+
+## 2026-11-23 · affects 3.1
+Steer: No size limit may block work: show warnings instead of refusals, and never let one project's state restrict another
+Why: the cross-project budget refusal blocked a fresh project and pushed its agent into editing another project's learnings
+Changed: 3.1 now warns instead of refusing; the budget refusals in learn and handoff are removed

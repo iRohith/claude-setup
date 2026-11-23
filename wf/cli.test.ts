@@ -200,32 +200,36 @@ test('state switches the handoff state and prints the new instructions', () => {
 	wf('state', 'setup');
 });
 
-test('learn numbers lessons, needs the arrow, and keeps the session context under budget', () => {
+test('learn numbers lessons, needs the arrow, and never refuses for size', () => {
 	const file = join(project, 'docs', 'state', 'learnings.md');
 	const first = wf('learn', 'pushed before updating state → state first, then commit');
 	assert.equal(first.code, 0, first.err);
 	assert.match(first.out, /^\+ 1\. pushed before updating state → state first, then commit$/m);
 	assert.match(wf('learn', 'second lesson → do better').out, /^\+ 2\. second lesson → do better$/m);
 	assert.match(wf('learn', 'no arrow here').err, /what went wrong → what to do instead/);
-	assert.match(wf('learn', `${'x'.repeat(200)} → y`).err, /at most 200 characters/);
+	const long = wf('learn', `${'x'.repeat(200)} → y`);
+	assert.equal(long.code, 0, long.err);
+	assert.match(long.err, /warning: this learning is 204 characters; aim for 200 or fewer/);
+	wf('learn', '--remove', '3');
 	const global = wf('learn', 'a lesson for all → apply it', '--global');
 	assert.equal(global.code, 0, global.err);
 	assert.match(
 		readFileSync(join(home, 'global', 'learnings.md'), 'utf8'),
 		/^1\. a lesson for all → apply it$/m
 	);
-	let rejected = '';
-	for (let i = 0; i < 80 && !rejected; i++) {
+	// Past the size target, learn still writes and only warns, naming this project's sizes.
+	let lastErr = '';
+	for (let i = 0; i < 40; i++) {
 		const r = wf('learn', `filler lesson number ${i} ${'z'.repeat(150)} → keep it short`);
-		if (r.code !== 0) rejected = r.err;
+		assert.equal(r.code, 0, r.err);
+		lastErr = r.err;
 	}
 	assert.match(
-		rejected,
-		/over the 4000 budget \(global learnings \d+, first action \d+, \w+ instructions \d+, project learnings \d+, handoff \d+\); merge or prune/
+		lastErr,
+		/warning: this project's session context is \d+ characters, over the 4000 target \(global learnings \d+, project learnings \d+, handoff \d+\)/
 	);
-	const kept = readFileSync(file, 'utf8');
-	wf('learn', `one more ${'z'.repeat(150)} → still over`);
-	assert.equal(readFileSync(file, 'utf8'), kept);
+	assert.equal(wf('learn', `a global one ${'z'.repeat(150)} → still fine`, '--global').code, 0);
+	assert.match(readFileSync(file, 'utf8'), /^42\. filler lesson number 39/m);
 });
 
 test('learn --edit rewrites in place, --remove renumbers, and both keep the rules', () => {
@@ -256,20 +260,11 @@ test('learn --edit rewrites in place, --remove renumbers, and both keep the rule
 	assert.match(wf('learn', '--edit', '1', 'no arrow').err, /what went wrong → what to do instead/);
 	assert.equal(wf('learn', '--edit', '1', '--remove', '2').code, 2);
 
-	// Fill to the budget with short lessons; then growing one by an edit is refused, unchanged.
-	for (let i = 0; i < 400 && wf('learn', `s${i} → t`).code === 0; i++);
-	const full = readFileSync(file, 'utf8');
-	const grown = wf('learn', '--edit', '1', `${'z'.repeat(190)} → y`);
-	assert.match(grown.err, /over the 4000 budget \(.*handoff \d+\); merge or prune/);
-	assert.equal(readFileSync(file, 'utf8'), full);
-	// The handoff shares the budget: one that would pass it is refused, unchanged.
-	const handoffFile = join(project, 'docs', 'state', 'handoff.md');
-	const handoff = readFileSync(handoffFile, 'utf8');
-	const long = wf('handoff', '--next', 'n'.repeat(300), '--verify', 'v', '--dont', 'd');
-	assert.match(long.err, /this handoff would bring .* over the 4000 budget .*; shorten it/);
-	assert.equal(readFileSync(handoffFile, 'utf8'), handoff);
-	// Removing is how a prune is done, so it works even at the budget.
-	assert.equal(wf('learn', '--remove', '1').code, 0);
+	// Growing one by an edit, and a long handoff, are never refused for size.
+	assert.equal(wf('learn', '--edit', '1', `${'z'.repeat(190)} → y`).code, 0);
+	const long = wf('handoff', '--next', 'n'.repeat(3000), '--verify', 'v', '--dont', 'd');
+	assert.equal(long.code, 0, long.err);
+	assert.match(long.err, /warning: this project's session context/);
 });
 
 test('steers and assumptions are recorded as summaries and listed by wf show', () => {

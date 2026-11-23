@@ -218,6 +218,9 @@ function main(argv: string[]): void {
 							? wf.editLearning(root, number(values.edit), arg(0, 'learning'), global)
 							: wf.addLearning(root, arg(0, 'learning'), global);
 				printChanges(before, after);
+				const long = values.remove === undefined && wf.learningWarning(arg(0, 'learning'));
+				if (long) console.error(`wf: warning: ${long}`);
+				warnContext(root);
 			};
 			return root ? wf.withLock(root, write) : write();
 		}
@@ -284,9 +287,16 @@ function handoff(next: string, verify: string, dont: string, open: string[]): vo
 		const active = wf.activeMinors(wf.readTodo(root)).map((n) => n.id);
 		const h = { state: old.state, active: active.join(', ') || '—', next, verify, dont, open };
 		const after = wf.formatHandoff(h);
-		wf.writeHandoffInBudget(root, h);
+		wf.writeHandoff(root, h);
 		printChanges(wf.formatHandoff(old), after);
+		warnContext(root);
 	});
+}
+
+/** Warns, never refuses, when this project's own session context is past the size to aim for. */
+function warnContext(root: string | undefined): void {
+	const warning = root && wf.contextWarning(root);
+	if (warning) console.error(`wf: warning: ${warning}`);
 }
 
 /** How many active items status titles, and how many steers show prints. */

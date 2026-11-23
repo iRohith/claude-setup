@@ -1030,8 +1030,18 @@ export function getState(root: string, name: string, section?: string): string {
 
 // ---------- session context and learnings ----------
 
-/** Re-injected after every compaction, so it stays small enough for a 100k-token model. */
+/** A size to aim for: passing it warns and shows in the dashboard; nothing is refused. */
 export const CONTEXT_BUDGET = 4000;
+
+/** A warning naming the sizes when this project's session context is past the target; else undefined. */
+export function contextWarning(root: string): string | undefined {
+	const size = sessionContext(root).length;
+	if (size <= CONTEXT_BUDGET) return undefined;
+	const global = section('', globalLearningsPath()).length;
+	const project = section('', projectLearningsPath(root)).length;
+	const handoff = section('', statePath(root, 'handoff.md')).length;
+	return `this project's session context is ${size} characters, over the ${CONTEXT_BUDGET} target (global learnings ${global}, project learnings ${project}, handoff ${handoff}); merge or prune learnings (wf learn --edit, --remove) or shorten the handoff when you can`;
+}
 
 const FIRST_ACTION =
 	'Before anything else, now and after every compaction: run `wf status` and `wf get intent`, then restate in one line the intent and the item you are on.';
@@ -1042,60 +1052,21 @@ const LEARNING_MAX = 200;
  * on, the instructions for its current state, its learnings and its handoff.
  */
 export function sessionContext(root: string | undefined): string {
-	return contextParts(root)
-		.map((p) => p.text)
-		.filter(Boolean)
-		.join('\n\n');
-}
-
-function contextParts(root: string | undefined): { name: string; text: string }[] {
-	const parts = [
-		{ name: 'global learnings', text: section('Global learnings (from wf)', globalLearningsPath()) }
-	];
+	const parts = [section('Global learnings (from wf)', globalLearningsPath())];
 	if (root) {
 		const state = readHandoff(root).state;
 		if (isAdmin(root))
-			parts.push({
-				name: 'admin note',
-				text: 'Admin mode is on for this project (set by the owner): no wf restriction applies until the owner turns it off.'
-			});
+			parts.push(
+				'Admin mode is on for this project (set by the owner): no wf restriction applies until the owner turns it off.'
+			);
 		parts.push(
-			{ name: 'first action', text: FIRST_ACTION },
-			{
-				name: `${state} instructions`,
-				text: `Instructions for the ${state} state (from wf):\n${stateInstructions(state)}`
-			},
-			{
-				name: 'project learnings',
-				text: section(`Project learnings for ${root} (from wf)`, projectLearningsPath(root))
-			},
-			{ name: 'handoff', text: section('Project handoff (from wf)', statePath(root, 'handoff.md')) }
+			FIRST_ACTION,
+			`Instructions for the ${state} state (from wf):\n${stateInstructions(state)}`,
+			section(`Project learnings for ${root} (from wf)`, projectLearningsPath(root)),
+			section('Project handoff (from wf)', statePath(root, 'handoff.md'))
 		);
 	}
-	return parts;
-}
-
-/** Why the project's session context is over budget, naming each part's size; undefined when within. */
-function overBudget(root: string): string | undefined {
-	const size = sessionContext(root).length;
-	if (size <= CONTEXT_BUDGET) return undefined;
-	const sizes = contextParts(root)
-		.filter((p) => p.text)
-		.map((p) => `${p.name} ${p.text.length}`)
-		.join(', ');
-	return `would bring ${root}'s session context to ${size} characters, over the ${CONTEXT_BUDGET} budget (${sizes})`;
-}
-
-/** Writes the handoff, refused when it would bring the session context past the budget. */
-export function writeHandoffInBudget(root: string, h: Handoff): void {
-	const path = statePath(root, 'handoff.md');
-	const before = readFileSync(path, 'utf8');
-	writeHandoff(root, h);
-	const over = overBudget(root);
-	if (over) {
-		writeAtomic(path, before);
-		throw new WfError(`this handoff ${over}; shorten it`);
-	}
+	return parts.filter(Boolean).join('\n\n');
 }
 
 function section(title: string, path: string): string {
@@ -1141,11 +1112,15 @@ function checkLearning(text: string): string {
 	const line = required(text, 'learning');
 	if (!line.includes('→'))
 		throw new WfError('a learning reads "what went wrong → what to do instead"');
-	if (line.length > LEARNING_MAX)
-		throw new WfError(
-			`a learning is at most ${LEARNING_MAX} characters; this one is ${line.length}`
-		);
 	return line;
+}
+
+/** A warning when a learning is longer than one short line should be; else undefined. */
+export function learningWarning(text: string): string | undefined {
+	const length = text.trim().length;
+	return length > LEARNING_MAX
+		? `this learning is ${length} characters; aim for ${LEARNING_MAX} or fewer`
+		: undefined;
 }
 
 /** The index of learning n, or an error naming how many there are. */
@@ -1157,15 +1132,11 @@ function learningIndex(lessons: string[], n: number): number {
 	return n - 1;
 }
 
-/**
- * Applies one change to a learnings file. With `budget`, the change is rolled back, and refused, when
- * any affected project's session context would pass the budget; a global file affects every project.
- */
+/** Applies one change to a learnings file. */
 function changeLearnings(
 	root: string | undefined,
 	global: boolean,
-	change: (lessons: string[]) => void,
-	budget: boolean
+	change: (lessons: string[]) => void
 ): { path: string; before: string; after: string } {
 	const path = learningsPath(root, global);
 	const before = existsSync(path) ? readFileSync(path, 'utf8') : '# Learnings\n';
@@ -1174,48 +1145,24 @@ function changeLearnings(
 	const after = formatLearnings(lessons);
 	mkdirSync(dirname(path), { recursive: true });
 	writeAtomic(path, after);
-	if (!budget) return { path, before, after };
-	const roots = global
-		? [...new Set([...Object.keys(readRegistry()), ...(root ? [root] : [])])]
-		: [root!];
-	const over = roots
-		.filter((r) => existsSync(statePath(r, 'handoff.md')))
-		.map(overBudget)
-		.find(Boolean);
-	if (over) {
-		writeAtomic(path, before);
-		throw new WfError(
-			`this learning ${over}; merge or prune learnings first (wf learn --edit, --remove), or shorten the handoff`
-		);
-	}
 	return { path, before, after };
 }
 
-/** Appends a learning, "what went wrong → what to do instead", within the budget. */
+/** Appends a learning, "what went wrong → what to do instead". */
 export function addLearning(root: string | undefined, text: string, global: boolean) {
 	const line = checkLearning(text);
-	return changeLearnings(root, global, (lessons) => lessons.push(line), true);
+	return changeLearnings(root, global, (lessons) => lessons.push(line));
 }
 
-/** Rewrites learning n in place, under the same rules and budget as adding one. */
+/** Rewrites learning n in place, under the same rules as adding one. */
 export function editLearning(root: string | undefined, n: number, text: string, global: boolean) {
 	const line = checkLearning(text);
-	return changeLearnings(
-		root,
-		global,
-		(lessons) => (lessons[learningIndex(lessons, n)] = line),
-		true
-	);
+	return changeLearnings(root, global, (lessons) => (lessons[learningIndex(lessons, n)] = line));
 }
 
 /** Removes learning n; the rest are renumbered. This is how a merge or a prune is done. */
 export function removeLearning(root: string | undefined, n: number, global: boolean) {
-	return changeLearnings(
-		root,
-		global,
-		(lessons) => lessons.splice(learningIndex(lessons, n), 1),
-		false
-	);
+	return changeLearnings(root, global, (lessons) => lessons.splice(learningIndex(lessons, n), 1));
 }
 
 const registryPath = () => join(wfHome(), 'local', 'projects.json');

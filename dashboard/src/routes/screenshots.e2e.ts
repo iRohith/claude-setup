@@ -78,9 +78,7 @@ test('real dashboard pages', async ({ page }, info) => {
 	await save(page, info, 'global');
 });
 
-test('learnings added, edited, removed and refused over budget, on a throwaway project', async ({
-	page
-}, info) => {
+test('learnings added, edited and removed, on a throwaway project', async ({ page }, info) => {
 	const root = Object.keys(wf.readRegistry()).find((r) => `${r}/`.startsWith(throwaway));
 	if (!root) throw new Error(`register a throwaway project under ${throwaway} with wf init first`);
 	const name = root.split('/').at(-1);
@@ -92,8 +90,6 @@ test('learnings added, edited, removed and refused over budget, on a throwaway p
 			wf.removeLearning(root, wf.readLearnings(root, false).length, false);
 		expect(readFileSync(file, 'utf8')).toBe(original);
 	};
-	// Filling to the budget takes a while on the phone emulation.
-	test.setTimeout(120_000);
 	await page.goto(`/projects${root}?view=learnings`);
 	await page.waitForLoadState('networkidle');
 	const list = page.getByRole('main').getByRole('list');
@@ -117,25 +113,6 @@ test('learnings added, edited, removed and refused over budget, on a throwaway p
 	await page.getByRole('button', { name: 'Remove' }).click();
 	await expect(page.getByText('screenshot run edited this')).toHaveCount(0);
 	await save(page, info, `project-${name}-learning-removed`);
-
-	// Fill to the budget through the core; one more from the dashboard is refused.
-	// Each filler is under the 200-character cap, so only the budget can stop the loop.
-	const filler = (i: number) => `budget filler ${i} ${'z'.repeat(150)} → removed right after`;
-	for (let i = 0; ; i++) {
-		try {
-			wf.addLearning(root, filler(i), false);
-		} catch (e) {
-			if (e instanceof Error && e.message.includes('budget')) break;
-			throw e;
-		}
-	}
-	await page.reload();
-	await page.waitForLoadState('networkidle');
-	await page.getByLabel('New learning').fill(filler(999));
-	await page.getByRole('button', { name: 'Add learning' }).click();
-	await expect(page.getByRole('alert')).toContainText('over the 4000 budget');
-	await page.getByRole('alert').scrollIntoViewIfNeeded();
-	await save(page, info, `project-${name}-learning-over-budget`, false);
 });
 
 test('a section edited on a throwaway project, and a malformed edit refused on this repo', async ({

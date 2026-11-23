@@ -194,9 +194,6 @@ test('the owner adds, edits and removes project learnings, with rule errors inli
 	await expect(page.getByLabel('New learning')).toHaveValue('');
 
 	await page.getByRole('button', { name: 'Edit learning 1' }).click();
-	await page.getByLabel('Learning 1').fill(`${'x'.repeat(200)} → y`);
-	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByRole('alert')).toContainText('at most 200 characters');
 	await page.getByLabel('Learning 1').fill(`edited on ${info.project.name} → keep it`);
 	await page.getByRole('button', { name: 'Save' }).click();
 	await expect(list).toContainText(`edited on ${info.project.name}`);

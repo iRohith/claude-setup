@@ -134,10 +134,11 @@ Deliverable: setup/discuss/build behave as spec section 2 in a real session, and
 ## [~] 3 · Records
 Deliverable: every record type from spec section 3 written and queried through `wf`.
 
-- [~] 3.1 learnings (project and global) with a size budget that keeps the whole SessionStart context under Claude Code's 10,000-character cap; injected at SessionStart
+- [~] 3.1 learnings (project and global) injected at SessionStart; past a size target wf warns with each part's size, never refuses, and only about the project it runs in
   Proof: a learning added in one session appears in the next session's context, including after `/compact`
   - `wf learn "<wrong> → <instead>" [--global]`: core `addLearning` numbers the line, needs the arrow, at most 200 characters, and rolls back if any affected project's session context would pass 9,000 characters (a global learning affects every registered project)
   - session-context assembly moved from hooks.ts into core (`sessionContext`, `tryFindRoot`) so the budget check and the hook share it; project and global learnings joined the deny map, naming `wf learn` and `wf learn --global`
+  - Budget refusals removed from learn (add, edit) and handoff, including the check that ran a global learning against every registered project; contextWarning prints a stderr warning with global learnings, project learnings and handoff sizes when the current project passes 4,000 characters; the dashboard meter keeps the target as a gauge
 - [x] 3.2 steers and assumptions with `--why` and `--log`
   Proof: `wf show <id>` lists the steer that changed it
   - core `parseSteers`, `addSteer` (ids must exist or be all; steers need --changed; summaries escaped), `steersFor` (an item or its major); `wf steer ... --log true|false` (false records nothing), `wf assume`; `wf show` lists an item's steers; steers.md joined the deny map
