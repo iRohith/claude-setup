@@ -50,14 +50,16 @@ export const HELP: Record<string, Help> = {
 	add: {
 		usage: [
 			'wf add major "<title>" --deliverable "<text>"',
-			'wf add minor <major> "<title>" --proof "<text>"'
+			'wf add minor <major> "<title>" --proof "<text>"',
+			'wf add micro <minor> "<title>"'
 		],
-		summary: 'add one major or one minor',
+		summary: 'add one major, minor or micro',
 		details: [
-			'Ids are assigned: majors x (max + 1), minors x.x starting at .1. Ids are never reused.',
+			'Ids are assigned: majors x (max + 1), minors x.x and micros x.x.x starting at .1. Never reused.',
 			'todo.md is always in id order, so where an item sits follows from its id.',
 			'A major needs a deliverable the owner can inspect; a minor needs a tangible, verifiable proof.',
-			'Every field is one line. Minors cannot be added to a done major.',
+			'A micro is one change inside a minor, however small: add and start it before its first edit.',
+			'Every field is one line. Nothing is added under a done item.',
 			'Prints the changed lines of todo.md.'
 		]
 	},
@@ -92,21 +94,22 @@ export const HELP: Record<string, Help> = {
 		]
 	},
 	start: {
-		usage: ['wf start <minor>'],
-		summary: 'mark a minor in progress before working on it',
+		usage: ['wf start <minor|micro>'],
+		summary: 'mark a minor or micro in progress before working on it',
 		details: [
-			'Choose the item first, start it, then work. Never claim work after the fact.',
-			'Finish a major before moving on, but never wait idle: when an item waits on the owner,',
-			'note it in the handoff and start the next one, in any major.',
-			'Starting a minor marks its major in progress.'
+			'Choose the item first, start it, then work: no edit happens outside an item in progress.',
+			'Never claim work after the fact. Finish a major before moving on, but never wait idle: when',
+			'an item waits on the owner, note it in the handoff and start the next one, in any major.',
+			'Starting a micro starts its minor; starting a minor starts its major.'
 		]
 	},
 	done: {
 		usage: ['wf done <id>'],
-		summary: 'mark a minor or a major done',
+		summary: 'mark a micro, a minor or a major done',
 		details: [
 			'Order: verify the proof, run the pre-commit checks, then done (with impl and handoff), then commit, then push.',
-			'A minor must be in progress. A major needs at least one minor and all of them done.'
+			'A micro or minor must be in progress; a minor needs every micro done.',
+			'A major needs at least one minor and all of them done.'
 		]
 	},
 	impl: {

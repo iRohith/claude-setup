@@ -222,3 +222,8 @@ Changed: 2.4 now covers wf writes and Edit/Write into any other project
 Steer: Each limit gets two thresholds, a warn limit and a refuse limit, and -1 turns either off
 Why: simpler to reason about than one value with a mode, and both can apply at once
 Changed: 4.8 settings reworked to warn and refuse thresholds
+
+## 2026-11-23 · affects 1.14
+Steer: Every change gets a checkable todo item before its first edit, so micros become real todo items with checkboxes
+Why: no edit may happen outside an item in progress, and small changes need their own item
+Changed: added 1.14: micros as checkable items; CLAUDE.md's todo and commit rules changed

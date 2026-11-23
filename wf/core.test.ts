@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
 	WfError,
 	addMajor,
+	addMicro,
 	applyBatch,
 	editItem,
 	addMinor,
@@ -113,12 +114,50 @@ test('done needs an in-progress minor; a major needs all minors done', () => {
 	assert.throws(() => addMinor(todo, '0', 'late', 'p'), /is done/);
 });
 
+test('micros are checkable items under a minor: added, started, done, round-tripped', () => {
+	const todo = parseTodo(sample);
+	const first = addMicro(todo, '1.1', 'parse the header');
+	const second = addMicro(todo, '1.1', 'parse the rows');
+	assert.deepEqual([first.id, second.id], ['1.1.1', '1.1.2']);
+	assert.throws(() => addMicro(todo, '1', 'x'), /under a minor/);
+	assert.throws(() => done(todo, '1.1.1'), /not in progress/);
+
+	// Starting a micro starts its minor and major.
+	start(todo, '1.1.1');
+	assert.equal(todo.majors[1].minors[0].mark, '~');
+	assert.equal(todo.majors[1].mark, '~');
+	done(todo, '1.1.1');
+	assert.throws(() => done(todo, '1.1'), /unfinished micros: 1\.1\.2/);
+	start(todo, '1.1.2');
+	done(todo, '1.1.2');
+	done(todo, '1.1');
+
+	// The file keeps micros under their minor, before its details, and reads back the same.
+	const text = formatTodo(todo);
+	assert.match(
+		text,
+		/^- \[x\] 1\.1 .+\n {2}Proof: .+\n {2}- \[x\] 1\.1\.1 parse the header\n {2}- \[x\] 1\.1\.2 parse the rows$/m
+	);
+	assert.equal(formatTodo(parseTodo(text)), text);
+	assert.throws(() => addMicro(todo, '1.1', 'late'), /is done/);
+
+	reopen(todo, '1.1.2');
+	assert.equal(todo.majors[1].minors[0].mark, '~');
+	editItem(todo, '1.1.2', { title: 'parse every row' });
+	assert.match(formatTodo(todo), /- \[ \] 1\.1\.2 parse every row/);
+	assert.throws(() => editItem(todo, '1.1.2', { proof: 'p' }), /micros have only a title/);
+	assert.throws(
+		() => parseTodo(text.replace('1.1.1', '2.1.1')),
+		/micro 2\.1\.1 is not under minor 1\.1/
+	);
+});
+
 test('start sets the major in progress', () => {
 	const todo = parseTodo(sample);
 	start(todo, '1.1');
 	assert.equal(todo.majors[1].mark, '~');
 	assert.throws(() => start(todo, '1.1'), /already in progress/);
-	assert.throws(() => start(todo, '1'), /takes a minor id/);
+	assert.throws(() => start(todo, '1'), /takes a minor \(x\.x\) or a micro/);
 });
 
 test('ids are max+1 and minors start at .1', () => {

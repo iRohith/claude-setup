@@ -78,6 +78,17 @@ test('real dashboard pages', async ({ page }, info) => {
 	await save(page, info, 'global');
 });
 
+test("real micros, on this repo's own todo", async ({ page }, info) => {
+	const repo = fileURLToPath(new URL('../../../', import.meta.url)).replace(/\/$/, '');
+	expect((await page.goto(`/projects${repo}`))?.ok()).toBe(true);
+	await page.waitForLoadState('networkidle');
+	const micros = page.getByRole('list', { name: 'Micros of 1.14' });
+	await expect(micros).toBeVisible();
+	const row = page.getByRole('listitem').filter({ has: micros }).first();
+	await row.scrollIntoViewIfNeeded();
+	await row.screenshot({ path: `${images}${process.env.ITEM}-micros-${info.project.name}.png` });
+});
+
 test('real settings page, as saved and with an unsaved change', async ({ page }, info) => {
 	expect((await page.goto('/settings'))?.ok()).toBe(true);
 	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();

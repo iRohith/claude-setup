@@ -337,6 +337,48 @@
 										<p class="mt-0.5 text-sm text-muted-foreground">
 											Proof: <Inline text={minor.proof} />
 										</p>
+										{#if minor.micros.length}
+											<ul class="mt-2 grid gap-1.5" aria-label="Micros of {minor.id}">
+												{#each minor.micros as micro (micro.id)}
+													<li class="text-sm">
+														<div class="flex items-start gap-2">
+															<form
+																method="POST"
+																action={micro.mark === 'x' ? '?/reopen' : '?/check'}
+																use:enhance
+																bind:this={doneForms[micro.id]}
+																class="pt-0.5"
+															>
+																<input type="hidden" name="id" value={micro.id} />
+																<Checkbox
+																	aria-label="Done {micro.id}"
+																	bind:checked={
+																		() => micro.mark === 'x',
+																		() => doneForms[micro.id]?.requestSubmit()
+																	}
+																	class="data-checked:border-done data-checked:bg-done dark:data-checked:bg-done"
+																/>
+															</form>
+															<span
+																class="w-12 shrink-0 font-mono text-xs leading-5 text-muted-foreground"
+																>{micro.id}</span
+															>
+															<span
+																class="min-w-0 flex-1 leading-5 {micro.mark === 'x'
+																	? 'text-muted-foreground'
+																	: ''}"
+															>
+																<Inline text={micro.title} />
+																{#if micro.mark === '~'}<span class="ml-1.5 inline-flex align-[1px]"
+																		><MarkBadge mark={micro.mark} /></span
+																	>{/if}
+															</span>
+														</div>
+														{@render problem(micro.id)}
+													</li>
+												{/each}
+											</ul>
+										{/if}
 										{#if minor.impl.length}
 											<Collapsible.Root open={minor.mark === '~'}>
 												<Collapsible.Trigger

@@ -10,8 +10,10 @@ These rules hold in every project; the owner's word in a session wins over them.
 - Run wf only in the main checkout, never inside a worktree.
 
 ## Working
-- Todo: majors with a deliverable, minors with a tangible proof. The first major is a crude end-to-end
-  version of what was asked. New work becomes an item now; no TODOs or "later".
+- Todo: majors with a deliverable, minors with a tangible proof, micros (`wf add micro`) for each change
+  inside a minor, however small. The first major is a crude end-to-end version of what was asked. New
+  work becomes an item now; no TODOs or "later".
+- No file is edited before its item (micro or minor) is in progress with `wf start`.
 - Per item: `wf start` first, build with tests of real behaviour, verify the proof as the owner would
   (real run, screenshots, benchmark), checks pass, `wf done`, `wf handoff`, commit, push. Never fake or
   weaken a test; never mark done before it is verified.
@@ -35,7 +37,8 @@ These rules hold in every project; the owner's word in a session wins over them.
   `global/CLAUDE.md`; elsewhere record it with `wf learn --global` and tell the owner.
 
 ## Commits
-- Subject `<id> <keywords>`, one item per commit, no attribution. Micro commits `x.x.x` inside a minor.
+- Subject `<id> <keywords>`, one item per commit, no attribution. Commit and push whole minors and
+  majors only; micros are checked off, never committed one by one.
 - `work` gets everything and is pushed after each minor; `main` only gets squashed commits when the
   owner says so. Never amend, force-push, rewrite history or skip hooks.
 - Pre-commit checks (set with `wf checks set`) stay fast; slow, hardware and benchmark runs belong to

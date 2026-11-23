@@ -296,6 +296,21 @@ test('a steer is edited in place; one missing its Why is refused', async ({ page
 	await expect(steer).toContainText('the owner reworded it');
 });
 
+test('micros show under their minor with checkboxes that check and reopen them', async ({
+	page
+}) => {
+	await openNotes(page);
+	const micros = page.getByRole('list', { name: 'Micros of 0.1' });
+	await expect(micros).toContainText('0.1.1');
+	await expect(micros).toContainText('save notes as JSON');
+	const box = micros.getByRole('checkbox', { name: 'Done 0.1.1' });
+	await expect(box).not.toBeChecked();
+	await box.click();
+	await expect(box).toBeChecked();
+	await box.click();
+	await expect(box).not.toBeChecked();
+});
+
 test('an unregistered path is a 404', async ({ page }) => {
 	const response = await page.goto('/projects/etc');
 	expect(response?.status()).toBe(404);

@@ -19,11 +19,19 @@ export class WfError extends Error {}
 export type Mark = ' ' | '~' | 'x';
 export type State = 'setup' | 'discuss' | 'build';
 
+/** One change inside a minor, checked off like any item; every edit happens inside one in progress. */
+export interface Micro {
+	id: string;
+	mark: Mark;
+	title: string;
+}
+
 export interface Minor {
 	id: string;
 	mark: Mark;
 	title: string;
 	proof: string;
+	micros: Micro[];
 	impl: string[];
 }
 
@@ -134,9 +142,15 @@ export function parseTodo(text: string, file = 'todo.md'): Todo {
 				mark: m[1] as Mark,
 				title: unescapeMd(m[3]),
 				proof: unescapeMd(pr![1]),
+				micros: [],
 				impl: []
 			};
 			major!.minors.push(minor);
+		} else if ((m = line.match(/^ {2}- \[([ ~x])\] (\d+\.\d+\.\d+) (.+)$/))) {
+			if (!minor) fail(i, 'micro outside a minor');
+			if (!m[2].startsWith(`${minor!.id}.`))
+				fail(i, `micro ${m[2]} is not under minor ${minor!.id}`);
+			minor!.micros.push({ id: m[2], mark: m[1] as Mark, title: unescapeMd(m[3]) });
 		} else if ((m = line.match(/^ {2}- (.+)$/))) {
 			if (!minor) fail(i, 'implementation detail outside a minor');
 			minor!.impl.push(unescapeMd(m[1]));
@@ -153,7 +167,10 @@ export function parseTodo(text: string, file = 'todo.md'): Todo {
 function sortById(todo: Todo): void {
 	const n = (id: string) => Number(id.split('.').at(-1));
 	todo.majors.sort((a, b) => n(a.id) - n(b.id));
-	for (const major of todo.majors) major.minors.sort((a, b) => n(a.id) - n(b.id));
+	for (const major of todo.majors) {
+		major.minors.sort((a, b) => n(a.id) - n(b.id));
+		for (const minor of major.minors) minor.micros.sort((a, b) => n(a.id) - n(b.id));
+	}
 }
 
 export function formatTodo(todo: Todo): string {
@@ -169,6 +186,8 @@ export function formatTodo(todo: Todo): string {
 				`- [${minor.mark}] ${minor.id} ${escapeMd(minor.title)}`,
 				`  Proof: ${escapeMd(minor.proof)}`
 			);
+			for (const micro of minor.micros)
+				out.push(`  - [${micro.mark}] ${micro.id} ${escapeMd(micro.title)}`);
 			for (const detail of minor.impl) out.push(`  - ${escapeMd(detail)}`);
 		}
 		if (major.minors.length) out.push('');
@@ -179,7 +198,8 @@ export function formatTodo(todo: Todo): string {
 function checkIds(todo: Todo): void {
 	const seen = new Set<string>();
 	for (const major of todo.majors) {
-		for (const id of [major.id, ...major.minors.map((n) => n.id)]) {
+		const ids = major.minors.flatMap((n) => [n.id, ...n.micros.map((k) => k.id)]);
+		for (const id of [major.id, ...ids]) {
 			if (seen.has(id)) throw new WfError(`duplicate id ${id}`);
 			seen.add(id);
 		}
@@ -202,6 +222,21 @@ export function findMinor(todo: Todo, id: string): Minor {
 }
 
 const isMinorId = (id: string) => /^\d+\.\d+$/.test(id);
+const isMicroId = (id: string) => /^\d+\.\d+\.\d+$/.test(id);
+const minorOf = (microId: string) => microId.split('.').slice(0, 2).join('.');
+
+export function findMicro(todo: Todo, id: string): Micro {
+	const micro = findMinor(todo, minorOf(id)).micros.find((n) => n.id === id);
+	if (!micro) throw new WfError(`no micro ${id}`);
+	return micro;
+}
+
+/** Any item by id, for the records that name one (steers, risks, deferred rows). */
+export function findItem(todo: Todo, id: string): Major | Minor | Micro {
+	if (isMicroId(id)) return findMicro(todo, id);
+	if (isMinorId(id)) return findMinor(todo, id);
+	return findMajor(todo, id);
+}
 const nextNumber = (ids: string[]) =>
 	Math.max(-1, ...ids.map((id) => Number(id.split('.').at(-1)))) + 1;
 
@@ -225,27 +260,56 @@ export function addMinor(todo: Todo, majorId: string, title: string, proof: stri
 		mark: ' ',
 		title: required(title, 'title'),
 		proof: required(proof, 'proof'),
+		micros: [],
 		impl: []
 	};
 	major.minors.push(minor);
 	return minor;
 }
 
-export function start(todo: Todo, id: string): Minor {
-	if (!isMinorId(id)) throw new WfError(`start takes a minor id (x.x), got ${id}`);
-	const minor = findMinor(todo, id);
-	if (minor.mark !== ' ')
-		throw new WfError(`${id} is already ${minor.mark === '~' ? 'in progress' : 'done'}`);
-	minor.mark = '~';
+/** A micro: one change inside a minor, as small as a single edit. */
+export function addMicro(todo: Todo, minorId: string, title: string): Micro {
+	if (!isMinorId(minorId)) throw new WfError(`a micro goes under a minor (x.x), got ${minorId}`);
+	const minor = findMinor(todo, minorId);
+	if (minor.mark === 'x') throw new WfError(`minor ${minorId} is done; add a new minor instead`);
+	const micro: Micro = {
+		id: `${minor.id}.${Math.max(1, nextNumber(minor.micros.map((n) => n.id)))}`,
+		mark: ' ',
+		title: required(title, 'title')
+	};
+	minor.micros.push(micro);
+	return micro;
+}
+
+/** Starts a minor, or a micro together with its minor and major. */
+export function start(todo: Todo, id: string): void {
+	if (!isMinorId(id) && !isMicroId(id))
+		throw new WfError(`start takes a minor (x.x) or a micro (x.x.x), got ${id}`);
+	const item = isMicroId(id) ? findMicro(todo, id) : findMinor(todo, id);
+	if (item.mark !== ' ')
+		throw new WfError(`${id} is already ${item.mark === '~' ? 'in progress' : 'done'}`);
+	item.mark = '~';
+	if (isMicroId(id)) {
+		const minor = findMinor(todo, minorOf(id));
+		if (minor.mark === 'x') throw new WfError(`minor ${minor.id} is done; add a new minor instead`);
+		minor.mark = '~';
+	}
 	const major = findMajor(todo, id.split('.')[0]);
 	if (major.mark === ' ') major.mark = '~';
-	return minor;
 }
 
 export function done(todo: Todo, id: string): void {
+	if (isMicroId(id)) {
+		const micro = findMicro(todo, id);
+		if (micro.mark !== '~') throw new WfError(`${id} is not in progress; start it first`);
+		micro.mark = 'x';
+		return;
+	}
 	if (isMinorId(id)) {
 		const minor = findMinor(todo, id);
 		if (minor.mark !== '~') throw new WfError(`${id} is not in progress; start it first`);
+		const open = minor.micros.filter((n) => n.mark !== 'x').map((n) => n.id);
+		if (open.length) throw new WfError(`minor ${id} has unfinished micros: ${open.join(', ')}`);
 		minor.mark = 'x';
 		return;
 	}
@@ -261,6 +325,14 @@ export function done(todo: Todo, id: string): void {
  * it has started minors and to open otherwise.
  */
 export function reopen(todo: Todo, id: string): void {
+	if (isMicroId(id)) {
+		const micro = findMicro(todo, id);
+		if (micro.mark === ' ') throw new WfError(`${id} is already open`);
+		micro.mark = ' ';
+		const minor = findMinor(todo, minorOf(id));
+		if (minor.mark === 'x') minor.mark = '~';
+		return;
+	}
 	if (isMinorId(id)) {
 		const minor = findMinor(todo, id);
 		if (minor.mark === ' ') throw new WfError(`${id} is already open`);
@@ -296,6 +368,12 @@ export function editItem(todo: Todo, id: string, changes: ItemChanges): void {
 		changes.deliverable === undefined
 	)
 		throw new WfError('nothing to change; pass --title, --proof or --deliverable');
+	if (isMicroId(id)) {
+		if (changes.proof !== undefined || changes.deliverable !== undefined)
+			throw new WfError(`${id} is a micro; micros have only a title`);
+		findMicro(todo, id).title = required(changes.title ?? '', 'title');
+		return;
+	}
 	if (isMinorId(id)) {
 		if (changes.deliverable !== undefined)
 			throw new WfError(`${id} is a minor; minors have a proof, not a deliverable`);
@@ -671,8 +749,7 @@ export function addSteer(root: string, s: Omit<Steer, 'date'>): { before: string
 	if (!affects.length) throw new WfError('affects is required: the ids this changes, or all');
 	for (const id of affects) {
 		if (id === 'all') continue;
-		if (isMinorId(id)) findMinor(todo, id);
-		else findMajor(todo, id);
+		findItem(todo, id);
 	}
 	if (s.kind === 'Steer' && !s.changed?.trim())
 		throw new WfError('a steer changes the plan first; say what changed with --changed');
@@ -729,8 +806,7 @@ export function addRisk(root: string, r: Partial<Risk>): { before: string; after
 	if (!RISK_LEVELS.includes(risk.level))
 		throw new WfError(`--level is one of ${RISK_LEVELS.join(', ')}, got ${risk.level}`);
 	const todo = readTodo(root);
-	if (isMinorId(risk.item)) findMinor(todo, risk.item);
-	else findMajor(todo, risk.item);
+	findItem(todo, risk.item);
 	const path = statePath(root, 'risks.md');
 	const before = existsSync(path) ? readFileSync(path, 'utf8') : '# Risks\n';
 	const date = new Date().toLocaleDateString('sv');
@@ -873,8 +949,7 @@ export function addDeferred(
 ): { before: string; after: string } {
 	const item = escapeMd(required(text, 'item')).replaceAll('|', '\\|');
 	const todo = readTodo(root);
-	if (isMinorId(resolves)) findMinor(todo, resolves);
-	else findMajor(todo, required(resolves, '--resolves'));
+	findItem(todo, required(resolves, '--resolves'));
 	const path = statePath(root, 'memory.md');
 	const before = readFileSync(path, 'utf8');
 	const lines = before.replace(/\n+$/, '').split('\n');

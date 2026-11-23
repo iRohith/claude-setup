@@ -565,3 +565,16 @@ test("each limit has the owner's warn and refuse thresholds, and -1 turns either
 	assert.match(learned.err, /settings file can't be read/);
 	rmSync(settingsFile);
 });
+
+test('micros are added, shown and started from the CLI, and hold their minor open', () => {
+	const added = wf('add', 'micro', '0.3', 'write the csv header');
+	assert.equal(added.code, 0, added.err);
+	assert.match(added.out, /^\+ {3}- \[ \] 0\.3\.1 write the csv header$/m);
+	assert.match(wf('show', '0.3').out, /^\[ \] 0\.3\.1 write the csv header$/m);
+	assert.equal(wf('start', '0.3.1').code, 0);
+	assert.match(wf('show', '0.3').out, /^\[~\] 0\.3 /m);
+	assert.match(wf('done', '0.3').err, /unfinished micros: 0\.3\.1/);
+	assert.equal(wf('done', '0.3.1').code, 0);
+	assert.equal(wf('done', '0.3').code, 0);
+	assert.match(wf('add', 'micro', '0.3', 'too late').err, /is done/);
+});

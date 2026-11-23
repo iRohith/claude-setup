@@ -105,7 +105,7 @@ export const actions: Actions = {
 	check: ({ params, request }) =>
 		change(params.path, request, (t, f) => {
 			const id = field(f, 'id');
-			if (id.includes('.') && wf.findMinor(t, id).mark === ' ') wf.start(t, id);
+			if (id.includes('.') && wf.findItem(t, id).mark === ' ') wf.start(t, id);
 			wf.done(t, id);
 		}),
 	start: ({ params, request }) =>

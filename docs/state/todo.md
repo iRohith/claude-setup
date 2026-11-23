@@ -112,6 +112,10 @@ Deliverable: in a throwaway project, a Claude session adds a major and two minor
   Proof: the owner's demo prompt re-run in a fresh session: one Edit attempt, the denial accepted, `wf edit` used instead, no chained commands
   - `global/states.md` has a section per state; core `stateInstructions` reads it from wf's own folder; session start injects the current state's section; `wf init` prints it; denials say the rule is fixed and a retry will be denied again
   - states.md gives each state numbered steps: setup (init, repo, native scaffold, gitignore, gitleaks plus the owner's checks, majors-only pre-push, refs and links, the init and main rule), discuss (references first, plan documents via wf doc, todo via wf batch), build
+- [x] 1.14 micros as checkable todo items: x.x.x lines with a checkbox under their minor, added with wf add micro, started and done like minors; a minor can't be done while a micro is open; guidance and dashboard follow
+  Proof: wf test covers add, start and done of a micro, the round trip of todo.md with micros, and done refusing a minor with an open micro; the dashboard shows micros with their checkboxes; the real todo.md still parses
+  - [x] 1.14.1 screenshots of micros on the real dashboard, then the commit
+  - Micros are todo items: { id x.x.x, mark, title } under their minor, written after its proof and before its details as '  - [ ] x.x.x title'; wf add micro \<minor>, wf start and wf done take micro ids, starting a micro starts its minor and major, a minor can't be done with an open micro, wf edit changes a micro's title, wf show lists a minor's micros; steers, risks and deferred rows accept micro ids; the dashboard lists micros under the proof with done checkboxes; CLAUDE.md: every change gets a micro, no edit before its item is started, commits only for whole minors and majors
 
 ## [~] 2 · States and admin
 Deliverable: setup/discuss/build behave as spec section 2 in a real session, and admin mode lifts every restriction only when the owner flips it.

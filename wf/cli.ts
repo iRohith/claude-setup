@@ -86,14 +86,16 @@ function main(argv: string[]): void {
 		case 'show':
 			return show(arg(0, 'id'));
 		case 'add': {
-			const kind = arg(0, 'major|minor');
+			const kind = arg(0, 'major|minor|micro');
 			if (kind === 'major')
 				return editTodo((t) => wf.addMajor(t, arg(1, 'title'), values.deliverable ?? ''));
 			if (kind === 'minor')
 				return editTodo((t) =>
 					wf.addMinor(t, arg(1, 'major'), arg(2, 'title'), values.proof ?? '')
 				);
-			throw new UsageError(`add takes major or minor, got ${kind}`, 'add');
+			if (kind === 'micro')
+				return editTodo((t) => wf.addMicro(t, arg(1, 'minor'), arg(2, 'title')));
+			throw new UsageError(`add takes major, minor or micro, got ${kind}`, 'add');
 		}
 		case 'batch': {
 			const file = arg(0, 'file');
@@ -118,7 +120,7 @@ function main(argv: string[]): void {
 			});
 		}
 		case 'start':
-			return editTodo((t) => wf.start(t, arg(0, 'minor')));
+			return editTodo((t) => wf.start(t, arg(0, 'minor|micro')));
 		case 'done':
 			return editTodo((t) => wf.done(t, arg(0, 'id')));
 		case 'impl':
@@ -354,9 +356,13 @@ function describeNext(item: wf.Minor | wf.Major): string {
 function show(id: string): void {
 	const root = wf.findRoot(process.cwd());
 	const todo = wf.readTodo(root);
-	if (id.includes('.')) {
+	if (id.split('.').length === 3) {
+		const micro = wf.findMicro(todo, id);
+		console.log(`[${micro.mark}] ${micro.id} ${micro.title}`);
+	} else if (id.includes('.')) {
 		const minor = wf.findMinor(todo, id);
 		console.log(`[${minor.mark}] ${minor.id} ${minor.title}\nProof: ${minor.proof}`);
+		for (const micro of minor.micros) console.log(`[${micro.mark}] ${micro.id} ${micro.title}`);
 		for (const detail of minor.impl) console.log(`- ${detail}`);
 	} else {
 		const major = wf.findMajor(todo, id);
