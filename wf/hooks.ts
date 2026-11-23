@@ -3,6 +3,7 @@ import { basename, resolve } from 'node:path';
 import * as wf from './core.ts';
 
 interface HookInput {
+	session_id?: string;
 	cwd?: string;
 	prompt?: string;
 	tool_name?: string;
@@ -14,6 +15,8 @@ const EDIT_TOOLS = ['Edit', 'MultiEdit', 'Write', 'NotebookEdit'];
 export function runHook(event: string, stdin: string): string {
 	const input = (stdin.trim() ? JSON.parse(stdin) : {}) as HookInput;
 	const cwd = input.cwd ?? process.cwd();
+	// Remember which project each session belongs to, so wf never writes another one from it.
+	if (input.session_id) wf.recordSession(input.session_id, cwd, event === 'session-start');
 	if (event === 'session-start') {
 		return JSON.stringify({
 			hookSpecificOutput: {
@@ -70,7 +73,11 @@ function denyReason(input: HookInput, cwd: string): string | undefined {
 	const file = resolve(cwd, target);
 	if (input.tool_name === 'Read') return wf.envDenial(file, undefined);
 	if (!EDIT_TOOLS.includes(input.tool_name ?? '')) return undefined;
-	const blocked = wf.adminDenial(file, undefined) ?? wf.envDenial(file, undefined);
+	const own = wf.sessionRoot(input.session_id) ?? root;
+	const blocked =
+		wf.adminDenial(file, undefined) ??
+		wf.envDenial(file, undefined) ??
+		wf.otherProjectDenial(own, file);
 	if (blocked) return blocked;
 	const alternative = wf.wfAlternative(file);
 	if (alternative)

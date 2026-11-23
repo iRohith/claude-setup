@@ -6,11 +6,14 @@ import { fileURLToPath } from 'node:url';
 const e2e = fileURLToPath(new URL('../../../scratch/temp/e2e/', import.meta.url));
 const cli = fileURLToPath(new URL('../../../wf/cli.ts', import.meta.url));
 
-/** The real wf CLI, run in the fixture project as a terminal would. */
+/** The real wf CLI, run in the fixture project as a terminal would: no Claude Code session. */
+const terminal = Object.fromEntries(
+	Object.entries(process.env).filter(([k]) => k !== 'CLAUDECODE' && k !== 'CLAUDE_CODE_SESSION_ID')
+);
 const wf = (...args: string[]) =>
 	execFileSync(process.execPath, [cli, ...args], {
 		cwd: `${e2e}notes`,
-		env: { ...process.env, WF_HOME: `${e2e}home` }
+		env: { ...terminal, WF_HOME: `${e2e}home` }
 	});
 
 /** On mobile the projects sidebar is a sheet behind the trigger. */

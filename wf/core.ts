@@ -1192,9 +1192,10 @@ export function adminDenial(
 	command: string | undefined
 ): string | undefined {
 	const touchesStore =
-		(file !== undefined && resolve(file) === registryPath()) ||
+		(file !== undefined && [registryPath(), sessionsPath()].includes(resolve(file))) ||
 		(command !== undefined &&
 			(command.includes('projects.json') ||
+				command.includes('sessions.json') ||
 				/\b(wf|cli\.ts)\s+admin\b/.test(command) ||
 				command.includes('?/admin')));
 	if (!touchesStore) return undefined;
@@ -1216,6 +1217,59 @@ function updateRegistry(root: string, change: (entry: ProjectEntry) => void): vo
 }
 
 const register = (root: string) => updateRegistry(root, () => {});
+
+// ---------- which project a Claude Code session belongs to ----------
+
+const sessionsPath = () => join(wfHome(), 'local', 'sessions.json');
+const SESSIONS_KEPT = 200;
+
+function readSessions(): Record<string, string> {
+	const path = sessionsPath();
+	return existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as Record<string, string>) : {};
+}
+
+/**
+ * Records the directory a session started in. Session start always records (it is the start
+ * directory); other hooks record only a session not seen yet, so a later cd never moves it.
+ */
+export function recordSession(id: string, cwd: string, always: boolean): void {
+	const sessions = readSessions();
+	if (!always && id in sessions) return;
+	delete sessions[id];
+	sessions[id] = resolve(cwd);
+	const kept = Object.entries(sessions).slice(-SESSIONS_KEPT);
+	mkdirSync(dirname(sessionsPath()), { recursive: true });
+	writeAtomic(sessionsPath(), JSON.stringify(Object.fromEntries(kept), null, '\t') + '\n');
+}
+
+/** The project a session belongs to: the project around its start directory, else that directory. */
+export function sessionRoot(id: string | undefined): string | undefined {
+	const start = id ? readSessions()[id] : undefined;
+	return start ? (tryFindRoot(start) ?? start) : undefined;
+}
+
+/**
+ * Inside Claude Code, wf writes only the project its session belongs to: never another project,
+ * and never a worktree's copy. Outside Claude Code (the owner's terminal) nothing is refused.
+ */
+export function sessionDenial(root: string): string | undefined {
+	if (!process.env.CLAUDECODE) return undefined;
+	const own = sessionRoot(process.env.CLAUDE_CODE_SESSION_ID);
+	if (!own)
+		return "this session's project is unknown to wf, so it writes nothing (a fixed rule); start a new session in the project";
+	if (resolve(root) === own) return undefined;
+	return `this session belongs to ${own}; wf never writes another project (${root}) from it (a fixed rule; retrying will be denied again)`;
+}
+
+/** Edit/Write into another registered project, from a session that belongs to a different one. */
+export function otherProjectDenial(own: string | undefined, file: string): string | undefined {
+	const target = resolve(file);
+	const owner = Object.keys(readRegistry())
+		.filter((r) => target === r || target.startsWith(r + '/'))
+		.sort((a, b) => b.length - a.length)[0];
+	if (!owner || owner === own) return undefined;
+	return `${owner} is another project: never write into it from this session (a fixed rule; retrying will be denied again). Anything it needs goes to the owner.`;
+}
 
 // ---------- state rules for hooks ----------
 

@@ -9,4 +9,4 @@
 7. Wrote the claude -p denial as a loose regex; all 15 of its denials in cuda-kernels were false (.claude/ paths, other tools' -p) → test each deny pattern against lookalikes
 8. Earlier setups failed on hand-edited state, loose states, hooks as the main control, rules leaning on unseen context → one checked tool, few states, hooks for hard limits, self-contained rules
 9. Proposed dropping ponytail and karpathy to save context; the owner needs them for coding ethics → cut duplication and procedure, never the principles the owner chose
-10. Made the context budget a refusal checked across all projects; cuda-kernels' size blocked nanoc and its agent rewrote cuda's learnings → warn, never refuse; one project never limits another
+10. Budget refusals spanned projects and wf let any session write any project, so nanoc rewrote cuda-kernels' learnings → warn, never refuse; a session writes only its own project

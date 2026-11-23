@@ -212,3 +212,8 @@ Changed: 7.5 now keeps both files instead of removing them; major 7's deliverabl
 Steer: No size limit may block work: show warnings instead of refusals, and never let one project's state restrict another
 Why: the cross-project budget refusal blocked a fresh project and pushed its agent into editing another project's learnings
 Changed: 3.1 now warns instead of refusing; the budget refusals in learn and handoff are removed
+
+## 2026-11-23 · affects 2.4
+Steer: A project must never be able to modify another project's state or files; this is a basic security requirement
+Why: a nanoc session rewrote cuda-kernels' learnings through wf
+Changed: 2.4 now covers wf writes and Edit/Write into any other project

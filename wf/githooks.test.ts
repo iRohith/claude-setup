@@ -10,11 +10,15 @@ const cli = fileURLToPath(new URL('cli.ts', import.meta.url));
 let tmp = '';
 let project = '';
 
+// As the owner in a terminal: no Claude Code session in the environment.
+const terminal = Object.fromEntries(
+	Object.entries(process.env).filter(([k]) => k !== 'CLAUDECODE' && k !== 'CLAUDE_CODE_SESSION_ID')
+);
 const run = (cmd: string, args: string[]) =>
 	spawnSync(cmd, args, {
 		cwd: project,
 		encoding: 'utf8',
-		env: { ...process.env, WF_HOME: join(tmp, 'home') }
+		env: { ...terminal, WF_HOME: join(tmp, 'home') }
 	});
 const git = (...args: string[]) => run('git', args);
 const wf = (...args: string[]) => run(process.execPath, [cli, ...args]);

@@ -10,6 +10,10 @@ const cli = fileURLToPath(new URL('cli.ts', import.meta.url));
 let tmp = '';
 let project = '';
 let home = '';
+// As the owner in a terminal: no Claude Code session in the environment.
+const terminal = Object.fromEntries(
+	Object.entries(process.env).filter(([k]) => k !== 'CLAUDECODE' && k !== 'CLAUDE_CODE_SESSION_ID')
+);
 
 before(() => {
 	mkdirSync(join(repo, 'scratch', 'temp'), { recursive: true });
@@ -24,7 +28,7 @@ before(() => {
 	);
 	spawnSync(process.execPath, [cli, 'init'], {
 		cwd: project,
-		env: { ...process.env, WF_HOME: home }
+		env: { ...terminal, WF_HOME: home }
 	});
 	writeFileSync(
 		join(project, 'docs', 'state', 'learnings.md'),
@@ -38,7 +42,7 @@ function hook(event: string, input: object, cwd = project) {
 	const r = spawnSync(process.execPath, [cli, 'hook', event], {
 		cwd,
 		input: JSON.stringify(input),
-		env: { ...process.env, WF_HOME: home },
+		env: { ...terminal, WF_HOME: home },
 		encoding: 'utf8'
 	});
 	assert.equal(r.status, 0, r.stderr);
@@ -64,7 +68,7 @@ test('session start injects global learnings, project learnings and the handoff'
 test('after wf state, the next session starts with the new state instructions', () => {
 	spawnSync(process.execPath, [cli, 'state', 'build'], {
 		cwd: project,
-		env: { ...process.env, WF_HOME: home }
+		env: { ...terminal, WF_HOME: home }
 	});
 	const ctx: string = hook('session-start', { source: 'startup', cwd: project }).hookSpecificOutput
 		.additionalContext;
@@ -72,14 +76,14 @@ test('after wf state, the next session starts with the new state instructions', 
 	assert.match(ctx, /State: build/);
 	spawnSync(process.execPath, [cli, 'state', 'setup'], {
 		cwd: project,
-		env: { ...process.env, WF_HOME: home }
+		env: { ...terminal, WF_HOME: home }
 	});
 });
 
 const wfIn = (...args: string[]) =>
 	spawnSync(process.execPath, [cli, ...args], {
 		cwd: project,
-		env: { ...process.env, WF_HOME: home }
+		env: { ...terminal, WF_HOME: home }
 	});
 const edit = (tool: string, file: string) =>
 	hook('pre-tool-use', { tool_name: tool, tool_input: { file_path: file }, cwd: project });
@@ -159,6 +163,24 @@ test('admin mode is guarded from the model and lifts every denial when the owner
 		'deny'
 	);
 	wfIn('state', 'setup');
+});
+
+test("a session never edits another registered project's files, even by absolute path", () => {
+	const other = join(tmp, 'other');
+	mkdirSync(other);
+	spawnSync(process.execPath, [cli, 'init'], { cwd: other, env: { ...terminal, WF_HOME: home } });
+	hook('session-start', { session_id: 'h1', source: 'startup', cwd: project });
+	for (const tool of ['Edit', 'Write']) {
+		// Even when the shell has moved into the other project, the session stays the start project's.
+		const out = hook('pre-tool-use', {
+			session_id: 'h1',
+			tool_name: tool,
+			tool_input: { file_path: join(other, 'docs', 'state', 'learnings.md') },
+			cwd: other
+		});
+		assert.match(out.hookSpecificOutput.permissionDecisionReason, /is another project/, tool);
+	}
+	assert.equal(edit('Write', join(project, 'src', 'own.ts')), undefined);
 });
 
 test('linked projects are read-only and claude -p is never run', () => {

@@ -127,9 +127,10 @@ Deliverable: setup/discuss/build behave as spec section 2 in a real session, and
   Proof: transcript of the agent failing to turn it on; the owner turns it on and the state file edit goes through
   - registry flag `admin`; core `setAdmin`, `isAdmin`, `adminDenial` (registry file, `wf admin`/`cli.ts admin`, `projects.json`, the dashboard `?/admin` action); in admin mode the pre-tool-use hook denies nothing and session start says admin is on
   - `wf admin on|off` refuses inside Claude Code; dashboard project page has the toggle (a form action) with an e2e test at both sizes; e2e runs on one worker since the fixture registry is shared; real-dashboard screenshots `scratch/images/2.3-*`
-- [~] 2.4 the remaining hook denials from spec section 5: Edit/Write on `scratch/links/**`, and Bash running `claude -p` or `--print`
+- [~] 2.4 the remaining hook denials from spec section 5: Edit/Write on scratch/links/** and on any other registered project, wf writes to any project but the session's own, and Bash running claude -p or --print
   Proof: hook tests and a real session show each one denied with its alternative
   - core `linksDenial` (Edit/Write under scratch/links/) and `claudeDenial` (Bash `claude` with `-p` or `--print`, inside or outside a project); wired into the pre-tool-use hook after the admin check
+  - Sessions are tied to projects: every hook records the session id with its start directory (session start always, other hooks only when unseen), in wf's local store, guarded like the registry; inside Claude Code every writing wf command refuses any project but the session's own (global learnings stay shared), and Edit/Write into another registered project is denied; verified live: env -C into the demo project was refused
 
 ## [~] 3 · Records
 Deliverable: every record type from spec section 3 written and queried through `wf`.

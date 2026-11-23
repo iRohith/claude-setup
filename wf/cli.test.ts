@@ -21,14 +21,21 @@ before(() => {
 
 after(() => rmSync(tmp, { recursive: true }));
 
-function wf(...args: string[]) {
+// As the owner in a terminal by default: no Claude Code session in the environment.
+const terminal = Object.fromEntries(
+	Object.entries(process.env).filter(([k]) => k !== 'CLAUDECODE' && k !== 'CLAUDE_CODE_SESSION_ID')
+);
+
+function run(cwd: string, env: Record<string, string>, ...args: string[]) {
 	const r = spawnSync(process.execPath, [cli, ...args], {
-		cwd: project,
-		env: { ...process.env, WF_HOME: home },
+		cwd,
+		env: { ...terminal, WF_HOME: home, ...env },
 		encoding: 'utf8'
 	});
 	return { code: r.status, out: r.stdout, err: r.stderr };
 }
+
+const wf = (...args: string[]) => run(project, {}, ...args);
 
 // The steps share one project, so they run in order.
 test('init creates docs/state in setup state and registers the project', () => {
@@ -446,4 +453,41 @@ test('commands outside a project explain what to do', () => {
 	// Everything under scratch/ sits inside this repo, so run from / (read-only) instead.
 	const r = spawnSync(process.execPath, [cli, 'status'], { cwd: '/', encoding: 'utf8' });
 	assert.match(r.stderr, /run wf init in the project/);
+});
+
+test('inside Claude Code, wf writes only the project its session started in', () => {
+	const other = join(tmp, 'other');
+	mkdirSync(other);
+	assert.equal(run(other, {}, 'init').code, 0);
+	writeFileSync(join(home, 'local', 'sessions.json'), JSON.stringify({ s1: project }));
+	const agent = { CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 's1' };
+
+	const own = run(project, agent, 'learn', 'own lesson → fine');
+	assert.equal(own.code, 0, own.err);
+	const otherLearnings = readFileSync(join(other, 'docs', 'state', 'learnings.md'), 'utf8');
+	for (const args of [
+		['learn', 'cross lesson → refused'],
+		['add', 'major', 'x', '--deliverable', 'y'],
+		['handoff', '--next', 'n', '--verify', 'v', '--dont', 'd'],
+		['state', 'discuss']
+	]) {
+		const r = run(other, agent, ...args);
+		assert.equal(r.code, 1, args.join(' '));
+		assert.match(r.err, /never writes another project/, args.join(' '));
+	}
+	assert.equal(readFileSync(join(other, 'docs', 'state', 'learnings.md'), 'utf8'), otherLearnings);
+	// Reading another project, and the shared global learnings, stay open.
+	assert.equal(run(other, agent, 'status').code, 0);
+	assert.equal(run(other, agent, 'learn', 'shared lesson → fine', '--global').code, 0);
+
+	const fresh = join(tmp, 'fresh');
+	mkdirSync(fresh);
+	assert.match(run(fresh, agent, 'init').err, /never writes another project/);
+	const unknown = run(
+		project,
+		{ CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 'nope' },
+		'learn',
+		'a → b'
+	);
+	assert.match(unknown.err, /unknown to wf/);
 });

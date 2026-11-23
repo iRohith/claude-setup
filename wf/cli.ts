@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Parses arguments, calls the core, prints plain text. No rules live here.
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import * as wf from './core.ts';
 import { setChecks, setPush } from './githooks.ts';
@@ -59,6 +59,7 @@ function main(argv: string[]): void {
 			return console.log(topic ? commandHelp(topic) : overview());
 		}
 		case 'init': {
+			checkSession(wf.tryFindRoot(process.cwd()) ?? resolve(process.cwd()));
 			const { root, created } = wf.initProject(process.cwd());
 			const dir = join(root, 'docs', 'state');
 			const state = wf.readHandoff(root).state;
@@ -105,7 +106,7 @@ function main(argv: string[]): void {
 			const name = arg(0, 'name');
 			if (!values.from) throw new UsageError('missing --from <file>', 'doc');
 			const text = readFileSync(values.from, 'utf8');
-			const root = wf.findRoot(process.cwd());
+			const root = writableRoot();
 			return wf.withLock(root, () => {
 				const { before, after } = wf.writeDoc(root, name, text, values.section);
 				printChanges(before, after);
@@ -127,7 +128,7 @@ function main(argv: string[]): void {
 				console.log('steer acknowledged, not logged (update the plan as it requires)');
 				return;
 			}
-			const root = wf.findRoot(process.cwd());
+			const root = writableRoot();
 			return wf.withLock(root, () => {
 				const { before, after } = wf.addSteer(root, {
 					kind: command === 'steer' ? 'Steer' : 'Assumption',
@@ -140,7 +141,7 @@ function main(argv: string[]): void {
 			});
 		}
 		case 'risk': {
-			const root = wf.findRoot(process.cwd());
+			const root = writableRoot();
 			return wf.withLock(root, () => {
 				const { before, after } = wf.addRisk(root, {
 					item: values.item,
@@ -156,17 +157,17 @@ function main(argv: string[]): void {
 		}
 		case 'checks': {
 			if (arg(0, 'set') !== 'set') throw new UsageError('checks takes set', 'checks');
-			console.log(`wrote ${setChecks(wf.findRoot(process.cwd()), args.slice(1))}`);
+			console.log(`wrote ${setChecks(writableRoot(), args.slice(1))}`);
 			return;
 		}
 		case 'push': {
 			if (arg(0, 'set') !== 'set') throw new UsageError('push takes set', 'push');
-			const path = setPush(wf.findRoot(process.cwd()), args.slice(1));
+			const path = setPush(writableRoot(), args.slice(1));
 			console.log(path ? `wrote ${path}` : 'no pre-push hook: pushes run nothing');
 			return;
 		}
 		case 'env': {
-			const root = wf.findRoot(process.cwd());
+			const root = writableRoot();
 			const action = arg(0, 'set|keys');
 			if (action === 'keys') {
 				const keys = wf.envKeys(root);
@@ -179,14 +180,14 @@ function main(argv: string[]): void {
 			return;
 		}
 		case 'memory': {
-			const root = wf.findRoot(process.cwd());
+			const root = writableRoot();
 			return wf.withLock(root, () => {
 				const { before, after } = wf.addMemory(root, arg(0, 'section'), arg(1, 'entry'));
 				printChanges(before, after);
 			});
 		}
 		case 'defer': {
-			const root = wf.findRoot(process.cwd());
+			const root = writableRoot();
 			return wf.withLock(root, () => {
 				const { before, after } = wf.addDeferred(root, arg(0, 'item'), values.resolves ?? '');
 				printChanges(before, after);
@@ -203,6 +204,8 @@ function main(argv: string[]): void {
 		case 'learn': {
 			const root = wf.tryFindRoot(process.cwd());
 			const global = values.global ?? false;
+			// Global learnings belong to every project; a project's own only to its sessions.
+			if (root && !global) checkSession(root);
 			if (values.edit !== undefined && values.remove !== undefined)
 				throw new UsageError('use --edit or --remove, not both', command);
 			const number = (value: string): number => {
@@ -225,7 +228,7 @@ function main(argv: string[]): void {
 			return root ? wf.withLock(root, write) : write();
 		}
 		case 'state': {
-			const root = wf.findRoot(process.cwd());
+			const root = writableRoot();
 			return wf.withLock(root, () => {
 				const { before, after } = wf.setState(root, arg(0, 'setup|discuss|build'));
 				printChanges(wf.formatHandoff(before), wf.formatHandoff(after));
@@ -269,8 +272,20 @@ class UsageError extends Error {
 	}
 }
 
-function editTodo(change: (todo: wf.Todo) => unknown): void {
+/** The project to write: the one here, refused when it isn't this session's own project. */
+function writableRoot(): string {
 	const root = wf.findRoot(process.cwd());
+	checkSession(root);
+	return root;
+}
+
+function checkSession(root: string): void {
+	const denial = wf.sessionDenial(root);
+	if (denial) throw new wf.WfError(denial);
+}
+
+function editTodo(change: (todo: wf.Todo) => unknown): void {
+	const root = writableRoot();
 	wf.withLock(root, () => {
 		const todo = wf.readTodo(root);
 		const before = wf.formatTodo(todo);
@@ -281,7 +296,7 @@ function editTodo(change: (todo: wf.Todo) => unknown): void {
 }
 
 function handoff(next: string, verify: string, dont: string, open: string[]): void {
-	const root = wf.findRoot(process.cwd());
+	const root = writableRoot();
 	wf.withLock(root, () => {
 		const old = wf.readHandoff(root);
 		const active = wf.activeMinors(wf.readTodo(root)).map((n) => n.id);

@@ -11,10 +11,16 @@ export default function setup(): void {
 	rmSync(e2e, { recursive: true, force: true });
 	const project = join(e2e, 'notes');
 	mkdirSync(project, { recursive: true });
+	// As the owner in a terminal: the fixture is built by the test, not by a Claude Code session.
+	const terminal = Object.fromEntries(
+		Object.entries(process.env).filter(
+			([k]) => k !== 'CLAUDECODE' && k !== 'CLAUDE_CODE_SESSION_ID'
+		)
+	);
 	const wf = (...args: string[]) =>
 		execFileSync(process.execPath, [cli, ...args], {
 			cwd: project,
-			env: { ...process.env, WF_HOME: join(e2e, 'home') }
+			env: { ...terminal, WF_HOME: join(e2e, 'home') }
 		});
 	wf('init');
 	wf('add', 'major', 'Crude end to end', '--deliverable', 'a page that lists notes');
