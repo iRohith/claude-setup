@@ -204,6 +204,7 @@ Deliverable: the owner manages todos and learnings across all projects without t
   Proof: systemctl --user is-enabled and is-active report enabled and active; curl on 127.0.0.1:47913 returns the real projects; the learnings meter shows a real size from the build
   - dashboard/wf-dashboard.service runs node on dashboard/build with PORT=47913 and HOST=127.0.0.1, path through %h; enabled with systemctl --user enable --now on the repo file, and loginctl enable-linger so it starts at boot; verified: enabled, active, listening on 127.0.0.1:47913 only, real projects listed, learnings meter 3,979
   - wf core finds its checkout by walking up to global/states.md instead of a fixed ../ from its file, so the bundled build reads states.md and the registry without WF_HOME (the meter read 0 before); scaffold README replaced with the dashboard's own
+  - Served at http://wf.localhost through the owner's Caddy; ORIGIN=http://wf.localhost in the unit, since adapter-node assumes https without it and refused every form save as cross-site (403); verified by adding and removing a learning on the demo project through the alias, file hash unchanged after
 
 ## [~] 5 · Guidance and skills
 Deliverable: global/CLAUDE.md complete and readable in one sitting, importing the adapted ponytail and karpathy rules; tdd, diagnosing-bugs and codebase-design installed as adapted skills

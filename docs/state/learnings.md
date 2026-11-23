@@ -10,3 +10,4 @@
 8. Earlier setups failed on hand-edited state, loose states, hooks as the main control, rules leaning on unseen context → one checked tool, few states, hooks for hard limits, self-contained rules
 9. Proposed dropping ponytail and karpathy to save context; the owner needs them for coding ethics → cut duplication and procedure, never the principles the owner chose
 10. Budget refusals spanned projects and wf let any session write any project, so nanoc rewrote cuda-kernels' learnings → warn, never refuse; a session writes only its own project
+11. Proved the dashboard service with page loads only; every form save was refused (403, origin assumed https) → prove a deployed app with a real write, not just reads

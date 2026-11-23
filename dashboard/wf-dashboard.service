@@ -5,6 +5,8 @@ After=network.target
 [Service]
 Environment=PORT=47913
 Environment=HOST=127.0.0.1
+# The address the browser uses (Caddy forwards http://wf.localhost here); form saves are checked against it.
+Environment=ORIGIN=http://wf.localhost
 ExecStart=/usr/bin/node %h/Projects/claude-setup/dashboard/build
 Restart=on-failure
 
