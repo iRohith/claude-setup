@@ -84,8 +84,10 @@ test('real settings page, as saved and with an unsaved change', async ({ page },
 	await page.waitForLoadState('networkidle');
 	await save(page, info, 'settings');
 	// Typed but never saved: the real settings stay as they are.
-	await page.getByLabel('Handoff', { exact: true }).fill('20');
+	await page.getByLabel('Handoff: refuse above').fill('20');
 	await expect(page.getByRole('button', { name: 'Discard changes' })).toBeVisible();
+	// Focusing the field scrolls; shoot from the top so the sticky header sits where it belongs.
+	await page.evaluate(() => window.scrollTo(0, 0));
 	await save(page, info, 'settings-editing');
 });
 

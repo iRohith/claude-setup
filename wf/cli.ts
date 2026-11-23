@@ -310,10 +310,16 @@ function warn(warnings: string[]): void {
 	for (const w of warnings) console.error(`wf: warning: ${w}`);
 }
 
-/** Titles in listings are cut to the owner's length; wf show <minor> prints one in full. */
+/** How many items a listing names in full; the owner's -1 names them all. */
+function listed(): number {
+	const n = wf.readSettings().listedItems;
+	return n === wf.OFF ? Infinity : n;
+}
+
+/** Titles in listings are cut to the owner's length (-1 never cuts); wf show <minor> prints in full. */
 function short(title: string): string {
 	const max = wf.readSettings().titleChars;
-	return title.length > max ? `${title.slice(0, max - 1)}…` : title;
+	return max !== wf.OFF && title.length > max ? `${title.slice(0, max - 1)}…` : title;
 }
 
 function status(): void {
@@ -323,7 +329,7 @@ function status(): void {
 	const next = wf.nextItem(todo);
 	console.log(`state: ${wf.readHandoff(root).state}`);
 	// Titles for the first few only, so the output stays small however much is in progress.
-	const shown = wf.readSettings().listedItems;
+	const shown = listed();
 	const titled = active.slice(0, shown).map((n) => `${n.id} ${short(n.title)}`);
 	const more = active.slice(shown).map((n) => n.id);
 	if (more.length) titled.push(`also ${more.join(', ')}`);
@@ -354,7 +360,7 @@ function show(id: string): void {
 			console.log(`[${minor.mark}] ${minor.id} ${short(minor.title)}`);
 	}
 	const steers = wf.steersFor(root, id);
-	const shown = wf.readSettings().listedItems;
+	const shown = listed();
 	if (steers.length) console.log('\nSteers:');
 	for (const s of steers.slice(-shown))
 		console.log(`- ${s.date} ${s.kind.toLowerCase()}: ${wf.unescapeMd(s.summary)}`);

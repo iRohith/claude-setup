@@ -120,7 +120,7 @@ export const HELP: Record<string, Help> = {
 		details: [
 			'State is kept; Active is filled from the minors in progress.',
 			"--open repeats, once per question waiting for the owner. The owner's settings limit its lines",
-			'and the session context; each limit refuses, warns or is off, as the owner set it.',
+			'and the session context; past a warn limit wf warns, past a refuse limit it refuses.',
 			'Rewrite it at the end of each minor and whenever work stops, before the commit.'
 		]
 	},
@@ -207,7 +207,7 @@ export const HELP: Record<string, Help> = {
 		details: [
 			'One line with the arrow, numbered automatically. Learnings are injected into every session,',
 			"so keep them few. The owner's settings limit a learning's length and this project's session",
-			'context; each limit refuses, warns or is off, as the owner set it. A removal is never refused.',
+			'context; past a warn limit wf warns, past a refuse limit it refuses; removals never are.',
 			'--edit rewrites learning n under the same rules. --remove drops it and renumbers the rest.',
 			'To merge two, edit one to cover both and remove the other.',
 			"Record a lesson the moment it is learned. A summary, never the owner's words verbatim."

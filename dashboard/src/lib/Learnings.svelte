@@ -21,8 +21,8 @@
 		lessons: string[];
 		/** Characters the fullest affected project's session context uses now. */
 		context: number;
-		budget: number;
-		/** Who the learnings reach, for the budget line. */
+		budget: number | undefined;
+		/** Who the learnings reach, for the meter line; the meter shows only when a limit is set. */
 		scope: string;
 		/** The form action, keeping the page's own query so the result lands on this view. */
 		action: string;
@@ -65,19 +65,27 @@
 <div class="mt-6 max-w-3xl">
 	<div class="flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
 		<span>Session context for {scope}</span>
-		<span class="font-mono"
-			><span class={context > budget * 0.9 ? 'text-progress' : 'text-foreground'}
-				>{context.toLocaleString('en')}</span
+		{#if budget}
+			<span class="font-mono"
+				><span class={context > budget * 0.9 ? 'text-progress' : 'text-foreground'}
+					>{context.toLocaleString('en')}</span
+				>
+				/ {budget.toLocaleString('en')}</span
 			>
-			/ {budget.toLocaleString('en')}</span
-		>
+		{:else}
+			<span
+				><span class="font-mono">{context.toLocaleString('en')}</span> characters, no limit set</span
+			>
+		{/if}
 	</div>
-	<Progress
-		value={Math.min(context, budget)}
-		max={budget}
-		class="mt-2"
-		aria-label="Session context used"
-	/>
+	{#if budget}
+		<Progress
+			value={Math.min(context, budget)}
+			max={budget}
+			class="mt-2"
+			aria-label="Session context used"
+		/>
+	{/if}
 
 	{#if lessons.length}
 		<ol class="mt-5 divide-y rounded-xl border bg-card">

@@ -207,7 +207,7 @@ test('state switches the handoff state and prints the new instructions', () => {
 	wf('state', 'setup');
 });
 
-test('learn numbers lessons, needs the arrow, and never refuses for size', () => {
+test('learn numbers lessons, needs the arrow, and by default only warns about size', () => {
 	const file = join(project, 'docs', 'state', 'learnings.md');
 	const first = wf('learn', 'pushed before updating state → state first, then commit');
 	assert.equal(first.code, 0, first.err);
@@ -218,7 +218,7 @@ test('learn numbers lessons, needs the arrow, and never refuses for size', () =>
 	assert.equal(long.code, 0, long.err);
 	assert.match(
 		long.err,
-		/warning: this learning in characters is 204, over the owner's limit of 200/
+		/warning: this learning in characters is 204, over the owner's warn limit of 200/
 	);
 	wf('learn', '--remove', '3');
 	const global = wf('learn', 'a lesson for all → apply it', '--global');
@@ -236,7 +236,7 @@ test('learn numbers lessons, needs the arrow, and never refuses for size', () =>
 	}
 	assert.match(
 		lastErr,
-		/warning: this project's session context in characters \(global learnings \d+, project learnings \d+, handoff \d+\) is \d+, over the owner's limit of 4000/
+		/warning: this project's session context in characters \(global learnings \d+, project learnings \d+, handoff \d+\) is \d+, over the owner's warn limit of 4000/
 	);
 	assert.equal(wf('learn', `a global one ${'z'.repeat(150)} → still fine`, '--global').code, 0);
 	assert.match(readFileSync(file, 'utf8'), /^42\. filler lesson number 39/m);
@@ -495,7 +495,7 @@ test('inside Claude Code, wf writes only the project its session started in', ()
 	assert.match(unknown.err, /unknown to wf/);
 });
 
-test("the owner's settings pick each limit's value and whether it refuses, warns or is off", () => {
+test("each limit has the owner's warn and refuse thresholds, and -1 turns either off", () => {
 	const settingsFile = join(home, 'local', 'wf-settings.json');
 	const set = (s: object) => writeFileSync(settingsFile, JSON.stringify(s));
 	const learnings = join(project, 'docs', 'state', 'learnings.md');
@@ -510,37 +510,48 @@ test("the owner's settings pick each limit's value and whether it refuses, warns
 		...Array.from({ length: opens }, (_, i) => ['--open', `q${i}`]).flat()
 	];
 
-	set({ learningChars: { value: 30, mode: 'refuse' } });
+	// Warn at 30, refuse at 60: a 45-character learning warns, a longer one is refused untouched.
+	set({ learningChars: { warn: 30, refuse: 60 } });
+	const middle = wf('learn', 'a lesson of forty-five characters → it warns');
+	assert.equal(middle.code, 0, middle.err);
+	assert.match(
+		middle.err,
+		/warning: this learning in characters is \d+, over the owner's warn limit of 30/
+	);
 	const kept = readFileSync(learnings, 'utf8');
-	const refused = wf('learn', 'a lesson that runs well past thirty → refused');
+	const refused = wf('learn', 'a lesson that runs well past the sixty character line → refused');
 	assert.equal(refused.code, 1);
-	assert.match(refused.err, /over the owner's limit of 30; refused/);
+	assert.match(refused.err, /over the owner's refuse limit of 60/);
 	assert.equal(readFileSync(learnings, 'utf8'), kept);
-	set({ learningChars: { value: 30, mode: 'off' } });
-	const off = wf('learn', 'a lesson that runs well past thirty → fine when off');
+	set({ learningChars: { warn: -1, refuse: -1 } });
+	const off = wf('learn', 'a lesson that runs well past the sixty character line → both off');
 	assert.equal(off.code, 0, off.err);
 	assert.doesNotMatch(off.err, /this learning in characters/);
 
 	// The context limit refuses for this project only, and a refused write is rolled back.
-	set({ contextChars: { value: 100, mode: 'refuse' } });
+	set({ contextChars: { warn: -1, refuse: 100 } });
 	const before = readFileSync(learnings, 'utf8');
-	assert.match(wf('learn', 'one more → refused by context').err, /session context.*refused/);
+	assert.match(wf('learn', 'one more → refused by context').err, /session context.*refuse limit/);
 	assert.equal(readFileSync(learnings, 'utf8'), before);
 	assert.equal(wf('learn', '--remove', '1').code, 0, 'a prune is never refused');
 
-	set({ handoffLines: { value: 8, mode: 'refuse' } });
+	set({ handoffLines: { warn: -1, refuse: 8 } });
 	assert.match(
 		wf(...handoffArgs(4)).err,
-		/the handoff in lines is 10, over the owner's limit of 8/
+		/the handoff in lines is 10, over the owner's refuse limit of 8/
 	);
-	set({ handoffLines: { value: 8, mode: 'warn' } });
+	set({ handoffLines: { warn: 8, refuse: -1 } });
 	const warned = wf(...handoffArgs(4));
 	assert.equal(warned.code, 0, warned.err);
-	assert.match(warned.err, /warning: the handoff in lines is 10/);
+	assert.match(warned.err, /warning: the handoff in lines is 10, over the owner's warn limit of 8/);
 
 	set({ titleChars: 3, listedItems: 1 });
 	assert.match(wf('show', '0').out, /^\[x\] 0\.1 pa…$/m);
+	set({ titleChars: -1, listedItems: -1 });
+	assert.doesNotMatch(wf('status').out, /…|also /);
+	set({ learningChars: { warn: 50, refuse: 40 } });
+	assert.match(wf('status').err, /learningChars refuse must be above its warn/);
 	set({ titleChars: 0 });
-	assert.match(wf('status').err, /titleChars must be a whole number of at least 1/);
+	assert.match(wf('status').err, /titleChars must be a whole number of at least 1, or -1 for off/);
 	rmSync(settingsFile);
 });

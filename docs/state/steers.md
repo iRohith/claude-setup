@@ -217,3 +217,8 @@ Changed: 3.1 now warns instead of refusing; the budget refusals in learn and han
 Steer: A project must never be able to modify another project's state or files; this is a basic security requirement
 Why: a nanoc session rewrote cuda-kernels' learnings through wf
 Changed: 2.4 now covers wf writes and Edit/Write into any other project
+
+## 2026-11-23 · affects 4.8
+Steer: Each limit gets two thresholds, a warn limit and a refuse limit, and -1 turns either off
+Why: simpler to reason about than one value with a mode, and both can apply at once
+Changed: 4.8 settings reworked to warn and refuse thresholds

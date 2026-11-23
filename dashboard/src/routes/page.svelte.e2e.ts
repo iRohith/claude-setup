@@ -1,6 +1,6 @@
 // Behaviour checks against the fixture registry built by e2e.setup.ts.
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const e2e = fileURLToPath(new URL('../../../scratch/temp/e2e/', import.meta.url));
@@ -301,7 +301,7 @@ test('an unregistered path is a 404', async ({ page }) => {
 	expect(response?.status()).toBe(404);
 });
 
-test('the owner sets a limit to refuse, then to warn, and wf follows it', async ({
+test('the owner sets a refuse limit, then a warn limit, and wf follows them', async ({
 	page
 }, info) => {
 	await page.goto('/');
@@ -310,40 +310,47 @@ test('the owner sets a limit to refuse, then to warn, and wf follows it', async 
 	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
 	await page.waitForLoadState('networkidle');
 
-	const value = page.getByLabel('One learning', { exact: true });
-	const mode = page.getByRole('combobox', { name: 'One learning mode' });
+	const warn = page.getByLabel('One learning: warn above');
+	const refuse = page.getByLabel('One learning: refuse above');
 	const save = page.getByRole('button', { name: 'Save settings' });
-	const pick = async (label: string) => {
-		await mode.click();
-		await page.getByRole('option', { name: label }).click();
-	};
 	await expect(save).toBeDisabled();
+	await expect(warn).toHaveValue('200');
+	await expect(refuse).toHaveValue('-1');
 
 	// Typed values survive the two-second refresh.
-	await value.fill('30');
+	await warn.fill('-1');
+	await refuse.fill('30');
 	await page.waitForTimeout(2500);
-	await expect(value).toHaveValue('30');
-	await pick('Refuse');
+	await expect(refuse).toHaveValue('30');
 	await save.click();
 	await expect(save).toBeDisabled();
 	await expect(page.getByText('Saved; wf uses them from its next command.')).toBeVisible();
-	const long = `a lesson from ${info.project.name} that runs past thirty → refused`;
-	expect(() => wf('learn', long)).toThrow(/over the owner's limit of 30; refused/);
+	const long = `a lesson from ${info.project.name} that runs past thirty → limited`;
+	expect(() => wf('learn', long)).toThrow(/over the owner's refuse limit of 30/);
 
-	await pick('Warn');
+	await warn.fill('30');
+	await refuse.fill('-1');
 	await save.click();
 	await expect(save).toBeDisabled();
-	const out = execFileSync(process.execPath, [cli, 'learn', long], {
+	const r = spawnSync(process.execPath, [cli, 'learn', long], {
 		cwd: `${e2e}notes`,
 		env: { ...terminal, WF_HOME: `${e2e}home` },
-		encoding: 'utf8',
-		stdio: ['ignore', 'pipe', 'pipe']
+		encoding: 'utf8'
 	});
-	expect(out).toContain(long);
+	expect(r.status).toBe(0);
+	expect(r.stderr).toContain("over the owner's warn limit of 30");
 	wf('learn', '--remove', '1');
 
-	// Back to the default for the next run.
-	await value.fill('200');
+	// A refuse limit at or below its warn limit is refused, with the saved settings kept.
+	await refuse.fill('20');
+	await save.click();
+	await expect(page.getByRole('alert')).toContainText(
+		'learningChars refuse must be above its warn'
+	);
+
+	// Back to the defaults for the next run.
+	await warn.fill('200');
+	await refuse.fill('-1');
 	await save.click();
 	await expect(save).toBeDisabled();
 });

@@ -122,11 +122,27 @@ export async function changeSection(root: string, request: Request) {
 	}
 }
 
-/** Learnings to edit, with how much of the session-context budget the fullest project uses. */
+/**
+ * Learnings to edit, with the fullest project's session context and the limit the meter shows: the
+ * owner's warn limit, else the refuse limit, else none.
+ */
 export interface LearningsView {
 	lessons: string[];
 	context: number;
-	budget: number;
+	budget: number | undefined;
+}
+
+/** The context limit the meter shows; an unreadable settings file shows the default. */
+function meterLimit(): number | undefined {
+	let limit: wf.Limit;
+	try {
+		limit = wf.readSettings().contextChars;
+	} catch (e) {
+		if (!(e instanceof wf.WfError)) throw e;
+		limit = wf.DEFAULT_SETTINGS.contextChars;
+	}
+	const target = limit.warn !== wf.OFF ? limit.warn : limit.refuse;
+	return target === wf.OFF ? undefined : target;
 }
 
 /** A project's learnings (root) or the global ones; global learnings reach every registered project. */
@@ -142,7 +158,7 @@ export function viewLearnings(root: string | undefined): LearningsView {
 	return {
 		lessons: wf.readLearnings(root, !root),
 		context: Math.max(0, ...sizes),
-		budget: wf.readSettings().contextChars.value
+		budget: meterLimit()
 	};
 }
 
@@ -172,9 +188,29 @@ export async function changeLearning(root: string | undefined, request: Request)
 	}
 }
 
-/** The owner's settings, with the defaults to show beside them. */
-export function viewSettings(): { settings: wf.Settings; defaults: wf.Settings } {
-	return { settings: wf.readSettings(), defaults: wf.DEFAULT_SETTINGS };
+/**
+ * The owner's settings, with the defaults to show beside them. A file wf can't read shows the
+ * defaults and the reason, so saving the page replaces it.
+ */
+export function viewSettings(): {
+	settings: wf.Settings;
+	defaults: wf.Settings;
+	unreadable?: string;
+} {
+	try {
+		return { settings: wf.readSettings(), defaults: wf.DEFAULT_SETTINGS };
+	} catch (e) {
+		if (!(e instanceof wf.WfError)) throw e;
+		// Just the reason: the page itself says where the file is and how to fix it.
+		const reason = e.message
+			.replace(`${wf.settingsPath()}: `, '')
+			.replace(/; the owner fixes it.*$/, '');
+		return {
+			settings: structuredClone(wf.DEFAULT_SETTINGS),
+			defaults: wf.DEFAULT_SETTINGS,
+			unreadable: reason
+		};
+	}
 }
 
 /** Saves the owner's settings from the form; a bad value is refused with the file kept. */
@@ -182,8 +218,8 @@ export async function saveSettings(request: Request) {
 	const form = await request.formData();
 	const num = (name: string) => Number(form.get(name));
 	const limit = (key: (typeof wf.LIMITS)[number]): wf.Limit => ({
-		value: num(`${key}.value`),
-		mode: String(form.get(`${key}.mode`)) as wf.LimitMode
+		warn: num(`${key}.warn`),
+		refuse: num(`${key}.refuse`)
 	});
 	try {
 		wf.writeSettings({

@@ -7,8 +7,7 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
-	import * as Select from '#lib/components/ui/select/index.js';
-	import type { LimitMode, Settings } from 'wf';
+	import type { Settings } from 'wf';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -36,32 +35,32 @@
 			help: "The lines in a project's handoff."
 		}
 	];
-	const COUNTS: { key: CountKey; label: string; unit: string; help: string }[] = [
+	const COUNTS: { key: CountKey; label: string; unit: string; help: string; off: string }[] = [
 		{
 			key: 'listedItems',
 			label: 'Items listed',
 			unit: 'items',
-			help: 'Active items wf status names in full, and steers wf show prints.'
+			help: 'Active items wf status names in full, and steers wf show prints.',
+			off: 'lists them all'
 		},
 		{
 			key: 'titleChars',
 			label: 'Titles in listings',
 			unit: 'characters',
-			help: 'Longer titles are cut in wf status and wf show.'
+			help: 'Longer titles are cut in wf status and wf show.',
+			off: 'never cuts'
 		}
 	];
-	const MODES: { value: LimitMode; label: string }[] = [
-		{ value: 'refuse', label: 'Refuse' },
-		{ value: 'warn', label: 'Warn' },
-		{ value: 'off', label: 'Off' }
-	];
+	const SIDES = [
+		{ side: 'warn', label: 'Warn above' },
+		{ side: 'refuse', label: 'Refuse above' }
+	] as const;
 
 	// A local draft, so the two-second refresh never resets what is being typed.
 	let draft: Settings = $state(untrack(() => structuredClone(data.settings)));
 	let saved = $state(false);
 	const changed = $derived(JSON.stringify(draft) !== JSON.stringify(data.settings));
-	const modeLabel = (mode: LimitMode) => MODES.find((m) => m.value === mode)?.label ?? mode;
-	const number = (n: number) => n.toLocaleString('en');
+	const shown = (n: number) => (n === -1 ? 'off' : n.toLocaleString('en'));
 
 	const save: SubmitFunction = () => {
 		saved = false;
@@ -84,54 +83,59 @@
 	both.
 </p>
 
+{#if data.unreadable}
+	<Alert.Root variant="destructive" class="mt-4 max-w-3xl">
+		<CircleAlert />
+		<Alert.Description>
+			<p>
+				wf can't read your settings file, so wf commands that use it fail until you save here.
+				Saving replaces it with the values below.
+			</p>
+			<p class="mt-1 text-xs">Reason: {data.unreadable}</p>
+		</Alert.Description>
+	</Alert.Root>
+{/if}
+
 <form method="POST" action="?/settings" use:enhance={save} class="mt-6 grid max-w-3xl gap-6">
 	<section aria-labelledby="limits" class="rounded-xl border bg-card">
 		<div class="border-b px-4 py-3">
 			<h2 id="limits" class="text-sm font-medium">Limits</h2>
 			<p class="text-xs text-muted-foreground">
-				Past a limit, wf refuses the write, warns and writes, or does nothing.
+				Past the warn limit wf writes and warns; past the refuse limit it refuses the write. -1
+				turns either off.
 			</p>
 		</div>
 		<ul class="divide-y">
 			{#each LIMITS as limit (limit.key)}
 				{@const d = data.defaults[limit.key]}
-				<li class="grid gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+				<li class="grid gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
 					<div>
-						<Label for={limit.key} class="text-sm font-medium">{limit.label}</Label>
+						<h3 class="text-sm font-medium">{limit.label}</h3>
 						<p class="mt-1 text-xs text-muted-foreground">{limit.help}</p>
 						<p class="mt-1 text-xs text-muted-foreground">
-							Default <span class="tabular-nums">{number(d.value)}</span>
-							{limit.unit}, {modeLabel(d.mode).toLowerCase()}
+							Default: warn <span class="tabular-nums">{shown(d.warn)}</span>, refuse
+							<span class="tabular-nums">{shown(d.refuse)}</span>
 						</p>
 					</div>
-					<div class="grid grid-cols-[7rem_5rem_7rem] items-center gap-2">
-						<Input
-							id={limit.key}
-							name="{limit.key}.value"
-							type="number"
-							min="1"
-							step="1"
-							required
-							bind:value={draft[limit.key].value}
-							class="w-full font-mono tabular-nums"
-						/>
-						<span class="text-xs text-muted-foreground">{limit.unit}</span>
-						<Select.Root
-							type="single"
-							name="{limit.key}.mode"
-							bind:value={
-								() => draft[limit.key].mode, (v) => (draft[limit.key].mode = v as LimitMode)
-							}
-						>
-							<Select.Trigger aria-label="{limit.label} mode" class="w-full">
-								{modeLabel(draft[limit.key].mode)}
-							</Select.Trigger>
-							<Select.Content>
-								{#each MODES as mode (mode.value)}
-									<Select.Item value={mode.value} label={mode.label} />
-								{/each}
-							</Select.Content>
-						</Select.Root>
+					<div class="grid grid-cols-[7rem_7rem_5rem] items-end gap-2">
+						{#each SIDES as { side, label } (side)}
+							<div class="grid gap-1">
+								<Label for="{limit.key}-{side}" class="text-xs text-muted-foreground">{label}</Label
+								>
+								<Input
+									id="{limit.key}-{side}"
+									name="{limit.key}.{side}"
+									type="number"
+									min="-1"
+									step="1"
+									required
+									aria-label="{limit.label}: {label.toLowerCase()}"
+									bind:value={draft[limit.key][side]}
+									class="w-full font-mono tabular-nums"
+								/>
+							</div>
+						{/each}
+						<span class="pb-2 text-xs text-muted-foreground">{limit.unit}</span>
 					</div>
 				</li>
 			{/each}
@@ -145,27 +149,31 @@
 		</div>
 		<ul class="divide-y">
 			{#each COUNTS as count (count.key)}
-				<li class="grid gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+				<li class="grid gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
 					<div>
-						<Label for={count.key} class="text-sm font-medium">{count.label}</Label>
-						<p class="mt-1 text-xs text-muted-foreground">{count.help}</p>
+						<h3 class="text-sm font-medium">{count.label}</h3>
+						<p class="mt-1 text-xs text-muted-foreground">{count.help} -1 {count.off}.</p>
 						<p class="mt-1 text-xs text-muted-foreground">
-							Default <span class="tabular-nums">{data.defaults[count.key]}</span>
+							Default: <span class="tabular-nums">{shown(data.defaults[count.key])}</span>
 							{count.unit}
 						</p>
 					</div>
-					<div class="grid grid-cols-[7rem_5rem_7rem] items-center gap-2">
-						<Input
-							id={count.key}
-							name={count.key}
-							type="number"
-							min="1"
-							step="1"
-							required
-							bind:value={draft[count.key]}
-							class="w-full font-mono tabular-nums"
-						/>
-						<span class="text-xs text-muted-foreground">{count.unit}</span>
+					<div class="grid grid-cols-[7rem_7rem_5rem] items-end gap-2">
+						<div class="grid gap-1">
+							<Label for={count.key} class="text-xs text-muted-foreground">At most</Label>
+							<Input
+								id={count.key}
+								name={count.key}
+								type="number"
+								min="-1"
+								step="1"
+								required
+								aria-label="{count.label}: at most"
+								bind:value={draft[count.key]}
+								class="w-full font-mono tabular-nums"
+							/>
+						</div>
+						<span class="pb-2 text-xs text-muted-foreground">{count.unit}</span>
 					</div>
 				</li>
 			{/each}
@@ -180,7 +188,7 @@
 	{/if}
 
 	<div class="flex items-center gap-3">
-		<Button type="submit" disabled={!changed}>Save settings</Button>
+		<Button type="submit" disabled={!changed && !data.unreadable}>Save settings</Button>
 		{#if changed}
 			<Button
 				type="button"

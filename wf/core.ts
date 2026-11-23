@@ -1039,12 +1039,13 @@ export function getState(root: string, name: string, section?: string): string {
 
 // ---------- the owner's settings ----------
 
-/** What happens past a limit: refuse the write, warn and write, or nothing. */
-export type LimitMode = 'refuse' | 'warn' | 'off';
-export const LIMIT_MODES: LimitMode[] = ['refuse', 'warn', 'off'];
+/** -1 turns that side of a limit off. */
+export const OFF = -1;
+
+/** Past `warn` wf writes and warns; past `refuse` it refuses the write. Either can be OFF. */
 export interface Limit {
-	value: number;
-	mode: LimitMode;
+	warn: number;
+	refuse: number;
 }
 
 /**
@@ -1058,16 +1059,16 @@ export interface Settings {
 	learningChars: Limit;
 	/** Lines in the handoff. */
 	handoffLines: Limit;
-	/** Active items wf status titles, and steers wf show prints. */
+	/** Active items wf status titles, and steers wf show prints; OFF lists them all. */
 	listedItems: number;
-	/** Characters of a title in wf status and wf show listings. */
+	/** Characters of a title in wf status and wf show listings; OFF never cuts. */
 	titleChars: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-	contextChars: { value: 4000, mode: 'warn' },
-	learningChars: { value: 200, mode: 'warn' },
-	handoffLines: { value: 15, mode: 'refuse' },
+	contextChars: { warn: 4000, refuse: OFF },
+	learningChars: { warn: 200, refuse: OFF },
+	handoffLines: { warn: OFF, refuse: 15 },
 	listedItems: 5,
 	titleChars: 80
 };
@@ -1077,20 +1078,22 @@ export const COUNTS = ['listedItems', 'titleChars'] as const;
 
 export const settingsPath = () => join(wfHome(), 'local', 'wf-settings.json');
 
-function positive(value: unknown, name: string): number {
-	if (!Number.isInteger(value) || (value as number) < 1)
-		throw new WfError(`${name} must be a whole number of at least 1`);
+/** A whole number of at least 1, or OFF. */
+function threshold(value: unknown, name: string): number {
+	if (value !== OFF && (!Number.isInteger(value) || (value as number) < 1))
+		throw new WfError(`${name} must be a whole number of at least 1, or -1 for off`);
 	return value as number;
 }
 
 /** Validates settings, naming the first bad field. */
 export function checkSettings(s: Settings): Settings {
 	for (const key of LIMITS) {
-		positive(s[key]?.value, `${key} value`);
-		if (!LIMIT_MODES.includes(s[key]?.mode))
-			throw new WfError(`${key} mode must be one of ${LIMIT_MODES.join(', ')}`);
+		const warn = threshold(s[key]?.warn, `${key} warn`);
+		const refuse = threshold(s[key]?.refuse, `${key} refuse`);
+		if (warn !== OFF && refuse !== OFF && refuse <= warn)
+			throw new WfError(`${key} refuse must be above its warn, or -1 for off`);
 	}
-	for (const key of COUNTS) positive(s[key], key);
+	for (const key of COUNTS) threshold(s[key], key);
 	return s;
 }
 
@@ -1102,7 +1105,9 @@ export function readSettings(): Settings {
 	try {
 		return checkSettings({ ...structuredClone(DEFAULT_SETTINGS), ...file });
 	} catch (e) {
-		throw new WfError(`${path}: ${(e as Error).message}`);
+		throw new WfError(
+			`${path}: ${(e as Error).message}; the owner fixes it on the dashboard's Settings page`
+		);
 	}
 }
 
@@ -1113,13 +1118,13 @@ export function writeSettings(s: Settings): void {
 	writeAtomic(settingsPath(), JSON.stringify(s, null, '\t') + '\n');
 }
 
-/** Past the limit: refuse throws, warn returns the warning; off or within returns nothing. */
+/** Past `refuse` throws; past `warn` returns the warning; otherwise nothing. */
 export function applyLimit(limit: Limit, actual: number, what: string): string | undefined {
-	if (limit.mode === 'off' || actual <= limit.value) return undefined;
-	const message = `${what} is ${actual}, over the owner's limit of ${limit.value}`;
-	if (limit.mode === 'refuse')
-		throw new WfError(`${message}; refused (the owner set it to refuse)`);
-	return message;
+	if (limit.refuse !== OFF && actual > limit.refuse)
+		throw new WfError(`${what} is ${actual}, over the owner's refuse limit of ${limit.refuse}`);
+	if (limit.warn !== OFF && actual > limit.warn)
+		return `${what} is ${actual}, over the owner's warn limit of ${limit.warn}`;
+	return undefined;
 }
 
 /** The project's session context against its limit; refuse throws, warn returns the warning. */
