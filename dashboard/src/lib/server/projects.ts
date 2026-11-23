@@ -142,7 +142,7 @@ export function viewLearnings(root: string | undefined): LearningsView {
 	return {
 		lessons: wf.readLearnings(root, !root),
 		context: Math.max(0, ...sizes),
-		budget: wf.CONTEXT_BUDGET
+		budget: wf.readSettings().contextChars.value
 	};
 }
 
@@ -170,4 +170,32 @@ export async function changeLearning(root: string | undefined, request: Request)
 			return fail(400, { error: e.message, item: op === 'add' ? 'learning-new' : `learning-${n}` });
 		throw e;
 	}
+}
+
+/** The owner's settings, with the defaults to show beside them. */
+export function viewSettings(): { settings: wf.Settings; defaults: wf.Settings } {
+	return { settings: wf.readSettings(), defaults: wf.DEFAULT_SETTINGS };
+}
+
+/** Saves the owner's settings from the form; a bad value is refused with the file kept. */
+export async function saveSettings(request: Request) {
+	const form = await request.formData();
+	const num = (name: string) => Number(form.get(name));
+	const limit = (key: (typeof wf.LIMITS)[number]): wf.Limit => ({
+		value: num(`${key}.value`),
+		mode: String(form.get(`${key}.mode`)) as wf.LimitMode
+	});
+	try {
+		wf.writeSettings({
+			contextChars: limit('contextChars'),
+			learningChars: limit('learningChars'),
+			handoffLines: limit('handoffLines'),
+			listedItems: num('listedItems'),
+			titleChars: num('titleChars')
+		});
+	} catch (e) {
+		if (e instanceof wf.WfError) return fail(400, { error: e.message });
+		throw e;
+	}
+	return { saved: true };
 }

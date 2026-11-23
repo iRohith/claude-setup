@@ -119,7 +119,8 @@ export const HELP: Record<string, Help> = {
 		summary: 'rewrite the handoff so any session can pick up where work stopped',
 		details: [
 			'State is kept; Active is filled from the minors in progress.',
-			'--open repeats, once per question waiting for the owner. At most 15 lines in all.',
+			"--open repeats, once per question waiting for the owner. The owner's settings limit its lines",
+			'and the session context; each limit refuses, warns or is off, as the owner set it.',
 			'Rewrite it at the end of each minor and whenever work stops, before the commit.'
 		]
 	},
@@ -204,9 +205,9 @@ export const HELP: Record<string, Help> = {
 		],
 		summary: 'record a lesson: this project, or with --global every project',
 		details: [
-			'One line with the arrow, numbered automatically. Past 200 characters wf warns.',
-			'Learnings are injected into every session, so keep them few. Nothing is refused for size;',
-			"past 4,000 characters of this project's session context, wf warns with each part's size.",
+			'One line with the arrow, numbered automatically. Learnings are injected into every session,',
+			"so keep them few. The owner's settings limit a learning's length and this project's session",
+			'context; each limit refuses, warns or is off, as the owner set it. A removal is never refused.',
 			'--edit rewrites learning n under the same rules. --remove drops it and renumbers the rest.',
 			'To merge two, edit one to cover both and remove the other.',
 			"Record a lesson the moment it is learned. A summary, never the owner's words verbatim."

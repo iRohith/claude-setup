@@ -290,14 +290,19 @@ test('fields are required and single-line', () => {
 	assert.throws(() => addMinor(todo, '1', 'a\nb', 'p'), /must be one line/);
 });
 
-test('handoff round-trips, checks the state, and is capped at 15 lines', () => {
+test('handoff round-trips and checks the state; its length is left to the owner limit', () => {
 	const text =
 		"# Handoff\nState: build\nActive: 1.1\nNext: 1.2\nVerify: node --test\nDon't: hand-edit\nOpen: —\n";
 	const h = parseHandoff(text);
 	assert.deepEqual(h.open, []);
 	assert.equal(formatHandoff(h), text);
 	assert.throws(() => parseHandoff(text.replace('build', 'admin')), /state must be one of/);
-	assert.throws(() => formatHandoff({ ...h, open: Array(10).fill('q') }), /limited to 15 lines/);
+	assert.equal(
+		formatHandoff({ ...h, open: Array(10).fill('q') })
+			.trimEnd()
+			.split('\n').length,
+		16
+	);
 	assert.throws(() => parseHandoff('# Handoff\nState: build\n'), WfError);
 });
 

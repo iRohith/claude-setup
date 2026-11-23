@@ -78,6 +78,17 @@ test('real dashboard pages', async ({ page }, info) => {
 	await save(page, info, 'global');
 });
 
+test('real settings page, as saved and with an unsaved change', async ({ page }, info) => {
+	expect((await page.goto('/settings'))?.ok()).toBe(true);
+	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
+	await page.waitForLoadState('networkidle');
+	await save(page, info, 'settings');
+	// Typed but never saved: the real settings stay as they are.
+	await page.getByLabel('Handoff', { exact: true }).fill('20');
+	await expect(page.getByRole('button', { name: 'Discard changes' })).toBeVisible();
+	await save(page, info, 'settings-editing');
+});
+
 test('learnings added, edited and removed, on a throwaway project', async ({ page }, info) => {
 	const root = Object.keys(wf.readRegistry()).find((r) => `${r}/`.startsWith(throwaway));
 	if (!root) throw new Error(`register a throwaway project under ${throwaway} with wf init first`);

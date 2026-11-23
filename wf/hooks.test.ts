@@ -135,19 +135,25 @@ test('admin mode is guarded from the model and lifts every denial when the owner
 		'wf admin on',
 		'node wf/cli.ts admin on',
 		'cat local/projects.json',
-		"curl -X POST 'http://localhost:5199/projects/x?/admin'"
+		"curl -X POST 'http://localhost:5199/projects/x?/admin'",
+		"sed -i 's/refuse/off/' local/wf-settings.json",
+		"curl -X POST 'http://wf.localhost/settings?/settings'"
 	])
 		assert.match(
 			bash(command).hookSpecificOutput.permissionDecisionReason,
-			/Admin mode belongs to the owner/,
+			/Admin mode, wf.s settings and its session store belong to the owner alone/,
 			command
 		);
 	assert.equal(bash('wf help admin'), undefined);
-	const store = edit('Write', join(home, 'local', 'projects.json'));
-	assert.match(
-		store.hookSpecificOutput.permissionDecisionReason,
-		/Admin mode belongs to the owner/
-	);
+	// A record that only mentions a store is fine; a chain that reaches it is not.
+	assert.equal(bash('wf impl 4.8 "settings live in local/wf-settings.json"'), undefined);
+	assert.ok(bash('wf status; cat local/wf-settings.json').hookSpecificOutput);
+	for (const file of ['projects.json', 'wf-settings.json'])
+		assert.match(
+			edit('Write', join(home, 'local', file)).hookSpecificOutput.permissionDecisionReason,
+			/Admin mode, wf.s settings and its session store belong to the owner alone/,
+			file
+		);
 
 	assert.equal(asOwner('admin', 'on').status, 0);
 	wfIn('state', 'discuss');

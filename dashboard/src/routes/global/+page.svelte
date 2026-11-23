@@ -9,8 +9,8 @@
 
 <h1 class="text-xl font-semibold tracking-tight">Global</h1>
 <p class="mt-1 text-sm text-muted-foreground">
-	Learnings injected into every project's sessions. Adding or editing one counts against the fullest
-	project's budget.
+	Learnings injected into every project's sessions. The meter shows the fullest project against your
+	session-context limit.
 </p>
 <Learnings
 	lessons={data.lessons}

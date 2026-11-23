@@ -300,3 +300,50 @@ test('an unregistered path is a 404', async ({ page }) => {
 	const response = await page.goto('/projects/etc');
 	expect(response?.status()).toBe(404);
 });
+
+test('the owner sets a limit to refuse, then to warn, and wf follows it', async ({
+	page
+}, info) => {
+	await page.goto('/');
+	const nav = await sidebar(page, info);
+	await nav.getByRole('link', { name: 'Settings' }).click();
+	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
+	await page.waitForLoadState('networkidle');
+
+	const value = page.getByLabel('One learning', { exact: true });
+	const mode = page.getByRole('combobox', { name: 'One learning mode' });
+	const save = page.getByRole('button', { name: 'Save settings' });
+	const pick = async (label: string) => {
+		await mode.click();
+		await page.getByRole('option', { name: label }).click();
+	};
+	await expect(save).toBeDisabled();
+
+	// Typed values survive the two-second refresh.
+	await value.fill('30');
+	await page.waitForTimeout(2500);
+	await expect(value).toHaveValue('30');
+	await pick('Refuse');
+	await save.click();
+	await expect(save).toBeDisabled();
+	await expect(page.getByText('Saved; wf uses them from its next command.')).toBeVisible();
+	const long = `a lesson from ${info.project.name} that runs past thirty → refused`;
+	expect(() => wf('learn', long)).toThrow(/over the owner's limit of 30; refused/);
+
+	await pick('Warn');
+	await save.click();
+	await expect(save).toBeDisabled();
+	const out = execFileSync(process.execPath, [cli, 'learn', long], {
+		cwd: `${e2e}notes`,
+		env: { ...terminal, WF_HOME: `${e2e}home` },
+		encoding: 'utf8',
+		stdio: ['ignore', 'pipe', 'pipe']
+	});
+	expect(out).toContain(long);
+	wf('learn', '--remove', '1');
+
+	// Back to the default for the next run.
+	await value.fill('200');
+	await save.click();
+	await expect(save).toBeDisabled();
+});

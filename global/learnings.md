@@ -6,3 +6,4 @@
 4. Put ref findings and general lessons in project learnings → general lessons go global; findings stay in refs
 5. git add -A committed .claude/worktrees; a worktree cd did not persist → ignore .claude/worktrees/, use absolute paths
 6. Pushed while tests still ran → wait for the test result before every push
+7. Committed and pushed micro commits and small edits (md tweaks, state-only changes) one by one, cluttering history → commit and push only whole minors and majors

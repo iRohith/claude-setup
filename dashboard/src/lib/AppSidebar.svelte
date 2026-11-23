@@ -5,6 +5,7 @@
 	import { page } from '$app/state';
 	import Globe from '@lucide/svelte/icons/globe';
 	import LayoutList from '@lucide/svelte/icons/layout-list';
+	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
 	import favicon from '#lib/assets/favicon.svg';
 	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
 	import type { ProjectTab } from '#lib/server/projects.js';
@@ -76,6 +77,15 @@
 						<Sidebar.MenuButton isActive={path === '/global'}>
 							{#snippet child({ props })}
 								<a href={resolve('/global')} {...props}><Globe /><span>Global</span></a>
+							{/snippet}
+						</Sidebar.MenuButton>
+					</Sidebar.MenuItem>
+					<Sidebar.MenuItem>
+						<Sidebar.MenuButton isActive={path === '/settings'}>
+							{#snippet child({ props })}
+								<a href={resolve('/settings')} {...props}
+									><SlidersHorizontal /><span>Settings</span></a
+								>
 							{/snippet}
 						</Sidebar.MenuButton>
 					</Sidebar.MenuItem>

@@ -49,7 +49,6 @@ export interface Handoff {
 }
 
 const STATES: State[] = ['setup', 'discuss', 'build'];
-const HANDOFF_MAX_LINES = 15;
 
 // ---------- markdown safety ----------
 
@@ -435,8 +434,6 @@ export function formatHandoff(h: Handoff): string {
 		`Don't: ${escapeMd(required(h.dont, "don't"))}`,
 		...open.map((o) => `Open: ${escapeMd(required(o, 'open'))}`)
 	];
-	if (lines.length > HANDOFF_MAX_LINES)
-		throw new WfError(`handoff is limited to ${HANDOFF_MAX_LINES} lines`);
 	return lines.join('\n') + '\n';
 }
 
@@ -1040,24 +1037,126 @@ export function getState(root: string, name: string, section?: string): string {
 	return [`## ${section}`, ...lines.slice(...range)].join('\n').replace(/\n+$/, '');
 }
 
-// ---------- session context and learnings ----------
+// ---------- the owner's settings ----------
 
-/** A size to aim for: passing it warns and shows in the dashboard; nothing is refused. */
-export const CONTEXT_BUDGET = 4000;
-
-/** A warning naming the sizes when this project's session context is past the target; else undefined. */
-export function contextWarning(root: string): string | undefined {
-	const size = sessionContext(root).length;
-	if (size <= CONTEXT_BUDGET) return undefined;
-	const global = section('', globalLearningsPath()).length;
-	const project = section('', projectLearningsPath(root)).length;
-	const handoff = section('', statePath(root, 'handoff.md')).length;
-	return `this project's session context is ${size} characters, over the ${CONTEXT_BUDGET} target (global learnings ${global}, project learnings ${project}, handoff ${handoff}); merge or prune learnings (wf learn --edit, --remove) or shorten the handoff when you can`;
+/** What happens past a limit: refuse the write, warn and write, or nothing. */
+export type LimitMode = 'refuse' | 'warn' | 'off';
+export const LIMIT_MODES: LimitMode[] = ['refuse', 'warn', 'off'];
+export interface Limit {
+	value: number;
+	mode: LimitMode;
 }
+
+/**
+ * Set by the owner alone, in the dashboard or by editing the file: wf has no command for it and the
+ * hooks deny agents the file. Machine-local, like the registry.
+ */
+export interface Settings {
+	/** Characters a project's session start (and each compaction) injects. */
+	contextChars: Limit;
+	/** Characters in one learning. */
+	learningChars: Limit;
+	/** Lines in the handoff. */
+	handoffLines: Limit;
+	/** Active items wf status titles, and steers wf show prints. */
+	listedItems: number;
+	/** Characters of a title in wf status and wf show listings. */
+	titleChars: number;
+}
+
+export const DEFAULT_SETTINGS: Settings = {
+	contextChars: { value: 4000, mode: 'warn' },
+	learningChars: { value: 200, mode: 'warn' },
+	handoffLines: { value: 15, mode: 'refuse' },
+	listedItems: 5,
+	titleChars: 80
+};
+
+export const LIMITS = ['contextChars', 'learningChars', 'handoffLines'] as const;
+export const COUNTS = ['listedItems', 'titleChars'] as const;
+
+export const settingsPath = () => join(wfHome(), 'local', 'wf-settings.json');
+
+function positive(value: unknown, name: string): number {
+	if (!Number.isInteger(value) || (value as number) < 1)
+		throw new WfError(`${name} must be a whole number of at least 1`);
+	return value as number;
+}
+
+/** Validates settings, naming the first bad field. */
+export function checkSettings(s: Settings): Settings {
+	for (const key of LIMITS) {
+		positive(s[key]?.value, `${key} value`);
+		if (!LIMIT_MODES.includes(s[key]?.mode))
+			throw new WfError(`${key} mode must be one of ${LIMIT_MODES.join(', ')}`);
+	}
+	for (const key of COUNTS) positive(s[key], key);
+	return s;
+}
+
+/** The owner's settings: the file over the defaults. */
+export function readSettings(): Settings {
+	const path = settingsPath();
+	if (!existsSync(path)) return structuredClone(DEFAULT_SETTINGS);
+	const file = JSON.parse(readFileSync(path, 'utf8')) as Partial<Settings>;
+	try {
+		return checkSettings({ ...structuredClone(DEFAULT_SETTINGS), ...file });
+	} catch (e) {
+		throw new WfError(`${path}: ${(e as Error).message}`);
+	}
+}
+
+/** Only the dashboard calls this, for the owner. */
+export function writeSettings(s: Settings): void {
+	checkSettings(s);
+	mkdirSync(dirname(settingsPath()), { recursive: true });
+	writeAtomic(settingsPath(), JSON.stringify(s, null, '\t') + '\n');
+}
+
+/** Past the limit: refuse throws, warn returns the warning; off or within returns nothing. */
+export function applyLimit(limit: Limit, actual: number, what: string): string | undefined {
+	if (limit.mode === 'off' || actual <= limit.value) return undefined;
+	const message = `${what} is ${actual}, over the owner's limit of ${limit.value}`;
+	if (limit.mode === 'refuse')
+		throw new WfError(`${message}; refused (the owner set it to refuse)`);
+	return message;
+}
+
+/** The project's session context against its limit; refuse throws, warn returns the warning. */
+function contextLimit(root: string): string | undefined {
+	const size = sessionContext(root).length;
+	const sizes = `global learnings ${section('', globalLearningsPath()).length}, project learnings ${section('', projectLearningsPath(root)).length}, handoff ${section('', statePath(root, 'handoff.md')).length}`;
+	const warning = applyLimit(
+		readSettings().contextChars,
+		size,
+		`this project's session context in characters (${sizes})`
+	);
+	return warning && `${warning}; merge or prune learnings, or shorten the handoff`;
+}
+
+/**
+ * Writes the handoff under the owner's limits on its lines and on the session context; a refused
+ * write leaves the file as it was. Returns the warnings.
+ */
+export function writeHandoffChecked(root: string, h: Handoff): string[] {
+	const lines = formatHandoff(h).trimEnd().split('\n').length;
+	const warnings = [applyLimit(readSettings().handoffLines, lines, 'the handoff in lines')];
+	const path = statePath(root, 'handoff.md');
+	const before = readFileSync(path, 'utf8');
+	writeHandoff(root, h);
+	try {
+		warnings.push(contextLimit(root));
+	} catch (e) {
+		writeAtomic(path, before);
+		throw e;
+	}
+	return warnings.filter((w): w is string => Boolean(w));
+}
+
+// ---------- session context and learnings ----------
 
 const FIRST_ACTION =
 	'Before anything else, now and after every compaction: run `wf status` and `wf get intent`, then restate in one line the intent and the item you are on.';
-const LEARNING_MAX = 200;
 
 /**
  * What session start injects: global learnings always; inside a wf project also admin mode when
@@ -1127,13 +1226,9 @@ function checkLearning(text: string): string {
 	return line;
 }
 
-/** A warning when a learning is longer than one short line should be; else undefined. */
-export function learningWarning(text: string): string | undefined {
-	const length = text.trim().length;
-	return length > LEARNING_MAX
-		? `this learning is ${length} characters; aim for ${LEARNING_MAX} or fewer`
-		: undefined;
-}
+/** The owner's limit on one learning's length; refuse throws, warn returns the warning. */
+const lengthLimit = (line: string) =>
+	applyLimit(readSettings().learningChars, line.length, 'this learning in characters');
 
 /** The index of learning n, or an error naming how many there are. */
 function learningIndex(lessons: string[], n: number): number {
@@ -1144,12 +1239,17 @@ function learningIndex(lessons: string[], n: number): number {
 	return n - 1;
 }
 
-/** Applies one change to a learnings file. */
+/**
+ * Applies one change to a learnings file. With `limited`, the owner's context limit is checked for
+ * the project this runs in, and only that one: a refused change is rolled back. Returns the warnings.
+ */
 function changeLearnings(
 	root: string | undefined,
 	global: boolean,
-	change: (lessons: string[]) => void
-): { path: string; before: string; after: string } {
+	change: (lessons: string[]) => void,
+	warnings: (string | undefined)[] = [],
+	limited = true
+): { path: string; before: string; after: string; warnings: string[] } {
 	const path = learningsPath(root, global);
 	const before = existsSync(path) ? readFileSync(path, 'utf8') : '# Learnings\n';
 	const lessons = parseLearnings(before, path);
@@ -1157,24 +1257,40 @@ function changeLearnings(
 	const after = formatLearnings(lessons);
 	mkdirSync(dirname(path), { recursive: true });
 	writeAtomic(path, after);
-	return { path, before, after };
+	if (limited && root && existsSync(statePath(root, 'handoff.md'))) {
+		try {
+			warnings.push(contextLimit(root));
+		} catch (e) {
+			writeAtomic(path, before);
+			throw e;
+		}
+	}
+	return { path, before, after, warnings: warnings.filter((w): w is string => Boolean(w)) };
 }
 
 /** Appends a learning, "what went wrong → what to do instead". */
 export function addLearning(root: string | undefined, text: string, global: boolean) {
 	const line = checkLearning(text);
-	return changeLearnings(root, global, (lessons) => lessons.push(line));
+	return changeLearnings(root, global, (lessons) => lessons.push(line), [lengthLimit(line)]);
 }
 
 /** Rewrites learning n in place, under the same rules as adding one. */
 export function editLearning(root: string | undefined, n: number, text: string, global: boolean) {
 	const line = checkLearning(text);
-	return changeLearnings(root, global, (lessons) => (lessons[learningIndex(lessons, n)] = line));
+	return changeLearnings(root, global, (lessons) => (lessons[learningIndex(lessons, n)] = line), [
+		lengthLimit(line)
+	]);
 }
 
-/** Removes learning n; the rest are renumbered. This is how a merge or a prune is done. */
+/** Removes learning n; the rest are renumbered. A prune, so no limit ever refuses it. */
 export function removeLearning(root: string | undefined, n: number, global: boolean) {
-	return changeLearnings(root, global, (lessons) => lessons.splice(learningIndex(lessons, n), 1));
+	return changeLearnings(
+		root,
+		global,
+		(lessons) => lessons.splice(learningIndex(lessons, n), 1),
+		[],
+		false
+	);
 }
 
 const registryPath = () => join(wfHome(), 'local', 'projects.json');
@@ -1196,22 +1312,28 @@ export function setAdmin(root: string, on: boolean): void {
 }
 
 /**
- * Denies any agent attempt to touch admin mode: the registry file, `wf admin`, or the dashboard's
- * admin action. Pattern checks can't catch every variant; the guidance forbids trying.
+ * Denies any agent attempt to touch what is the owner's alone: admin mode (the registry file,
+ * `wf admin`, the dashboard's admin action), the settings (their file, the dashboard's settings
+ * action) and the session store. Pattern checks can't catch every variant; the guidance forbids trying.
  */
 export function adminDenial(
 	file: string | undefined,
 	command: string | undefined
 ): string | undefined {
 	const touchesStore =
-		(file !== undefined && [registryPath(), sessionsPath()].includes(resolve(file))) ||
+		(file !== undefined &&
+			[registryPath(), sessionsPath(), settingsPath()].includes(resolve(file))) ||
 		(command !== undefined &&
-			(command.includes('projects.json') ||
-				command.includes('sessions.json') ||
-				/\b(wf|cli\.ts)\s+admin\b/.test(command) ||
-				command.includes('?/admin')));
+			(/\b(wf|cli\.ts)\s+admin\b/.test(command) ||
+				// A bare wf call has no command for these stores, whatever its text mentions.
+				(!bareWf(command) &&
+					(command.includes('projects.json') ||
+						command.includes('sessions.json') ||
+						command.includes('wf-settings.json') ||
+						command.includes('?/admin') ||
+						command.includes('?/settings')))));
 	if (!touchesStore) return undefined;
-	return 'Admin mode belongs to the owner alone; the model never enters, leaves or touches it (a fixed rule; retrying will be denied again).';
+	return "Admin mode, wf's settings and its session store belong to the owner alone; the model never changes or touches them (a fixed rule; retrying will be denied again).";
 }
 
 export function readRegistry(): Record<string, ProjectEntry> {
@@ -1309,10 +1431,15 @@ export function linksDenial(root: string, file: string): string | undefined {
 }
 
 /** Headless Claude sessions can bill API credits; they are never started. */
+/** A single wf call with no shell operators outside its quoted text: it only does what wf does. */
+function bareWf(command: string): boolean {
+	const literals = command.replace(/'[^']*'|"(?:[^"$`\\]|\\.)*"/g, '""');
+	return /^wf\s[^;&|`$\n]*$/.test(literals);
+}
+
 export function claudeDenial(command: string): string | undefined {
 	// A bare wf call never starts a session, even when its text mentions one.
-	const literals = command.replace(/'[^']*'|"(?:[^"$`\\]|\\.)*"/g, '""');
-	if (/^wf\s[^;&|`$\n]*$/.test(literals)) return undefined;
+	if (bareWf(command)) return undefined;
 	// claude as a command word (not a .claude path), with -p or --print before the next separator
 	if (!/(?:^|[\s;&|(`'"])(?:\S*\/)?claude(?=\s)[^\n;&|]*\s(?:-p|--print)\b/.test(command))
 		return undefined;

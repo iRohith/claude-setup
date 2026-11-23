@@ -214,16 +214,14 @@ function main(argv: string[]): void {
 				return Number(value);
 			};
 			const write = () => {
-				const { before, after } =
+				const { before, after, warnings } =
 					values.remove !== undefined
 						? wf.removeLearning(root, number(values.remove), global)
 						: values.edit !== undefined
 							? wf.editLearning(root, number(values.edit), arg(0, 'learning'), global)
 							: wf.addLearning(root, arg(0, 'learning'), global);
 				printChanges(before, after);
-				const long = values.remove === undefined && wf.learningWarning(arg(0, 'learning'));
-				if (long) console.error(`wf: warning: ${long}`);
-				warnContext(root);
+				warn(warnings);
 			};
 			return root ? wf.withLock(root, write) : write();
 		}
@@ -301,23 +299,22 @@ function handoff(next: string, verify: string, dont: string, open: string[]): vo
 		const old = wf.readHandoff(root);
 		const active = wf.activeMinors(wf.readTodo(root)).map((n) => n.id);
 		const h = { state: old.state, active: active.join(', ') || '—', next, verify, dont, open };
-		const after = wf.formatHandoff(h);
-		wf.writeHandoff(root, h);
-		printChanges(wf.formatHandoff(old), after);
-		warnContext(root);
+		const warnings = wf.writeHandoffChecked(root, h);
+		printChanges(wf.formatHandoff(old), wf.formatHandoff(h));
+		warn(warnings);
 	});
 }
 
-/** Warns, never refuses, when this project's own session context is past the size to aim for. */
-function warnContext(root: string | undefined): void {
-	const warning = root && wf.contextWarning(root);
-	if (warning) console.error(`wf: warning: ${warning}`);
+/** The owner's limits set to warn: printed after the write, which went through. */
+function warn(warnings: string[]): void {
+	for (const w of warnings) console.error(`wf: warning: ${w}`);
 }
 
-/** How many active items status titles, and how many steers show prints. */
-const SHOWN = 5;
-/** Titles in listings are cut to this; wf show <minor> prints one in full. */
-const short = (title: string): string => (title.length > 80 ? `${title.slice(0, 79)}…` : title);
+/** Titles in listings are cut to the owner's length; wf show <minor> prints one in full. */
+function short(title: string): string {
+	const max = wf.readSettings().titleChars;
+	return title.length > max ? `${title.slice(0, max - 1)}…` : title;
+}
 
 function status(): void {
 	const root = wf.findRoot(process.cwd());
@@ -326,8 +323,9 @@ function status(): void {
 	const next = wf.nextItem(todo);
 	console.log(`state: ${wf.readHandoff(root).state}`);
 	// Titles for the first few only, so the output stays small however much is in progress.
-	const titled = active.slice(0, SHOWN).map((n) => `${n.id} ${short(n.title)}`);
-	const more = active.slice(SHOWN).map((n) => n.id);
+	const shown = wf.readSettings().listedItems;
+	const titled = active.slice(0, shown).map((n) => `${n.id} ${short(n.title)}`);
+	const more = active.slice(shown).map((n) => n.id);
 	if (more.length) titled.push(`also ${more.join(', ')}`);
 	console.log(`active: ${titled.length ? titled.join('; ') : '—'}`);
 	console.log(`next: ${next ? describeNext(next) : '—'}`);
@@ -356,11 +354,12 @@ function show(id: string): void {
 			console.log(`[${minor.mark}] ${minor.id} ${short(minor.title)}`);
 	}
 	const steers = wf.steersFor(root, id);
+	const shown = wf.readSettings().listedItems;
 	if (steers.length) console.log('\nSteers:');
-	for (const s of steers.slice(-SHOWN))
+	for (const s of steers.slice(-shown))
 		console.log(`- ${s.date} ${s.kind.toLowerCase()}: ${wf.unescapeMd(s.summary)}`);
-	if (steers.length > SHOWN)
-		console.log(`(${steers.length - SHOWN} older: wf find "<text>" or wf get steers)`);
+	if (steers.length > shown)
+		console.log(`(${steers.length - shown} older: wf find "<text>" or wf get steers)`);
 	const deferred = wf.deferredFor(root, id);
 	if (deferred.length) console.log('\nDeferred to it:');
 	for (const d of deferred)
