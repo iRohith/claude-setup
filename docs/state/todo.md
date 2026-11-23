@@ -200,6 +200,10 @@ Deliverable: the owner manages todos and learnings across all projects without t
   - rules: steers through parseSteers, risks through a new strict parseRisks (heading, Action, Why, Surface, Recover, level low|medium|high), memory keeps its five sections and the Deferred table, docs need only the section rules
   - dashboard: Sections.svelte replaces the rendered-file views for steers, risks, memory and docs: each section rendered (line breaks kept for steers and risks) with an Edit button that opens its markdown in a shadcn Textarea; one section action through changeSection; renderState removed
   - tests: wf 71 (every section of the real steers, risks, memory, implementation and spec written back leaves them byte-identical; an edit changes only its lines; each file's rule refuses a broken edit); dashboard e2e 36; screenshots refuse a malformed steer on this repo with its hash unchanged and edit the throwaway's memory, restored in afterEach
+- [x] 4.7 dashboard built and served at boot by a systemd user service on port 47913, bound to localhost
+  Proof: systemctl --user is-enabled and is-active report enabled and active; curl on 127.0.0.1:47913 returns the real projects; the learnings meter shows a real size from the build
+  - dashboard/wf-dashboard.service runs node on dashboard/build with PORT=47913 and HOST=127.0.0.1, path through %h; enabled with systemctl --user enable --now on the repo file, and loginctl enable-linger so it starts at boot; verified: enabled, active, listening on 127.0.0.1:47913 only, real projects listed, learnings meter 3,979
+  - wf core finds its checkout by walking up to global/states.md instead of a fixed ../ from its file, so the bundled build reads states.md and the registry without WF_HOME (the meter read 0 before); scaffold README replaced with the dashboard's own
 
 ## [~] 5 · Guidance and skills
 Deliverable: global/CLAUDE.md complete and readable in one sitting, importing the adapted ponytail and karpathy rules; tdd, diagnosing-bugs and codebase-design installed as adapted skills

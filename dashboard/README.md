@@ -1,54 +1,11 @@
-# sv
+# Dashboard
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+The owner's view of every wf project: todo, plans, learnings, steers, risks and memory, editable.
 
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
-
-```sh
-# create a new project
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@1.4.0 create --template minimal --types ts --add tailwindcss="plugins:none" --no-install /home/r/Projects/claude-setup/dashboard
-```
-
-## Adding features
-
-Add features to your project with `sv add`:
-
-```sh
-npx sv add
-```
-
-For example, to add Tailwind CSS:
-
-```sh
-npx sv add tailwindcss
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
+- Develop: `pnpm --dir dashboard dev`. Test: `pnpm --dir dashboard test`.
+- Runs at boot as the systemd user service `wf-dashboard.service` (this folder), on
+  `http://127.0.0.1:47913`, localhost only. It serves `build/`, which every commit rebuilds; pick up a
+  new build with `systemctl --user restart wf-dashboard`.
+- Set up once per machine: `pnpm --dir dashboard build`, then
+  `systemctl --user enable --now <repo>/dashboard/wf-dashboard.service` and `loginctl enable-linger`
+  so it starts at boot without a login. The unit expects the repo at `~/Projects/claude-setup`.

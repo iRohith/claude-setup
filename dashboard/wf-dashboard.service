@@ -1,0 +1,12 @@
+[Unit]
+Description=claude-setup dashboard: wf state for every project, local only
+After=network.target
+
+[Service]
+Environment=PORT=47913
+Environment=HOST=127.0.0.1
+ExecStart=/usr/bin/node %h/Projects/claude-setup/dashboard/build
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

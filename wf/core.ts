@@ -589,15 +589,27 @@ export const countLearnings = (path: string): number =>
 
 // ---------- projects ----------
 
+/**
+ * The claude-setup checkout this code runs from: the nearest folder above it holding
+ * global/states.md. Found by walking up, so it also works from the dashboard's bundled build.
+ */
+function shippedRoot(): string {
+	let dir = dirname(fileURLToPath(import.meta.url));
+	while (!existsSync(join(dir, 'global', 'states.md'))) {
+		const up = dirname(dir);
+		if (up === dir) throw new WfError('no global/states.md above wf; is claude-setup intact?');
+		dir = up;
+	}
+	return dir;
+}
+
 /** claude-setup itself: global learnings and the machine-local project registry live here. */
-export const wfHome = (): string =>
-	process.env.WF_HOME ?? fileURLToPath(new URL('..', import.meta.url));
+export const wfHome = (): string => process.env.WF_HOME ?? shippedRoot();
 
 export const globalLearningsPath = () => join(wfHome(), 'global', 'learnings.md');
 
 /** Instructions ship with wf itself, unlike the data under WF_HOME. */
-export const globalFile = (name: string) =>
-	fileURLToPath(new URL(`../global/${name}`, import.meta.url));
+export const globalFile = (name: string) => join(shippedRoot(), 'global', name);
 
 /** The "## <state>" section of global/states.md: what to do in that state. */
 export function stateInstructions(state: State): string {
